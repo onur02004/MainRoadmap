@@ -1,13 +1,161 @@
 <!doctype html>
 <html>
-  <head><meta charset="utf-8"><title>Login</title></head>
-  <body style="font-family:system-ui;margin:2rem">
-    <h1>Login</h1>
-    <form method="post" action="/login">
-      <div><label>Username: <input name="username" autocomplete="username" required></label></div>
-      <div><label>Password: <input name="password" type="password" autocomplete="current-password" required></label></div>
-      <button type="submit">Login</button>
-    </form>
-    <p><a href="/">Back</a></p>
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <link rel="stylesheet" href="loginstyle.css">
+</head>
+
+<body>
+
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <section class="waveanim">
+    <div class="wave">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </section>
+
+  <div class="fixed-bottom">
+    <div class="welcome-text-holder">
+      <p style="font-size: 3.5em; font-weight: 200; padding-left: 1rem;">Welcome,</p>
+      <p style="font-size: 4.8em; font-weight: 400; padding-left: 1rem;">Login</p>
+      <p style="font-size: 1em; font-weight: 400; padding-left: 1rem;">
+        Built By: Onur Dönmez
+      </p>
+    </div>
+    <div class="login-options-holder">
+      <form id="login-form" method="post" action="/login">
+        <div class="login-fields-holder"><label style="font-size: 1.3em;">Username: <input name="username"
+              autocomplete="username" required></label></div>
+        <div class="login-fields-holder"><label style="font-size: 1.3em;">Password: <input name="password"
+              type="password" autocomplete="current-password" required></label></div>
+        <p id="error-message-box" style="display: none;"></p>
+
+        <button type="submit" style="font-size: 1.5rem;" class="glow-on-hover">Login</button>
+      </form>
+
+      <button class="forgot-btn" id="forgot-btn" onclick="forgotclick()"
+        style="border-radius: 10px; border-color: #13131384; border-style: solid; border-width: 2px; background-color: rgba(50, 205, 50, 0.46);">Forgot
+        Credentials?</button>
+
+
+      <div id="forgot-form">
+        <div class="login-fields-holder"><label style="font-size: 1.3em;">Email:
+            <input id="forgotemailinput" name="email" autocomplete="email" required></label></div>
+
+        <p id="forgotMsg"></p>
+
+        <button class="forgot-btn" id="send-btn"
+          style="border-radius: 10px; border-color: #13131384; border-style: solid; border-width: 2px; background-color: rgba(50, 205, 50, 0.46);">Check
+          Email</button>
+
+      </div>
+
+      <button class="back-btn"
+        style="font-size: 1rem; height: 40px; border-radius: 10px; border-color: #13131384; border-style: solid; border-width: 2px;"><a
+          href="/">Back</a></button>
+    </div>
+  </div>
+
+
+
+
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('login-form');
+      const loadingOverlay = document.getElementById('loading-overlay');
+      const errorBox = document.getElementById('error-message-box');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Stop the default form submission
+
+        // 1. Show the loading overlay
+        loadingOverlay.style.display = 'flex';
+        errorBox.style.display = 'flex';
+        errorBox.innerHTML = ''; // Clear any previous error
+
+        try {
+          // 2. Perform the form submission using fetch
+          const response = await fetch(form.action, {
+            method: form.method,
+            body: new URLSearchParams(new FormData(form)), // Get form data
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              // The server will set the cookie, so no special header for that is needed
+            }
+          });
+
+          // 3. Handle the response
+          if (response.ok) {
+            // Success (2xx status codes) - The server logic should handle redirection
+            // Since your server handler (`router.post("/login")`) does `res.redirect("/dashboard")`,
+            // the browser will automatically follow the redirect.
+            // We can just rely on the server to redirect the client.
+            // For a clean transition, we can just navigate to the expected redirect path:
+            window.location.href = "/account";
+          } else {
+            // Error (4xx or 5xx status codes)
+            let errorMessage = "Login failed. Please try again.";
+
+            // You can try to parse the error message from the server response
+            // Your server sends simple HTML like "Invalid credentials. <a href='/login.html'>Try again</a>"
+            // For a more robust client, you'd want the server to send JSON, but we can extract the text here.
+            const errorHtml = await response.text();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = errorHtml;
+            // Extract just the text content for a cleaner error display
+            errorMessage = tempDiv.textContent.trim().split('.')[0] + '.';
+
+            // 4. Display error icon/message
+            errorBox.textContent = `❌ ${errorMessage}`;
+
+            // The loading overlay is hidden in the `finally` block
+
+            document.getElementById('forgot-btn').style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Network or fetch error:', error);
+          errorBox.textContent = '❌ A network error occurred. Check your connection.';
+        } finally {
+          // 5. Hide the loading overlay whether success or failure
+          loadingOverlay.style.display = 'none';
+        }
+      });
+    });
+
+
+    async function forgotclick() {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('forgot-btn').style.display = 'none';
+
+    }
+
+    document.getElementById("send-btn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('forgotemailinput').value;
+      console.log("forgotten email:", email);
+
+      const res = await fetch("/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      document.getElementById("forgotMsg").textContent = data.message;
+    });
+
+  </script>
+</body>
+
 </html>

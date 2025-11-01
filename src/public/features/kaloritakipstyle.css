@@ -1,0 +1,358 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Jersey 10", sans-serif;
+}
+
+body {
+    background-color: #131313;
+    color: #fff;
+    height: 100%;
+}
+
+
+/* #region wave anim */
+section {
+    position: absolute;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+section .wave {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #52c471;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+    transition: 0.5s;
+}
+
+section .wave span {
+    position: absolute;
+    width: 325vh;
+    height: 325vh;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -75%);
+    background: #000;
+}
+
+section .wave span:nth-child(1) {
+    border-radius: 45%;
+    background: rgba(20, 20, 20, 1);
+    animation: animate 15s linear infinite;
+}
+
+section .wave span:nth-child(2) {
+    border-radius: 40%;
+    background: rgba(20, 20, 20, 0.5);
+    animation: animate 20s linear infinite;
+}
+
+section .wave span:nth-child(3) {
+    border-radius: 42.5%;
+    background: rgba(20, 20, 20, 0.5);
+    animation: animate 25s linear infinite;
+}
+
+@keyframes animate {
+    0% {
+        transform: translate(-50%, -75%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -75%) rotate(360deg);
+    }
+}
+/* #endregion */
+
+
+.mainfgupperholder {
+    grid-area: upper;
+    height: 95vh;
+    /* This height might be an issue when side-by-side; consider removing or adjusting */
+    max-width:  700px;
+    /* Optional: Use this in addition if you went with '1fr 1fr' columns */
+
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 30px;
+}
+
+.mainfgholder {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+
+    /* use padding instead of margin so we can use exact 100vh later */
+    padding: 15px;
+
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "upper"
+        "lower";
+}
+
+
+.mainfglowerholder {
+    display: grid;
+    grid-area: lower;
+
+    /* Auto-fit as many cards as possible; falls back to single column on narrow widths */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+
+    /* Make sure placement starts top-left and fills rows first (default) */
+    grid-auto-flow: row;
+    align-content: start;
+}
+
+.profilbilgi {
+    grid-area: bilgi;
+}
+
+
+@media screen and (min-width: 800px) {
+    .mainfgholder {
+        /* Sets the first column to be at most 700px, but shrinks if the screen is smaller. 
+           The second column takes the remaining space (1fr). */
+        grid-template-columns: minmax(auto, 400px) auto;
+        grid-template-areas: "upper lower";
+        align-items: start;
+        min-height: 100vh;
+    }
+
+    .mainfglowerholder {
+        padding: 20px;
+        padding-bottom: 1px;
+        align-content: end;
+        height: 100%;
+    }
+
+    .mainfgholder {
+
+    }
+
+    .mainfgupperholder {
+        
+    }
+}
+
+
+.userinfo {
+    height: 100px;
+    padding: 1rem;
+    display: flex;
+    gap: 25px;
+    grid-template-areas: "pic bilgi account";
+
+    background: rgba(19, 19, 19, 0.34);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(7.9px);
+    -webkit-backdrop-filter: blur(7.9px);
+    border: 1px solid rgba(19, 19, 19, 0.31);
+}
+
+.profilepic {
+    height: 100%;
+    grid-area: upper;
+}
+
+img {
+    border-radius: 50%;
+}
+
+
+/* #region add btn */
+
+.glow-on-hover {
+    height: 60px;
+    border: none;
+    outline: none;
+    color: #fff;
+    background: #1e1e1e;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.glow-on-hover:before {
+    content: '';
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(5px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing 20s linear infinite;
+    opacity: 1;
+    transition: opacity .3s ease-in-out;
+    border-radius: 10px;
+}
+
+.glow-on-hover:after {
+    z-index: -1;
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #1e1e1e;
+    left: 0;
+    top: 0;
+    border-radius: 10px;
+}
+
+@keyframes glowing {
+    0% {
+        background-position: 0 0;
+    }
+
+    50% {
+        background-position: 400% 0;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* #endregion */
+
+
+
+.chart-wrap {
+  width: 100%;
+  max-width: 700px;   /* fits your column */
+  margin: 8px 0 24px;
+  /* Set a comfortable height via aspect ratio for mobile */
+  aspect-ratio: 16 / 10;
+}
+#weightChart {
+  width: 100% !important;
+  height: 100% !important;  /* Chart.js will fill the parent */
+}
+
+
+
+
+/* ===== Modal — mobile-first ===== */
+.modal { position: fixed; inset: 0; z-index: 1000; display: none; }
+.modal.show { display: block; }
+
+.modal__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(2px);
+}
+
+.modal__panel {
+  position: absolute;
+  inset: env(safe-area-inset-top) env(safe-area-inset-right)
+        env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Fullscreen on mobile */
+  width: auto; height: auto;
+  background: #1e1e1e;
+  border: none;
+  border-radius: 0;
+  padding: 16px;
+  display: flex; flex-direction: column;
+  gap: 12px;
+}
+
+.modal__header { display:flex; justify-content:space-between; align-items:center; }
+.modal__close {
+  appearance:none; background:transparent; border:0; color:#fff;
+  font-size: 1.9rem; line-height:1; padding:8px; margin:-8px; cursor:pointer;
+}
+
+.modal__body { display:grid; gap:14px; margin-top:4px; }
+
+.field { display:grid; gap:6px; }
+.field span { font-size:1rem; color:#cfcfcf; }
+.field input {
+  width: 100%; padding: 14px 14px; font-size: 18px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.14);
+  background:#141414; color:#fff; outline:none;
+}
+.field input:focus { border-color:#52c471; box-shadow:0 0 0 3px rgba(82,196,113,.18); }
+
+.modal__actions { display:flex; gap:12px; justify-content:flex-end; margin-top:6px; }
+.btn {
+  min-height: 48px; /* 48px target for touch */
+  padding: 0 18px; border-radius: 12px; border:1px solid transparent;
+  font-weight: 700; font-size: 16px; cursor:pointer;
+}
+.btn--primary { background:#52c471; color:#0b150e; }
+.btn--primary:active { transform: scale(.98); }
+.btn--ghost { background:transparent; border-color:rgba(255,255,255,0.28); color:#fff; }
+
+.body--lock { overflow: hidden; }
+
+/* Desktop/tablet: turn modal into a centered sheet */
+@media (min-width: 820px) {
+  .modal__panel {
+    position: relative; inset: auto; margin: 8vh auto 0 auto;
+    width: min(92vw, 520px); height: auto;
+    border-radius: 16px; border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  }
+}
+
+
+.chart-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.chart-controls label {
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.chart-controls select {
+  appearance: none;
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  outline: none;
+  min-width: 120px;
+}
+
+.chart-controls select:focus {
+  border-color: #52c471;
+  box-shadow: 0 0 0 3px rgba(82,196,113,0.18);
+}
+
+@media (max-width: 600px) {
+  .chart-controls {
+    justify-content: center;
+    font-size: 0.95rem;
+  }
+  .chart-controls select {
+    font-size: 0.95rem;
+    padding: 6px 10px;
+  }
+}

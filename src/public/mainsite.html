@@ -3,12 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Main Wegweiser</title>
   <link rel="stylesheet" href="mainsitestyle.css" />
 
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+  <script src="mainsite.js"></script>
 </head>
 
 <body>
@@ -22,64 +24,104 @@
     </section>
 
     <div class="mainfgholder">
+
       <div class="mainfgupperholder">
 
         <div class="userinfo">
           <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
 
           <div class="profilbilgi">
-            <p>deneme</p>
+            <p id="authLabel"></p>
+            <div class="logged-in-infos">
+              <p style="font-size: 2rem;" id="usernameLabel">Username</p>
+              <p id="realnameLabel">Real Name</p>
+              <p id="roleLabel">Role</p>
+            </div>
+            <div class="wrapper"></div>
           </div>
+
         </div>
 
-        <div>
+        <div class="maintitleholder">
           <p style="font-size: 3.5em; font-weight: 200">Welcome To</p>
           <p style="font-size: 4.5em; font-weight: 400">Main Roadmap</p>
           <p style="font-size: 1em; font-weight: 400">
             Built By: Onur Dönmez
           </p>
-        </div>        
+        </div>
       </div>
 
       <div class="mainfglowerholder">
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Remote Control</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Song Share</h1>
         </div>
-        <div class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Automisation</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
+          <h1>Downloads</h1>
+        </div>
+        <div data-aos="fade-up" class="routeoption">
           <h1>Chat</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Storage</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Online Link</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Api Endpoints</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Images</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Account</h1>
         </div>
-        <div data-aos="zoom-out" class="routeoption">
+        <div data-aos="fade-up" class="routeoption">
           <h1>Blog</h1>
         </div>
+        <p style="font-size: 2.5em; font-weight: 200; padding-top: 20px;" data-aos="fade-up">User Specific Feautres:</p>
+        <div class="featuresHolder">
+
+
+        </div>
       </div>
+      
     </div>
   </div>
 
 
   <script>
-    AOS.init();
-  </script>
+  // init AOS normally first
+  AOS.init();
+
+  // if viewport is >=800px, kill animations
+  const mq = window.matchMedia("(min-width: 800px)");
+  if (mq.matches) {
+    // 1. remove data-aos attributes so AOS won't animate
+    document.querySelectorAll("[data-aos]").forEach(el => {
+      el.removeAttribute("data-aos");
+      el.style.opacity = ""; // optional: let it use normal styles
+      el.style.transform = ""; // optional cleanup in case AOS touched it
+    });
+
+    // 2. stop AOS from doing anything else
+    AOS.refreshHard = () => {};
+    AOS.init = () => {};
+  }
+
+  // your existing click handler
+  document.querySelector('.userinfo').addEventListener('click', () => {
+    window.location.href = '/account';
+  });
+</script>
+
+
 </body>
 
 </html>

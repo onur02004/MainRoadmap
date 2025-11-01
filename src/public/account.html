@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account Details</title>
+  <link rel="stylesheet" href="accountstyle.css" />
+
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+</head>
+
+<body>
+  <div class="mainbggrid">
+    <section class="waveanim">
+      <div class="wave">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </section>
+
+    <div class="mainfgholder">
+
+      <div class="mainfgupperholder">
+
+
+
+        <div class="userinfo">
+          <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
+
+          <div class="profilbilgi">
+            <p id="authLabel"></p>
+            <div class="logged-in-infos">
+              <p id="usernameLabel">Username</p>
+            </div>
+
+
+
+            <div class="wrapper"></div>
+          </div>
+
+          <div class="zartzurtbilgi">
+            <div class="zartzurtbilgibox">
+              <h3>Join Date</h3>
+              <p id="joindatecontent">Join date Content</p>
+            </div>
+
+            <div class="zartzurtbilgibox">
+              <h3>Verified</h3>
+              <p id="verificationcontent">Verification Content</p>
+            </div>
+
+            <div class="zartzurtbilgibox">
+              <h3>Role</h3>
+              <p id="rolecontent">Role Content</p>
+            </div>
+
+            <div class="zartzurtbilgibox" id="zartzurtbilgitel">
+              <h3 style="grid-area: head;">Contact</h3>
+              <p style="grid-area: content;" id="contactcontent">Email / Tel Content</p>
+              <div style="grid-area: edit;" class="editimgholder">
+                <img class="editimg" src="/content/editIconWhite.png" alt="Edit">
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="maintitleholder">
+          <p style="font-size: 3.5em; font-weight: 200">Hello,</p>
+          <p id="realnameLabel"
+            style="font-size: 4.5em; font-weight: 400; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+            Real Name</p>
+          <p style="font-size: 1em; font-weight: 400">
+            Built By: Onur Dönmez
+          </p>
+        </div>
+
+      </div>
+
+      <div class="mainfglowerholder">
+        <div data-aos="fade-up" class="routeoption">
+          <h1>My Images</h1>
+        </div>
+
+        <div data-aos="fade-up" class="routeoption">
+          <h1>Relations</h1>
+        </div>
+
+        <div data-aos="fade-up" class="routeoption" id="logoutholder">
+          <h1 id="logoutButton">Log Out</h1>
+        </div>
+
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <script>
+    AOS.init();
+
+    const mq = window.matchMedia("(min-width: 800px)");
+    if (mq.matches) {
+      document.querySelectorAll("[data-aos]").forEach(el => {
+        el.removeAttribute("data-aos");
+        el.style.opacity = "";
+        el.style.transform = "";
+      });
+
+      AOS.refreshHard = () => { };
+      AOS.init = () => { };
+    }
+
+    document.querySelector('#logoutholder').addEventListener('click', () => {
+      handleLogout();
+    });
+
+    async function handleLogout() {
+      const button = document.getElementById('logoutButton');
+      console.log("loggin out bi sn..");
+
+      const originalText = button.textContent;
+      button.textContent = 'Logging out...';
+      button.disabled = true;
+      button.classList.add('opacity-70', 'cursor-not-allowed');
+
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // You might include an Authorization header here if needed (e.g., JWT)
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({})
+        });
+
+        if (response.ok) { // This will now catch the 204 No Content
+          showMessage('Logout successful. Redirecting...', 'success');
+          localStorage.removeItem('token');
+          window.location.href = '/login'; // Redirect on the client
+        }
+        else if (response.status === 401) {
+          showMessage('Session expired. Logout forced.', 'info');
+          window.location.href = '/login';
+        }
+        else {
+          const errorData = await response.json().catch(() => ({ message: 'Server error occurred.' }));
+          showMessage(`Logout failed: ${errorData.message || response.statusText}`, 'error');
+        }
+
+      } catch (error) {
+        // Handle network errors (e.g., server offline, CORS issues)
+        console.error('Network Error during logout:', error);
+        showMessage('Network error. Could not reach server.', 'error');
+      }
+    }
+
+
+    function showMessage(message, type = 'info') {
+      console.log("showMessage(): ", message);
+    }
+
+
+    async function loadProfile() {
+      try {
+        const res = await fetch("/meinfo", {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          // e.g. 401, 404, 500...
+          console.error("Profile fetch failed:", res.status);
+          if (res.status === 401) {
+            // not logged in -> back to login
+            window.location.href = "/login";
+          }
+          return;
+        }
+
+        const profile = await res.json();
+        console.log("profile:", profile);
+
+        // Example: fill DOM
+        document.getElementById("usernameLabel").innerHTML = profile.username;
+
+        document.getElementById("rolecontent").innerHTML = profile.role;
+        document.getElementById("verificationcontent").innerHTML = profile.verified || "NOT Verified";
+        document.getElementById("contactcontent").innerHTML = profile.email + " | " + profile.phone;
+        document.getElementById("realnameLabel").innerHTML = profile.realName;
+
+        const joinDateText = profile.joinDate
+          ? new Date(profile.joinDate).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+          })
+          : "-";
+        document.getElementById("joindatecontent").textContent = joinDateText;
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      }
+    }
+
+    loadProfile();
+
+  </script>
+
+
+</body>
+
+</html>

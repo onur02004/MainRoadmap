@@ -1,9 +1,17 @@
 import { Router } from "express";
 import requireAuth from "../middleware/requireAuth.js";
+import { requireFeature } from "../middleware/requireAuth.js";
+import path from "node:path";
+import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
 
 const router = Router();
 
-router.get("/dashboard", requireAuth, (req, res) => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+router.get("/account", requireAuth, (req, res) => {
+  /*
   res.send(`
     <!doctype html>
     <html>
@@ -19,6 +27,47 @@ router.get("/dashboard", requireAuth, (req, res) => {
       </body>
     </html>
   `);
+  */
+
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public', 
+        'account.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending account.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
 });
+
+
+// Example protected endpoint only users with feature 'x' can call:
+router.get('/kt', requireAuth, requireFeature('kt'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'kaloritakip.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending KaloriTakip.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
+
+
 
 export default router;

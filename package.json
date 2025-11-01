@@ -2,7 +2,7 @@
   "name": "mainsite",
   "version": "1.0.0",
   "description": "Main Hub Where everything is going to be hosted. Is going to be used for navigation.",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node src/server.js"

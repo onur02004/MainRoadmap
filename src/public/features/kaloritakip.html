@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#141414">
+    <title>Kalori Takibi</title>
+    <link rel="stylesheet" href="../features/kaloritakipstyle.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../features/kaloritakipscript.js"></script>
+</head>
+
+<body>
+    <div id="weightModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true"
+        aria-labelledby="weightModalTitle">
+        <div class="modal__backdrop" data-close></div>
+
+        <div class="modal__panel" role="document">
+            <div class="modal__header">
+                <h2 id="weightModalTitle">Add Weight</h2>
+                <button class="modal__close" title="Close" aria-label="Close" data-close>&times;</button>
+            </div>
+
+            <form id="weightForm" class="modal__body">
+                <label class="field">
+                    <span>Date</span>
+                    <input id="wDate" type="date">
+                </label>
+
+                <label class="field">
+                    <span>Weight (kg)</span>
+                    <input id="wKg" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 75.4" required>
+                </label>
+
+                <label class="field">
+                    <span>Note (optional)</span>
+                    <input id="wNote" type="text" placeholder="e.g. after workout">
+                </label>
+
+                <div class="modal__actions">
+                    <button type="button" class="btn btn--ghost" data-close>Cancel</button>
+                    <button type="submit" class="btn btn--primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <section class="waveanim">
+        <div class="wave">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </section>
+
+
+    <div class="mainfgholder">
+
+        <div class="mainfgupperholder">
+            <button id="openWeightModal" type="submit" style="font-size: 1.2rem;" class="glow-on-hover">Add
+                Value!</button>
+
+            <div class="userinfo">
+                <img class="profilepic" src="../content/deafult.jpg" alt="profile_pic">
+
+                <div class="profilbilgi">
+                    <p id="authLabel"></p>
+                    <div class="logged-in-infos">
+                        <p style="font-size: 2rem;" id="usernameLabel">Username</p>
+                        <p id="realnameLabel">Real Name</p>
+                        <p id="roleLabel">Role</p>
+                    </div>
+                    <div class="wrapper"></div>
+                </div>
+
+            </div>
+
+            <div class="chart-controls">
+  <label for="rangeSelect">Show:</label>
+  <select id="rangeSelect">
+    <option value="7">Last Week</option>
+    <option value="30" selected>Last Month</option>
+    <option value="90">3 Months</option>
+    <option value="180">6 Months</option>
+    <option value="365">Year</option>
+  </select>
+</div>
+
+            <div class="chart-wrap">
+                <canvas id="weightChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="mainfglowerholder">
+        </div>
+    </div>
+</body>
+
+</html>

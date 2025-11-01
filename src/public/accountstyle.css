@@ -112,7 +112,7 @@ section .wave span:nth-child(3) {
     grid-area: upper;
     height: 95vh;
     /* This height might be an issue when side-by-side; consider removing or adjusting */
-    max-width:  700px;
+    max-width: 700px;
     /* Optional: Use this in addition if you went with '1fr 1fr' columns */
 
     display: flex;
@@ -155,6 +155,9 @@ section .wave span:nth-child(3) {
     grid-area: bilgi;
 }
 
+.zartzurtbilgi {
+    grid-area: verified;
+}
 
 @media screen and (min-width: 800px) {
     .mainfgholder {
@@ -177,9 +180,7 @@ section .wave span:nth-child(3) {
         padding-bottom: 100px;
     }
 
-    .mainfgupperholder {
-        
-    }
+    .mainfgupperholder {}
 }
 
 
@@ -210,11 +211,15 @@ section .wave span:nth-child(3) {
 
 
 .userinfo {
-    height: 100px;
+    /*height: 400px;*/
     padding: 1rem;
-    display: flex;
+    display: grid;
     gap: 25px;
-    grid-template-areas: "pic bilgi account";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "pic bilgi"
+        "verified verified";
 
     background: rgba(19, 19, 19, 0.34);
     border-radius: 16px;
@@ -225,50 +230,138 @@ section .wave span:nth-child(3) {
 }
 
 .profilepic {
-    height: 100%;
-    grid-area: upper;
+    height: 70px;
+    width: 70px;
+    grid-area: pic;
 }
 
 
 
 
-
-.wrapper { 
+/* #region color anim */
+.wrapper {
     z-index: -100;
     border-radius: 15px;
     opacity: 0.1;
-  height: 100%;
-  width: 100%;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  position: absolute;
-background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8,#dd00f3, #dd00f3);
-background-size: 1800% 1800%;
+    height: 100%;
+    width: 100%;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #dd00f3, #dd00f3);
+    background-size: 1800% 1800%;
 
--webkit-animation: rainbow 18s ease infinite;
--z-animation: rainbow 18s ease infinite;
--o-animation: rainbow 18s ease infinite;
-  animation: rainbow 18s ease infinite;
+    -webkit-animation: rainbow 18s ease infinite;
+    -z-animation: rainbow 18s ease infinite;
+    -o-animation: rainbow 18s ease infinite;
+    animation: rainbow 18s ease infinite;
 }
 
 @-webkit-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
+    0% {
+        background-position: 0% 82%
+    }
+
+    50% {
+        background-position: 100% 19%
+    }
+
+    100% {
+        background-position: 0% 82%
+    }
 }
+
 @-moz-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
+    0% {
+        background-position: 0% 82%
+    }
+
+    50% {
+        background-position: 100% 19%
+    }
+
+    100% {
+        background-position: 0% 82%
+    }
 }
+
 @-o-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
+    0% {
+        background-position: 0% 82%
+    }
+
+    50% {
+        background-position: 100% 19%
+    }
+
+    100% {
+        background-position: 0% 82%
+    }
 }
-@keyframes rainbow { 
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
+
+@keyframes rainbow {
+    0% {
+        background-position: 0% 82%
+    }
+
+    50% {
+        background-position: 100% 19%
+    }
+
+    100% {
+        background-position: 0% 82%
+    }
+}
+
+/* #endregion */
+
+#usernameLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 70px;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    font-size: 2.5rem;
+    padding: 0;
+    padding-bottom: 0;
+}
+
+
+
+.zartzurtbilgibox {
+    background-color: #1313133a;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 10px;
+}
+
+
+.zartzurtbilgibox h3 {
+    font-size: 1.5rem;
+    font-weight: 350;
+}
+
+.zartzurtbilgibox img {
+    border-radius: 0;
+    height: 1.5rem;
+}
+
+.editimgholder {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    padding-right: 10px;
+}
+
+#zartzurtbilgitel {
+    display: grid;
+    grid-template-areas:
+        "head edit"
+        "content edit";
+}
+
+#logoutholder{
+    background-color: rgba(255, 0, 0, 0.493);
 }
