@@ -8,7 +8,10 @@
     <title>Kalori Takibi</title>
     <link rel="stylesheet" href="../features/kaloritakipstyle.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../features/kaloritakipscript.js"></script>
+    <script src="../features/kaloritakipscript.js" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
 </head>
 
 <body>
@@ -77,23 +80,35 @@
             </div>
 
             <div class="chart-controls">
-  <label for="rangeSelect">Show:</label>
-  <select id="rangeSelect">
-    <option value="7">Last Week</option>
-    <option value="30" selected>Last Month</option>
-    <option value="90">3 Months</option>
-    <option value="180">6 Months</option>
-    <option value="365">Year</option>
-  </select>
-</div>
+                <label for="rangeSelect">Show:</label>
+                <select id="rangeSelect">
+                    <option value="7">Last Week</option>
+                    <option value="30" selected>Last Month</option>
+                    <option value="90">3 Months</option>
+                    <option value="180">6 Months</option>
+                    <option value="365">Year</option>
+                </select>
+            </div>
 
             <div class="chart-wrap">
                 <canvas id="weightChart"></canvas>
             </div>
 
+            <div class="maintitleholder">
+                <p id="realnameLabel"
+                    style="font-size: 4.5em; font-weight: 400; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    Measurements</p>
+                <p style="font-size: 1em; font-weight: 400">
+                    Built By: Onur Dönmez
+                </p>
+            </div>
+
         </div>
 
         <div class="mainfglowerholder">
+            <div data-aos="fade-up" class="routeoption">
+                <h1>Weights</h1>
+            </div>
         </div>
     </div>
 </body>

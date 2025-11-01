@@ -1,3 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+
+.jersey-10-regular {
+    font-family: "Jersey 10", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -12,9 +20,10 @@ body {
 }
 
 section {
-    position: relative;
+    position: fixed;
+    inset: 0;
     width: 100%;
-    height: 100vh;
+    height: 100svh;
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -23,7 +32,7 @@ section {
 }
 
 section .wave {
-    position: absolute;
+    position: fixed;
     left: 0;
     width: 100%;
     height: 100%;
@@ -74,10 +83,10 @@ section .wave span:nth-child(3) {
     position: fixed;
     bottom: 0;
     width: 100%;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 1rem;
     align-items: left;
 }
 
@@ -88,7 +97,7 @@ section .wave span:nth-child(3) {
     backdrop-filter: blur(7.9px);
     -webkit-backdrop-filter: blur(7.9px);
     border: 1px solid rgba(19, 19, 19, 0.31);
-    padding: 1.5rem;
+    padding: 1rem;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -112,11 +121,10 @@ input {
     border-radius: 8px;
     border: none;
     outline: none;
-    font-size: 1.rem;
+    font-size: 1.1rem;
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     font-family: "Jersey 10", sans-serif;
-    font-size: 1.3rem;
 }
 
 input::placeholder {
@@ -254,3 +262,17 @@ input:focus {
 #forgot-form{
     display: none;
 }
+
+
+@supports (height: 100dvh) {
+  .section { height: 100dvh; }
+}
+
+/* 3) iOS Safari old fallback */
+@supports (-webkit-touch-callout: none) {
+  html, body { min-height: 100%; }
+  .section { height: -webkit-fill-available; }
+}
+
+html, body { margin: 0; overflow-x: hidden; }
+body { overscroll-behavior-y: none; } 

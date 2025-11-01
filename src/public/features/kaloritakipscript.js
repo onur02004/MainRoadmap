@@ -162,8 +162,8 @@ async function renderWeightChart() {
                     borderColor: c => {
                         const i0 = c.p0DataIndex, i1 = c.p1DataIndex;
                         const prev = weights[i0], next = weights[i1];
-                        if (next < prev) return 'rgb(0,200,0)';
-                        if (next > prev) return 'rgb(220,0,0)';
+                        if (next > prev) return 'rgb(0,200,0)';
+                        if (next < prev) return 'rgb(220,0,0)';
                         return '#aaa';
                     }
                 }
@@ -224,7 +224,6 @@ function getLocalISODate(date) {
         .slice(0, 10);
 }
 
-
 async function fetchAndRender(days = currentRange) {
     try {
         currentRange = days;
@@ -238,6 +237,7 @@ async function fetchAndRender(days = currentRange) {
 
         // data = { days, range: {start,end}, count, items:[{entry_date,weight_kg,note,source}] }
         renderWeightChartFromItems(data.items);
+        renderWeightsList(data.items);
 
         // (nice-to-have) show exact range as a tooltip on the label
         const label = document.querySelector('.chart-controls label');
@@ -266,9 +266,9 @@ function renderWeightChartFromItems(items = []) {
     }
 
     const labels = items.map(r => {
-  const d = new Date(r.entry_date);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-});const weights = items.map(r => Number(r.weight_kg));      // numeric
+        const d = new Date(r.entry_date);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    }); const weights = items.map(r => Number(r.weight_kg));      // numeric
 
     const ctx = canvas.getContext('2d');
     if (window.weightChartInstance) window.weightChartInstance.destroy();
@@ -289,8 +289,8 @@ function renderWeightChartFromItems(items = []) {
                     borderColor: c => {
                         const i0 = c.p0DataIndex, i1 = c.p1DataIndex;
                         const prev = weights[i0], next = weights[i1];
-                        if (next < prev) return 'rgb(0,200,0)';
-                        if (next > prev) return 'rgb(220,0,0)';
+                        if (next > prev) return 'rgb(0,200,0)';
+                        if (next < prev) return 'rgb(220,0,0)';
                         return '#aaa';
                     }
                 }
@@ -347,4 +347,112 @@ function showChartEmptyState(message) {
         wrap.appendChild(empty);
     }
     empty.textContent = message;
+}
+
+
+AOS.init();
+
+const mq = window.matchMedia("(min-width: 800px)");
+if (mq.matches) {
+    document.querySelectorAll("[data-aos]").forEach(el => {
+        el.removeAttribute("data-aos");
+        el.style.opacity = "";
+        el.style.transform = "";
+    });
+
+    AOS.refreshHard = () => { };
+    AOS.init = () => { };
+}
+
+async function loadProfile() {
+    try {
+        const res = await fetch("/meinfo", {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!res.ok) {
+            // e.g. 401, 404, 500...
+            console.error("Profile fetch failed:", res.status);
+            if (res.status === 401) {
+                // not logged in -> back to login
+                window.location.href = "/login";
+            }
+            return;
+        }
+
+        const profile = await res.json();
+        console.log("profile:", profile);
+
+        // Example: fill DOM
+        document.getElementById("usernameLabel").innerHTML = profile.username;
+
+        document.getElementById("roleLabel").innerHTML = profile.role;
+        document.getElementById("realnameLabel").innerHTML = profile.realName;
+    } catch (err) {
+        console.error("Failed to load profile:", err);
+    }
+}
+
+loadProfile();
+
+function formatDateShort(iso) {
+  // e.g. "2025-11-01" -> "01 Nov"
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+
+function renderWeightsList(items = []) {
+  const lower = document.querySelector('.mainfglowerholder');
+  if (!lower) return;
+
+  // clear old content
+  lower.innerHTML = '';
+
+  if (!Array.isArray(items) || items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'routeoption';
+    empty.textContent = 'No entries in this range yet.';
+    lower.appendChild(empty);
+    return;
+  }
+
+  // reverse items so newest is first
+  const reversed = [...items].reverse();
+
+  for (let i = 0; i < reversed.length; i++) {
+    const cur = reversed[i];
+    const prev = i > 0 ? reversed[i - 1] : null;
+
+    const kg = Number(cur.weight_kg);
+    const delta = prev ? kg - Number(prev.weight_kg) : 0;
+    const deltaStr = prev ? (delta > 0 ? `+${delta.toFixed(1)} kg` : `${delta.toFixed(1)} kg`) : '—';
+
+    const card = document.createElement('div');
+    card.className = 'routeoption';
+    card.setAttribute('data-aos', 'fade-up');
+
+    let chipClass = 'chip-flat';
+    if (prev) {
+      chipClass = delta > 0 ? 'chip-up' : (delta < 0 ? 'chip-down' : 'chip-flat');
+    }
+
+    card.innerHTML = `
+      <div class="weight-row">
+        <div class="date">${formatDateShort(cur.entry_date)}</div>
+        <div class="kg">${kg.toFixed(1)} kg</div>
+      </div>
+      <div class="meta-row">
+        <span class="chip ${chipClass}">${deltaStr}</span>
+        ${cur.note ? `<span class="note">• ${cur.note}</span>` : ''}
+        ${cur.source ? `<span class="source">• ${cur.source}</span>` : ''}
+      </div>
+    `;
+
+    lower.appendChild(card);
+  }
+
+  // refresh AOS animations
+  if (window.AOS?.refreshHard) AOS.refreshHard();
 }

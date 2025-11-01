@@ -39,11 +39,11 @@
               type="password" autocomplete="current-password" required></label></div>
         <p id="error-message-box" style="display: none;"></p>
 
-        <button type="submit" style="font-size: 1.5rem;" class="glow-on-hover">Login</button>
+        <button type="submit" style="font-size: 1.1rem;" class="glow-on-hover">Login</button>
       </form>
 
       <button class="forgot-btn" id="forgot-btn" onclick="forgotclick()"
-        style="border-radius: 10px; border-color: #13131384; border-style: solid; border-width: 2px; background-color: rgba(50, 205, 50, 0.46);">Forgot
+        style="border-radius: 10px; border-color: #d1d1d184; border-style: solid; border-width: 2px; background-color: rgba(50, 205, 50, 0.46);">Forgot
         Credentials?</button>
 
 
@@ -60,7 +60,7 @@
       </div>
 
       <button class="back-btn"
-        style="font-size: 1rem; height: 40px; border-radius: 10px; border-color: #13131384; border-style: solid; border-width: 2px;"><a
+        style="font-size: .9rem; height: 40px; border-radius: 10px; border-color: #08d0c384; border-style: solid; border-width: 2px;"><a
           href="/">Back</a></button>
     </div>
   </div>
@@ -135,6 +135,7 @@
 
 
     async function forgotclick() {
+      return;
       document.getElementById('login-form').style.display = 'none';
       document.getElementById('forgot-btn').style.display = 'none';
 
