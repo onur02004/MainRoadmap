@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { exec as execLED } from "node:child_process";
 
 import authRoutes from "./routes/auth.js";
 import protectedRoutes from "./routes/protected.js";
@@ -17,6 +18,7 @@ const PORT = 3000;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(express.json());
 
 
 //PROTECTED
@@ -68,6 +70,38 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "mainsite.html"));
 });
+
+
+import { exec } from "node:child_process";
+
+app.get("/adjustled", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "adjustled.html"));
+});
+
+app.post("/api/led", (req, res) => {
+  const { mode, color } = req.body;
+
+  let cmd;
+  if (mode === "color" && color) {
+    const [r, g, b] = color.split(",").map(Number);
+    cmd = `sudo python3 src/led_control.py color ${r} ${g} ${b}`;
+  } else if (mode === "rainbow") {
+    cmd = `sudo python3 src/led_control.py rainbow`;
+  } else {
+    return res.status(400).json({ error: "Invalid mode" });
+  }
+
+  execLED(cmd, (error, stdout, stderr) => {
+    if (error) {
+      console.error(stderr);
+      return res.status(500).json({ error: "LED command failed" });
+    }
+    res.json({ ok: true, stdout });
+  });
+});
+
+
+
 
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);

@@ -1,5 +1,6 @@
 {
   "name": "mainsite",
+  "type": "module",
   "version": "1.0.0",
   "description": "Main Hub Where everything is going to be hosted. Is going to be used for navigation.",
   "main": "server.js",
