@@ -455,4 +455,18 @@ function renderWeightsList(items = []) {
 
   // refresh AOS animations
   if (window.AOS?.refreshHard) AOS.refreshHard();
+
+  const mq = window.matchMedia("(min-width: 800px)");
+  if (mq.matches) {
+    // 1. remove data-aos attributes so AOS won't animate
+    document.querySelectorAll("[data-aos]").forEach(el => {
+      el.removeAttribute("data-aos");
+      el.style.opacity = ""; // optional: let it use normal styles
+      el.style.transform = ""; // optional cleanup in case AOS touched it
+    });
+
+    // 2. stop AOS from doing anything else
+    AOS.refreshHard = () => {};
+    AOS.init = () => {};
+  }
 }

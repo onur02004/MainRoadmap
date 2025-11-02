@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+
+
 * {
     margin: 0;
     padding: 0;
@@ -423,3 +426,29 @@ img {
 .chip-flat { background: rgba(170,170,170,0.10); border-color: rgba(170,170,170,0.35); }
 
 .note, .source { opacity: 0.9; }
+
+
+.icon-bar {
+  display: flex;
+  gap: 10px; /* space between icons */
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 1000000;
+}
+
+.homeicon {
+  background-color: #1313133a;
+  border-radius: 10px;
+  padding: 0.7rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.homeicon:hover {
+  transform: scale(1.05);
+}
+
+.homeicon img {
+  width: 2rem;
+}

@@ -14,6 +14,7 @@
 </head>
 
 <body>
+
   <div class="mainbggrid">
     <section class="waveanim">
       <div class="wave">
@@ -80,12 +81,9 @@
           <h1>Images</h1>
         </div>
         <div data-aos="fade-up" class="routeoption">
-          <h1>Account</h1>
-        </div>
-        <div data-aos="fade-up" class="routeoption">
           <h1>Blog</h1>
         </div>
-        <p style="font-size: 2.5em; font-weight: 200; padding-top: 20px;" data-aos="fade-up">User Specific Feautres:</p>
+        <p id="featuresyazisi" style="font-size: 2.5em; font-weight: 200; padding-top: 20px;" data-aos="fade-up">User Specific Feautres:</p>
         <div class="featuresHolder">
 
 
@@ -100,24 +98,19 @@
   // init AOS normally first
   AOS.init();
 
-  // if viewport is >=800px, kill animations
-  const mq = window.matchMedia("(min-width: 800px)");
-  if (mq.matches) {
-    // 1. remove data-aos attributes so AOS won't animate
-    document.querySelectorAll("[data-aos]").forEach(el => {
-      el.removeAttribute("data-aos");
-      el.style.opacity = ""; // optional: let it use normal styles
-      el.style.transform = ""; // optional cleanup in case AOS touched it
-    });
+  const goToAccount = () => { window.location.href = '/account'; };
 
-    // 2. stop AOS from doing anything else
-    AOS.refreshHard = () => {};
-    AOS.init = () => {};
-  }
+  document.querySelector('.userinfo')?.addEventListener('click', (e) => {
+    e.preventDefault();
 
-  // your existing click handler
-  document.querySelector('.userinfo').addEventListener('click', () => {
-    window.location.href = '/account';
+    if ('startViewTransition' in document) {
+      // Modern smooth transition
+      document.startViewTransition(goToAccount);
+    } else {
+      // Fallback: quick fade
+      document.documentElement.classList.add('leaving');
+      setTimeout(goToAccount, 180);
+    }
   });
 </script>
 

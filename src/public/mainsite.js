@@ -23,6 +23,11 @@
 
             const rawFeatures = (data.features ?? data.user?.features ?? []) || [];
 
+            if (!Array.isArray(rawFeatures) || rawFeatures.length === 0) {
+                console.warn("⚠️ No features found in API response:", data);
+                document.getElementById('featuresyazisi').style.display = 'none';
+            }
+
             // normalize to { key, label }
             const features = rawFeatures.map(f => ({
                 key: f.key ?? f.feature_key ?? f.id ?? String(f),
@@ -58,15 +63,18 @@
                 holder.appendChild(card);
             });
 
+
             // refresh AOS so new nodes animate
             if (window.AOS && typeof AOS.refresh === 'function') AOS.refresh();
 
             console.log('User features (from /api/session):', uniq);
-
+            
         } else {
             loggedInInfos[0].style.display = 'none';
             label.innerHTML = `<a href="/login.html" style="text-decoration:underline">Login</a>`;
             console.log('User is not authenticated');
+            document.getElementById('featuresyazisi').style.display = 'none';
+
         }
     } catch (err) {
         console.error('Auth check failed:', err);
@@ -74,6 +82,21 @@
         if (label) label.innerHTML = `<a href="/login.html">Login</a>`;
         const loggedInInfos = document.getElementsByClassName('logged-in-infos');
         loggedInInfos[0].style.display = 'none';
+    }
+
+
+    const mq = window.matchMedia("(min-width: 800px)");
+    if (mq.matches) {
+        // 1. remove data-aos attributes so AOS won't animate
+        document.querySelectorAll("[data-aos]").forEach(el => {
+            el.removeAttribute("data-aos");
+            el.style.opacity = ""; // optional: let it use normal styles
+            el.style.transform = ""; // optional cleanup in case AOS touched it
+        });
+
+        // 2. stop AOS from doing anything else
+        AOS.refreshHard = () => { };
+        AOS.init = () => { };
     }
 })();
 
