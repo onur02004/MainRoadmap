@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Remote Control</title>
+
+  <link rel="stylesheet" href="../remotecontrolstyle.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../remotecontrolscript.js" defer></script>
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+</head>
+<body>
+  <div class="icon-bar">
+    <a href="/" class="homeicon">
+      <img alt="Home_Icon" src="../content/homeIconWhite.png">
+    </a>
+    <a href="/account" class="homeicon">
+      <img alt="Account_Icon" src="../content/accountIconWhite.png">
+    </a>
+  </div>
+
+  <section class="waveanim">
+    <div class="wave">
+      <span></span><span></span><span></span>
+    </div>
+  </section>
+
+  <div class="mainfgholder">
+    <div class="mainfgupperholder">
+        <div class="device-toolbar">
+        <select id="filterKind">
+          <option value="">All kinds</option>
+        </select>
+        <select id="filterStatus">
+          <option value="">All status</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
+        <input id="searchInput" type="search" placeholder="Search display name…" />
+      </div>
+
+
+      <button id="openDeviceModal" type="button" class="glow-on-hover" style="font-size:1.2rem;">Add Device</button>
+
+      <div class="userinfo">
+        <img class="profilepic" src="../content/deafult.jpg" alt="profile_pic" />
+        <div class="profilbilgi">
+          <p id="authLabel"></p>
+          <div class="logged-in-infos">
+            <p id="usernameLabel" style="font-size:2rem;">Username</p>
+            <p id="realnameLabel">Real Name</p>
+            <p id="roleLabel">Role</p>
+          </div>
+          <div class="wrapper"></div>
+        </div>
+      </div>
+
+      <div class="maintitleholder">
+        <p style="font-size:4.5em;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
+          Remote-Control
+        </p>
+        <p style="font-size:1em;font-weight:400">Built By: Onur Dönmez</p>
+      </div>
+    </div>
+
+    <div class="mainfglowerholder">
+      <!-- Filters (optional) -->
+      
+      <!-- Device grid -->
+      <div id="deviceGrid" class="device-grid" data-aos="fade-up"></div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="empty-state" style="display:none;" data-aos="fade-up">
+        <img src="../content/iotIconWhite.png" alt="IoT"/>
+        <h2>No devices yet</h2>
+        <p>Add your first device to start controlling it here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Device Modal -->
+  <dialog id="deviceModal" class="modal">
+    <form method="dialog" id="deviceForm" class="modal-card">
+      <h3>Add Device</h3>
+      <label>
+        Kind
+        <select name="kindKey" id="kindKey" required></select>
+      </label>
+      <label>
+        Display name
+        <input name="displayName" id="displayName" required maxlength="80" />
+      </label>
+      <label>
+        Meta (JSON)
+        <textarea name="meta" id="meta" rows="4" placeholder='{"pixels":60,"pin":"GPIO18"}'></textarea>
+      </label>
+      <div class="modal-actions">
+        <button value="cancel" type="button" id="cancelModal" class="btn-secondary">Cancel</button>
+        <button value="default" type="submit" class="glow-on-hover">Create</button>
+      </div>
+      <p class="form-hint">Tip: start with a <b>led_strip</b> and meta like {"pixels":60,"pin":"GPIO18"}.</p>
+      <output id="modalError" class="error-text"></output>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Device Remote</title>
+
+    <link rel="stylesheet" href="../remotecontrolstyle.css" />
+    <script src="../deviceremotescript.js" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+</head>
+
+<body>
+    <div class="icon-bar">
+        <a href="/" class="homeicon">
+            <img alt="Home_Icon" src="../content/homeIconWhite.png">
+        </a>
+        <a href="/remotecontrol.html" class="homeicon">
+            <img alt="Back_Icon" src="../content/accountIconWhite.png">
+        </a>
+    </div>
+
+    <section class="waveanim">
+        <div class="wave">
+            <span></span><span></span><span></span>
+        </div>
+    </section>
+
+    <div class="mainfgholder">
+        <div class="mainfgupperholder">
+            <div class="userinfo">
+                <img class="profilepic" src="../content/deafult.jpg" alt="profile_pic" />
+                <div class="profilbilgi">
+                    <p id="authLabel"></p>
+                    <div class="logged-in-infos">
+                        <p id="usernameLabel" style="font-size:2rem;">Username</p>
+                        <p id="realnameLabel">Real Name</p>
+                        <p id="roleLabel">Role</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="maintitleholder">
+                <p id="deviceTitle"
+                    style="font-size:3rem;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
+                    Device
+                </p>
+                <p id="deviceSub" class="muted"></p>
+            </div>
+        </div>
+
+        <div class="mainfglowerholder" data-aos="fade-up">
+            <div class="device-remote">
+                <div class="device-remote-row">
+                    <span class="muted">Status:</span> <span id="statusBadge" class="status-badge"
+                        style="font-size: 3rem;">…</span>
+                </div>
+                <div class="device-remote-row">
+                    <span class="muted">Last seen:</span> <span id="lastSeen" style="font-size: 2rem;">…</span>
+                </div>
+                <div class="device-remote-row">
+                    <span class="muted">Capabilities: </span> <span style="font-size: 2rem;" id="caps"></span>
+                </div>
+
+                <hr style="border-color:#2a2a2a; margin:1rem 0;">
+
+
+                <!-- Optional controls for param actions -->
+                <div id="colorPickerWrap" style="display:none;margin-top:1rem;">
+                    <label class="muted" style="display:block;margin-bottom:.3rem;">Pick color (RGB)</label>
+                    <input type="color" id="colorPicker" value="#ffffff" />
+                    <button id="sendColor" class="chip-btn">Send Color</button>
+                </div>
+
+                <div id="brightnessWrap" style="display:none;margin-top:1rem;">
+                    <label class="muted" style="display:block;margin-bottom:.3rem;">Brightness (0–255)</label>
+                    <input type="range" id="brightnessInput" min="0" max="255" value="128" />
+                    <button id="sendBrightness" class="chip-btn">Set Brightness</button>
+                </div>
+
+                <output id="execResult" class="muted" style="display:block;margin-top:1rem;"></output>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

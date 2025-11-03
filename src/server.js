@@ -9,6 +9,7 @@ import { exec as execLED } from "node:child_process";
 import authRoutes from "./routes/auth.js";
 import protectedRoutes from "./routes/protected.js";
 import requireAuth from "./middleware/requireAuth.js";
+import deviceRoutes from "./routes/devices.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -19,6 +20,7 @@ const PORT = 3000;
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(deviceRoutes); 
 
 
 //PROTECTED
@@ -71,8 +73,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "mainsite.html"));
 });
 
-
-import { exec } from "node:child_process";
 
 app.get("/adjustled", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "adjustled.html"));
