@@ -432,5 +432,67 @@ router.get('/api/weights', requireAuth, async (req, res) => {
   }
 });
 
+router.patch('/api/weight/:date', requireAuth, express.json(), async (req, res) => {
+  try {
+    const entry_date = String(req.params.date || '').trim();
+
+    // Basic YYYY-MM-DD sanity check
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry_date)) {
+      return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD)' });
+    }
+
+    let { weightKg, note, source } = req.body || {};
+
+    // Optional weight validation (only if provided)
+    if (weightKg !== undefined) {
+      const w = Number(weightKg);
+      if (!isFinite(w) || w <= 0 || w >= 400) {
+        return res.status(400).json({ error: 'Invalid weight' });
+      }
+      weightKg = w;
+    }
+
+    // Only allow known sources (optional: tighten as you like)
+    if (source !== undefined && typeof source !== 'string') {
+      return res.status(400).json({ error: 'Invalid source' });
+    }
+    if (note !== undefined && typeof note !== 'string') {
+      return res.status(400).json({ error: 'Invalid note' });
+    }
+
+    // Nothing to update?
+    if (weightKg === undefined && note === undefined && source === undefined) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    // Build dynamic UPDATE with COALESCE on passed fields
+    const sql = `
+      UPDATE weight_entries
+         SET weight_kg = COALESCE($4::numeric, weight_kg),
+             note      = COALESCE($5, note),
+             source    = COALESCE($6, source),
+             updated_at= now()
+       WHERE user_id   = $1
+         AND entry_date= $2::date
+      RETURNING user_id, entry_date, weight_kg, note, source, created_at, updated_at;
+    `;
+
+    const params = [
+      req.user.sub,        // $1 user_id (from JWT)
+      entry_date,          // $2 date to edit
+      null,                // (kept for readability if you later add more columns)
+      weightKg ?? null,    // $4 weight_kg (nullable for COALESCE)
+      note ?? null,        // $5 note
+      source ?? null       // $6 source
+    ];
+
+    const { rows } = await q(sql, params);
+    if (!rows.length) return res.status(404).json({ error: 'Entry not found' });
+    return res.json(rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/weight/:date failed:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 export default router;

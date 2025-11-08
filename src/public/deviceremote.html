@@ -10,6 +10,10 @@
     <script src="../deviceremotescript.js" defer></script>
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+
 </head>
 
 <body>
@@ -53,6 +57,51 @@
 
         <div class="mainfglowerholder" data-aos="fade-up">
             <div class="device-remote">
+
+                <div class="stateless-toggle-container" style="--delay: 0.8s;">
+                    <button id="turnon" class="toggle-option">On</button>
+                    <button id="turnoff" class="toggle-option">Off</button>
+                </div>
+
+
+                <div class="switch-container">
+                    <!-- This is the moving background "slider" -->
+                    <div class="switch-slider" id="switch-slider"></div>
+
+                    <!-- The three options -->
+                    <!-- We use data-index to know which one was clicked -->
+                    <button class="switch-option active" data-index="0">RGB</button>
+                    <button class="switch-option" data-index="1">Wave</button>
+                    <button class="switch-option" data-index="2">HUE</button>
+                </div>
+
+                <!-- This div will display the trigger message -->
+                <div id="message-output" style="display: none;">Select an option</div>
+
+                <div id="brightnessWrap" style="display:none;margin-top:1rem;">
+                    <label class="muted" style="display:block;margin-bottom:.3rem;">Brightness (0–255)</label>
+                    <div style="display: flex; width: 100%; justify-content: center; align-items: center;">
+                        <input type="range" class="volume" id="brightnessInputNEW" min="0" max="255" value="100" />
+                    </div>
+                </div>
+
+
+                
+                <div id="colorPickerWrap" style="display:none;margin-top:1rem;">
+                    <input type="color" id="colorPicker" value="#ffffff" />
+                    <button id="sendColor" class="chip-btn">Send Color</button>
+                </div>
+
+                <hr style="border-color:#2a2a2a; margin:1rem 0;">
+
+
+
+
+
+
+
+
+
                 <div class="device-remote-row">
                     <span class="muted">Status:</span> <span id="statusBadge" class="status-badge"
                         style="font-size: 3rem;">…</span>
@@ -64,21 +113,11 @@
                     <span class="muted">Capabilities: </span> <span style="font-size: 2rem;" id="caps"></span>
                 </div>
 
-                <hr style="border-color:#2a2a2a; margin:1rem 0;">
-
 
                 <!-- Optional controls for param actions -->
-                <div id="colorPickerWrap" style="display:none;margin-top:1rem;">
-                    <label class="muted" style="display:block;margin-bottom:.3rem;">Pick color (RGB)</label>
-                    <input type="color" id="colorPicker" value="#ffffff" />
-                    <button id="sendColor" class="chip-btn">Send Color</button>
-                </div>
 
-                <div id="brightnessWrap" style="display:none;margin-top:1rem;">
-                    <label class="muted" style="display:block;margin-bottom:.3rem;">Brightness (0–255)</label>
-                    <input type="range" id="brightnessInput" min="0" max="255" value="128" />
-                    <button id="sendBrightness" class="chip-btn">Set Brightness</button>
-                </div>
+
+
 
                 <output id="execResult" class="muted" style="display:block;margin-top:1rem;"></output>
             </div>

@@ -291,10 +291,12 @@ router.post("/api/device-actions/:id/:action", requireAuth, express.json(), asyn
 
             switch (action) {
                 case "on":
+                    console.log("Turning on led");
                     args.push("on");
                     break;
                 case "off":
                     args.push("off");
+                    console.log("Turning off led");
                     break;
                 case "set_color": {
                     const { r = 255, g = 255, b = 255 } = params;
@@ -483,6 +485,8 @@ router.patch("/api/devices/:id/state", requireAuth, express.json(), async (req, 
 
 // Small helper uses your existing executor endpoint internally
 async function callAction(deviceId, action, params) {
+    console.log("Device Mode Changed to: " + action + " with param: " + params);
+    
     // local call through DB+spawn path
     // You already have router.post("/api/device-actions/:id/:action"...)
     // Here we just re-run the same logic directly to avoid HTTP hop:

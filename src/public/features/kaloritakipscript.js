@@ -439,18 +439,25 @@ function renderWeightsList(items = []) {
     }
 
     card.innerHTML = `
-      <div class="weight-row">
-        <div class="date">${formatDateShort(cur.entry_date)}</div>
-        <div class="kg">${kg.toFixed(1)} kg</div>
-      </div>
-      <div class="meta-row">
-        <span class="chip ${chipClass}">${deltaStr}</span>
-        ${cur.note ? `<span class="note">• ${cur.note}</span>` : ''}
-        ${cur.source ? `<span class="source">• ${cur.source}</span>` : ''}
-      </div>
-    `;
+  <div class="weight-row">
+    <div class="date">${formatDateShort(cur.entry_date)}</div>
+    <div class="kg">${kg.toFixed(1)} kg</div>
+  </div>
+  <div class="meta-row">
+    <span class="chip ${chipClass}">${deltaStr}</span>
+    ${cur.note ? `<span class="note">• ${cur.note}</span>` : ''}
+    ${cur.source ? `<span class="source">• ${cur.source}</span>` : ''}
+    <button class="btn btn--ghost btn--sm edit-btn" style="margin-left:auto; min-height:10px">Edit</button>
+  </div>
+`;
+
 
     lower.appendChild(card);
+
+    card.querySelector('.edit-btn')?.addEventListener('click', () => openEditWeight(cur));
+// (Optional): double-click anywhere on the card to edit
+card.addEventListener('dblclick', () => openEditWeight(cur));
+
   }
 
   // refresh AOS animations
@@ -470,3 +477,129 @@ function renderWeightsList(items = []) {
     AOS.init = () => {};
   }
 }
+
+
+// track whether we are editing an existing entry (by its date)
+let editState = null;
+
+/** PATCH /api/weight/:date */
+async function patchWeight(date, { weightKg, note, source = 'manual' } = {}) {
+  const body = {};
+  if (weightKg !== undefined && weightKg !== null) body.weightKg = Number(weightKg);
+  if (note !== undefined) body.note = String(note);
+  if (source !== undefined) body.source = String(source);
+
+  return safeFetchJSON(`/api/weight/${date}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body)
+  });
+}
+
+
+
+function openEditWeight(entry) {
+  // entry = { entry_date, weight_kg, note, source }
+  editState = entry.entry_date;                       // remember what we edit
+  const m = document.getElementById('weightModal');
+  m.classList.add('show');
+  document.body.classList.add('body--lock');
+
+  // Title -> Edit
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Edit Weight';
+
+  // Prefill fields
+  document.getElementById('wDate').value = entry.entry_date; // show the date (disabled below)
+  document.getElementById('wKg').value = Number(entry.weight_kg).toFixed(1);
+  document.getElementById('wNote').value = entry.note ?? '';
+
+  // Don’t allow changing the date for edit (keeps PK stable)
+  document.getElementById('wDate').setAttribute('disabled', 'disabled');
+
+  setTimeout(() => document.getElementById('wKg')?.focus(), 60);
+}
+
+function openWeightModal() {
+  // “Add” mode (original)
+  editState = null;
+  const m = document.getElementById('weightModal');
+  m.classList.add('show');
+  document.body.classList.add('body--lock');
+
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Add Weight';
+
+  const isoLocal = getLocalISODate(new Date());
+  const wDate = document.getElementById('wDate');
+  if (wDate) {
+    wDate.removeAttribute('disabled');
+    if (!wDate.value) wDate.value = isoLocal;
+  }
+
+  document.getElementById('wKg').value = '';
+  document.getElementById('wNote').value = '';
+
+  setTimeout(() => document.getElementById('wKg')?.focus(), 60);
+}
+
+function closeWeightModal() {
+  const m = document.getElementById('weightModal');
+  if (!m) return;
+  m.classList.remove('show');
+  document.body.classList.remove('body--lock');
+  // reset edit state when closing
+  editState = null;
+  document.getElementById('wDate')?.removeAttribute('disabled');
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Add Weight';
+}
+
+
+document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const weightKg = parseFloat(document.getElementById('wKg').value);
+    const date = document.getElementById('wDate').value || null;
+    const note = document.getElementById('wNote').value || '';
+
+    if (editState) {
+      // EDIT existing row
+      await patchWeight(editState, { weightKg, note, source: 'manual' });
+    } else {
+      // ADD new row
+      await uploadWeight({ weightKg, date, note, source: 'manual' });
+    }
+
+    closeWeightModal();
+    await fetchAndRender(currentRange);
+  } catch (err) {
+    alert(err.message || 'Failed to save');
+  }
+});
+
+
+
+// Get the Note input field by its ID
+const weightNoteInput = document.getElementById('wNote');
+
+// Get all the suggestion buttons within the suggestionsholder
+const suggestionButtons = document.querySelectorAll('.suggestionsholder button');
+
+// Loop through each button and attach an event listener
+suggestionButtons.forEach(button => {
+    button.addEventListener('click', function(event) {
+        // Prevent the button click from submitting the form and closing the modal
+        event.preventDefault(); 
+        
+        // Get the text from the clicked button
+        const buttonText = this.textContent;
+        
+        // Set the value of the note input field to the button's text
+        weightNoteInput.value = buttonText;
+        
+        // Optional: You might want to close the modal or focus the input after selection
+        // weightNoteInput.focus();
+    });
+});

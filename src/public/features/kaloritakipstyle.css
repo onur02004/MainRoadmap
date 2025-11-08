@@ -411,6 +411,7 @@ img {
   gap: 8px;
   color: #bbb;
   font-size: 0.95rem;
+  align-items: center;
 }
 
 .chip {
@@ -451,4 +452,52 @@ img {
 
 .homeicon img {
   width: 2rem;
+}
+
+
+.btn.btn--sm { padding: .25rem .6rem; font-size: .85rem; }
+
+
+
+/* Styling for the Suggestion Buttons within the Modal */
+.suggestionsholder {
+    max-height: 150px;
+    overflow-y: auto; /* Use 'auto' instead of 'scroll' for cleaner look when not needed */
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Slightly less gap for a compact list */
+}
+
+.suggestionsholder button {
+    /* Reset/Standard Styles */
+    width: 100%;
+    height: auto; /* Remove fixed height for content-based sizing */
+    min-height: 40px; /* Ensure minimum touch target size */
+    font-size: 1rem;
+    padding: 10px 15px; /* Comfortable padding */
+    cursor: pointer;
+    text-align: left; /* Align text to the left for better readability */
+    
+    /* Design to match modal theme */
+    background: #282828; /* A shade darker than the modal body, or lighter than the main background */
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    
+    /* Smooth transitions for hover/focus */
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+/* Hover and Focus States for better interactivity */
+.suggestionsholder button:hover,
+.suggestionsholder button:focus {
+    background: #3a3a3a; /* Slightly lighter on hover */
+    border-color: #52c471; /* Highlight with the theme color */
+    outline: none; /* Remove default focus outline */
+}
+
+/* Active State for a visual click effect */
+.suggestionsholder button:active {
+    transform: translateY(1px);
+    opacity: 0.9;
 }
