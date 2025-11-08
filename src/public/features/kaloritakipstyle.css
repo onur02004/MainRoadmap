@@ -285,7 +285,7 @@ img {
   font-size: 1.9rem; line-height:1; padding:8px; margin:-8px; cursor:pointer;
 }
 
-.modal__body { display:grid; gap:14px; margin-top:4px; }
+.modal__body { display:grid; gap:14px; margin-top:4px; z-index: 1000000000; }
 
 .field { display:grid; gap:6px; }
 .field span { font-size:1rem; color:#cfcfcf; }
@@ -500,4 +500,28 @@ img {
 .suggestionsholder button:active {
     transform: translateY(1px);
     opacity: 0.9;
+}
+
+
+.dateOptionsHolder{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-top: 5px;
+  gap: 5px;
+}
+
+.dateOptionsHolder button{
+    background: #3a3a3a; /* Slightly lighter on hover */
+    border-color: #52c471; /* Highlight with the theme color */
+  font-size: 1.2rem;
+  height: 45px;
+  border-radius: 11px;
+  color: white;
+}
+
+.dateReadout{
+  margin-top:.35rem;
+  font-size: 1.7rem;
+  color:#ddd;
 }

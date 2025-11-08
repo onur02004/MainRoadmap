@@ -38,6 +38,14 @@
                 <label class="field">
                     <span>Date</span>
                     <input id="wDate" type="date">
+
+                    <div id="wDateReadout" class="dateReadout" aria-live="polite" hidden></div>
+
+                    <div class="dateOptionsHolder">
+                        <button type="button" data-shift="-1">Previous Day</button>
+                        <button type="button" data-shift="0">Today</button>
+                        <button type="button" data-shift="1">Next Day</button>
+                    </div>
                 </label>
 
                 <label class="field">
@@ -49,19 +57,19 @@
                     <span>Note (optional)</span>
                     <input id="wNote" type="text" placeholder="e.g. after workout">
                 </label>
-                
+
                 <span>Note Suggestions</span>
-                    <div class="suggestionsholder">
-                        <button>After waking up</button>
-                        <button>After toilet (Morning)</button>
-                        <button>After toilet (Evening)</button>
-                        <button>Before breakfast</button>
-                        <button>After breakfast</button>
-                        <button>Before workout</button>
-                        <button>After workout</button>
-                        <button>Before bed</button>
-                        <button>After dinner</button>
-                        <button>After travel</button>
+                    <div class="suggestionsholder" id="suggestionsholder">
+                        <button type="button">After waking up</button>
+                        <button type="button">After toilet (Morning)</button>
+                        <button type="button">After toilet (Evening)</button>
+                        <button type="button">Before breakfast</button>
+                        <button type="button">After breakfast</button>
+                        <button type="button">Before workout</button>
+                        <button type="button">After workout</button>
+                        <button type="button">Before bed</button>
+                        <button type="button">After dinner</button>
+                        <button type="button">After travel</button>
                     </div>
 
                 <div class="modal__actions">
@@ -84,7 +92,7 @@
     <div class="mainfgholder">
 
         <div class="mainfgupperholder">
-            <button id="openWeightModal" type="submit" style="font-size: 1.2rem;" class="glow-on-hover">Add
+            <button id="openWeightModal" type="button" style="font-size: 1.2rem;" class="glow-on-hover">Add
                 Value!</button>
 
             <div class="userinfo">

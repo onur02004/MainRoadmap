@@ -438,10 +438,17 @@ router.patch('/api/weight/:date', requireAuth, express.json(), async (req, res) 
 
     // Basic YYYY-MM-DD sanity check
     if (!/^\d{4}-\d{2}-\d{2}$/.test(entry_date)) {
-      return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD)' });
+      console.log("False Date format to update the KT.");
+      return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD). INPUT: ' + entry_date });
     }
 
+    // DESTRUCTURE FIRST
     let { weightKg, note, source } = req.body || {};
+
+    // THEN LOG
+    console.log('PATCH request for date:', entry_date);
+    console.log('Update data:', { weightKg, note, source });
+    console.log('User ID:', req.user.sub);
 
     // Optional weight validation (only if provided)
     if (weightKg !== undefined) {
@@ -466,25 +473,24 @@ router.patch('/api/weight/:date', requireAuth, express.json(), async (req, res) 
     }
 
     // Build dynamic UPDATE with COALESCE on passed fields
+    const params = [
+      req.user.sub,        // $1 user_id
+      entry_date,          // $2 date
+      weightKg ?? null,    // $3 weight_kg
+      note ?? null,        // $4 note
+      source ?? null       // $5 source
+    ];
+
     const sql = `
       UPDATE weight_entries
-         SET weight_kg = COALESCE($4::numeric, weight_kg),
-             note      = COALESCE($5, note),
-             source    = COALESCE($6, source),
+         SET weight_kg = COALESCE($3::numeric, weight_kg),
+             note      = COALESCE($4, note),
+             source    = COALESCE($5, source),
              updated_at= now()
        WHERE user_id   = $1
          AND entry_date= $2::date
       RETURNING user_id, entry_date, weight_kg, note, source, created_at, updated_at;
     `;
-
-    const params = [
-      req.user.sub,        // $1 user_id (from JWT)
-      entry_date,          // $2 date to edit
-      null,                // (kept for readability if you later add more columns)
-      weightKg ?? null,    // $4 weight_kg (nullable for COALESCE)
-      note ?? null,        // $5 note
-      source ?? null       // $6 source
-    ];
 
     const { rows } = await q(sql, params);
     if (!rows.length) return res.status(404).json({ error: 'Entry not found' });

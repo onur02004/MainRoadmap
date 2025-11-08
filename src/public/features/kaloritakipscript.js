@@ -1,415 +1,300 @@
 let currentRange = 30;
+let editState = null; // date string when editing
 
-
-function openWeightModal() {
-    const m = document.getElementById('weightModal');
-    m.classList.add('show');
-    document.body.classList.add('body--lock');
-
-    // Use the helper to set default date to *today local*
-    const isoLocal = getLocalISODate(new Date());
-    const wDate = document.getElementById('wDate');
-    if (wDate && !wDate.value) wDate.value = isoLocal;
-
-    // focus weight input after paint
-    setTimeout(() => document.getElementById('wKg')?.focus(), 60);
-}
-
-function closeWeightModal() {
-    const m = document.getElementById('weightModal');
-    m.classList.remove('show');
-    document.body.classList.remove('body--lock');
-}
-
-// open/close bindings
-window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('openWeightModal')?.addEventListener('click', openWeightModal);
-    document.querySelectorAll('#weightModal [data-close]').forEach(el => el.addEventListener('click', closeWeightModal));
-
-    // close on backdrop tap
-    document.querySelector('#weightModal .modal__backdrop')?.addEventListener('click', closeWeightModal, { passive: true });
-
-    // ESC
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWeightModal(); });
-
-    // submit handler (uses your uploadWeight function from before)
-    document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            const weightKg = parseFloat(document.getElementById('wKg').value);
-            const date = document.getElementById('wDate').value || null;
-            const note = document.getElementById('wNote').value || '';
-            await uploadWeight({ weightKg, date, note }); // same as earlier
-            closeWeightModal();
-            await fetchAndRender(currentRange);
-        } catch (err) {
-            alert(err.message || 'Failed to save');
-        }
-    });
-});
-
-
-function closeWeightModal() {
-    const m = document.getElementById('weightModal');
-    if (!m) return;
-    m.classList.remove('show');
-    document.body.classList.remove('body--lock');
-}
-
-// Bind open/close on load
-window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('openWeightModal')?.addEventListener('click', openWeightModal);
-
-    // Close on backdrop or any [data-close]
-    document.querySelectorAll('#weightModal [data-close]').forEach(el => {
-        el.addEventListener('click', closeWeightModal);
-    });
-
-    // ESC to close
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeWeightModal();
-    });
-
-    // Submit form
-    const form = document.getElementById('weightForm');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            try {
-                const weightKg = parseFloat(document.getElementById('wKg').value);
-                const date = document.getElementById('wDate').value || null;
-                const note = document.getElementById('wNote').value || '';
-
-                await uploadWeight({ weightKg, date, note });  // <— defined below
-                closeWeightModal();
-                await renderWeightChart?.();                   // refresh chart if present
-            } catch (err) {
-                alert(err.message || 'Failed to save');
-            }
-        });
-    }
-
-
-    const select = document.getElementById('rangeSelect');
-    if (select) {
-        currentRange = parseInt(select.value, 10) || 30;
-        select.addEventListener('change', (e) => {
-            const days = parseInt(e.target.value, 10) || 30;
-            fetchAndRender(days);
-        });
-    }
-    // first paint
-    fetchAndRender(currentRange);
-});
-
-// ===== Upload function (POST /api/weight) =====
-async function uploadWeight({ weightKg, date = null, note = '', source = 'manual' }) {
-    if (typeof weightKg !== 'number' || !isFinite(weightKg)) {
-        throw new Error('Please enter a valid number for weight.');
-    }
-
-    // The 'date' param from the form handler is already 'YYYY-MM-DD' or null.
-    // No re-parsing or normalization is needed.
-    const entry_date = date;
-
-    // safeFetchJSON returns parsed JSON data on success or throws an Error.
-    // No need to check res.ok or call res.json() here.
-    try {
-        const data = await safeFetchJSON('/api/weight', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ weightKg, entry_date, note, source })
-        });
-        return data; // Return the parsed JSON directly
-    } catch (err) {
-        // Re-throw the error from safeFetchJSON
-        throw new Error(err.message || 'Upload failed');
-    }
-}
-
-async function renderWeightChart() {
-    // demo data (replace with API data later)
-    const today = new Date();
-    const labels = [];
-    const weights = [];
-    let w = 75;
-    for (let i = 14; i >= 0; i--) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        labels.push(d.toISOString().slice(0, 10));
-        w += (Math.random() - 0.5) * 0.6;
-        weights.push(Math.round(w * 10) / 10);
-    }
-
-    const ctx = document.getElementById('weightChart').getContext('2d');
-    if (window.weightChartInstance) window.weightChartInstance.destroy();
-
-    window.weightChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Weight (kg)',
-                data: weights,
-                borderWidth: 2,
-                tension: 0.3,
-                pointRadius: 3.5,
-                pointHoverRadius: 5,
-                fill: false,
-                borderColor: '#52c471',
-                backgroundColor: '#52c471',
-                segment: {
-                    borderColor: c => {
-                        const i0 = c.p0DataIndex, i1 = c.p1DataIndex;
-                        const prev = weights[i0], next = weights[i1];
-                        if (next > prev) return 'rgb(0,200,0)';
-                        if (next < prev) return 'rgb(220,0,0)';
-                        return '#aaa';
-                    }
-                }
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,  // <- fills parent .chart-wrap
-            interaction: { mode: 'nearest', intersect: false },
-            scales: {
-                x: {
-                    ticks: { maxRotation: 0, autoSkip: true, color: '#ccc' },
-                    grid: { display: false }
-                },
-                y: {
-                    beginAtZero: false,
-                    ticks: { color: '#ccc' },
-                    grid: { color: 'rgba(255,255,255,.08)' }
-                }
-            },
-            plugins: {
-                legend: { labels: { color: '#fff' } },
-                tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } }
-            },
-            // render crisp on high-DPI phones
-            devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
-        }
-    });
+// ---------- helpers ----------
+function getLocalISODate(date) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString().slice(0, 10);
 }
 
 async function safeFetchJSON(input, init) {
-    const res = await fetch(input, init);
-    const text = await res.text();
-    const ct = res.headers.get('content-type') || '';
-
-    if (!ct.includes('application/json')) {
-        // helpful log during dev
-        console.error('Expected JSON but got:', ct, '\nPayload:\n', text.slice(0, 500));
-        throw new Error(`${res.status} ${res.statusText} (non-JSON response)`);
-    }
-    const data = JSON.parse(text);
-    if (!res.ok) {
-        const msg = data?.error || `${res.status} ${res.statusText}`;
-        throw new Error(msg);
-    }
-    return data;
+  const res = await fetch(input, init);
+  const text = await res.text();
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    console.error('Expected JSON but got:', ct, '\nPayload:\n', text.slice(0, 500));
+    throw new Error(`${res.status} ${res.statusText} (non-JSON response)`);
+  }
+  const data = JSON.parse(text);
+  if (!res.ok) throw new Error(data?.error || `${res.status} ${res.statusText}`);
+  return data;
 }
-
-
-function getLocalISODate(date) {
-    const d = new Date(date);
-    if (isNaN(d)) return null;
-
-    // Get the timestamp, subtract the *local* timezone offset,
-    // then get the 'YYYY-MM-DD' part of the resulting ISO string.
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 10);
-}
-
-async function fetchAndRender(days = currentRange) {
-    try {
-        currentRange = days;
-        const data = await safeFetchJSON(`/api/weights?days=${days}`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Accept': 'application/json' }
-        });
-
-        console.log("requesting days amount: " + currentRange);
-
-        // data = { days, range: {start,end}, count, items:[{entry_date,weight_kg,note,source}] }
-        renderWeightChartFromItems(data.items);
-        renderWeightsList(data.items);
-
-        // (nice-to-have) show exact range as a tooltip on the label
-        const label = document.querySelector('.chart-controls label');
-        if (label && data?.range?.start && data?.range?.end) {
-            label.title = `From ${data.range.start} to ${data.range.end}`;
-        }
-    } catch (err) {
-        console.error(err);
-        showChartEmptyState(err.message || 'Failed to load data');
-    }
-}
-
-function renderWeightChartFromItems(items = []) {
-    const wrap = document.querySelector('.chart-wrap');
-    const canvas = document.getElementById('weightChart');
-    if (!wrap || !canvas) return;
-
-    if (!Array.isArray(items) || items.length === 0) {
-        showChartEmptyState('No data in this range yet.');
-        // ensure any previous chart is destroyed
-        if (window.weightChartInstance) {
-            window.weightChartInstance.destroy();
-            window.weightChartInstance = null;
-        }
-        return;
-    }
-
-    const labels = items.map(r => {
-        const d = new Date(r.entry_date);
-        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-    }); const weights = items.map(r => Number(r.weight_kg));      // numeric
-
-    const ctx = canvas.getContext('2d');
-    if (window.weightChartInstance) window.weightChartInstance.destroy();
-
-    window.weightChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Weight (kg)',
-                data: weights,
-                borderWidth: 2,
-                tension: 0.25,
-                pointRadius: 0,
-                borderColor: '#52c471',
-                // green if down, red if up, gray if equal
-                segment: {
-                    borderColor: c => {
-                        const i0 = c.p0DataIndex, i1 = c.p1DataIndex;
-                        const prev = weights[i0], next = weights[i1];
-                        if (next > prev) return 'rgb(0,200,0)';
-                        if (next < prev) return 'rgb(220,0,0)';
-                        return '#aaa';
-                    }
-                }
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'nearest', intersect: false },
-            scales: {
-                x: {
-                    ticks: { maxRotation: 0, autoSkip: true, color: '#ccc' },
-                    grid: { display: false }
-                },
-                y: {
-                    beginAtZero: false,
-                    ticks: { color: '#ccc' },
-                    grid: { color: 'rgba(255,255,255,.08)' }
-                }
-            },
-            plugins: {
-                legend: { labels: { color: '#fff' } },
-                tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } }
-            },
-            animation: { duration: 260 },
-            devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
-        }
-    });
-
-    // remove any empty-state overlay
-    const oldEmpty = wrap.querySelector('.chart-empty');
-    if (oldEmpty) oldEmpty.remove();
-}
-
-function showChartEmptyState(message) {
-    const wrap = document.querySelector('.chart-wrap');
-    if (!wrap) return;
-    let empty = wrap.querySelector('.chart-empty');
-    if (!empty) {
-        empty = document.createElement('div');
-        empty.className = 'chart-empty';
-        Object.assign(empty.style, {
-            position: 'absolute',
-            inset: '0',
-            display: 'grid',
-            placeItems: 'center',
-            color: '#bbb',
-            fontSize: '0.95rem',
-            textAlign: 'center',
-            pointerEvents: 'none',
-            padding: '1rem'
-        });
-        wrap.style.position = 'relative';
-        wrap.appendChild(empty);
-    }
-    empty.textContent = message;
-}
-
-
-AOS.init();
-
-const mq = window.matchMedia("(min-width: 800px)");
-if (mq.matches) {
-    document.querySelectorAll("[data-aos]").forEach(el => {
-        el.removeAttribute("data-aos");
-        el.style.opacity = "";
-        el.style.transform = "";
-    });
-
-    AOS.refreshHard = () => { };
-    AOS.init = () => { };
-}
-
-async function loadProfile() {
-    try {
-        const res = await fetch("/meinfo", {
-            method: "GET",
-            credentials: "include"
-        });
-
-        if (!res.ok) {
-            // e.g. 401, 404, 500...
-            console.error("Profile fetch failed:", res.status);
-            if (res.status === 401) {
-                // not logged in -> back to login
-                window.location.href = "/login";
-            }
-            return;
-        }
-
-        const profile = await res.json();
-        console.log("profile:", profile);
-
-        // Example: fill DOM
-        document.getElementById("usernameLabel").innerHTML = profile.username;
-
-        document.getElementById("roleLabel").innerHTML = profile.role;
-        document.getElementById("realnameLabel").innerHTML = profile.realName;
-    } catch (err) {
-        console.error("Failed to load profile:", err);
-    }
-}
-
-loadProfile();
 
 function formatDateShort(iso) {
-  // e.g. "2025-11-01" -> "01 Nov"
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 }
 
+function formatDateLong(iso) {
+  const d = new Date(iso);
+  // e.g. "Sat, 01 Nov 2025"
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+  });
+}
+
+function toYMD(input) {
+  if (!input) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) {
+    console.error('Invalid date input:', input);
+    return null;
+  }
+  
+  return getLocalISODate(d);
+}
+
+
+// ---------- modal open/close (single source of truth) ----------
+function openWeightModalAdd() {
+  editState = null;
+
+  const m = document.getElementById('weightModal');
+  m.classList.add('show');
+  document.body.classList.add('body--lock');
+
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Add Weight';
+
+  const wDate = document.getElementById('wDate');
+  const readout = document.getElementById('wDateReadout');
+  const opts = document.querySelector('.dateOptionsHolder');
+
+  if (wDate) {
+    wDate.removeAttribute('disabled');
+    wDate.style.display = '';
+    wDate.removeAttribute('aria-hidden');
+    if (!wDate.value) wDate.value = getLocalISODate(new Date());
+  }
+  if (readout) {
+    readout.hidden = true;
+    readout.textContent = '';
+  }
+  if (opts) opts.style.display = '';
+
+  document.getElementById('suggestionsholder').style.display = 'grid';
+  document.getElementById('wKg').value = '';
+  document.getElementById('wNote').value = '';
+  setTimeout(() => document.getElementById('wKg')?.focus(), 60);
+}
+
+
+function openWeightModalEdit(entry) {
+  // Normalize entry.entry_date to 'YYYY-MM-DD'
+  const ymd = toYMD(entry.entry_date) || String(entry.entry_date).slice(0, 10);
+
+  editState = ymd; // <— this is what goes into /api/weight/:date
+
+  const m = document.getElementById('weightModal');
+  m.classList.add('show');
+  document.body.classList.add('body--lock');
+
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Edit Weight';
+
+  const wDate = document.getElementById('wDate');
+  const readout = document.getElementById('wDateReadout');
+  const opts = document.querySelector('.dateOptionsHolder');
+
+  if (wDate) {
+    wDate.value = ymd;                 // keep input holding date-only
+    wDate.setAttribute('disabled', 'disabled');
+    wDate.style.display = 'none';
+    wDate.setAttribute('aria-hidden', 'true');
+  }
+  if (readout) {
+    readout.textContent = formatDateLong(ymd);
+    readout.hidden = false;
+  }
+  if (opts) opts.style.display = 'none';
+
+  const wKg = document.getElementById('wKg');
+  const wNote = document.getElementById('wNote');
+  if (wKg) wKg.value = Number(entry.weight_kg).toFixed(1);
+  if (wNote) wNote.value = entry.note ?? '';
+
+  setTimeout(() => wKg?.focus(), 60);
+}
+
+
+function closeWeightModal() {
+  const m = document.getElementById('weightModal');
+  if (!m) return;
+  m.classList.remove('show');
+  document.body.classList.remove('body--lock');
+
+  // reset mode bits
+  editState = null;
+
+  const wDate = document.getElementById('wDate');
+  const readout = document.getElementById('wDateReadout');
+  const opts = document.querySelector('.dateOptionsHolder');
+
+  if (wDate) {
+    wDate.removeAttribute('disabled');
+    wDate.style.display = '';
+    wDate.removeAttribute('aria-hidden');
+  }
+  if (readout) {
+    readout.hidden = true;
+    readout.textContent = '';
+  }
+  if (opts) opts.style.display = '';
+
+  const title = document.getElementById('weightModalTitle');
+  if (title) title.textContent = 'Add Weight';
+}
+
+
+// ---------- API ----------
+async function uploadWeight({ weightKg, date = null, note = '', source = 'manual' }) {
+  if (typeof weightKg !== 'number' || !isFinite(weightKg)) {
+    throw new Error('Please enter a valid number for weight.');
+  }
+  const entry_date = date;
+  return safeFetchJSON('/api/weight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ weightKg, entry_date, note, source })
+  });
+}
+
+async function patchWeight(date, { weightKg, note, source = 'manual' } = {}) {
+  const ymd = toYMD(date);
+  if (!ymd) throw new Error('Invalid date');
+
+  const body = {};
+  if (weightKg !== undefined && weightKg !== null) body.weightKg = Number(weightKg);
+  if (note !== undefined) body.note = String(note);
+  if (source !== undefined) body.source = String(source);
+
+  console.log('PATCH sending:', { ymd, body }); // Add this for debugging
+
+  return safeFetchJSON(`/api/weight/${ymd}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body)
+  });
+}
+
+async function fetchAndRender(days = currentRange) {
+  currentRange = days;
+  try {
+    const data = await safeFetchJSON(`/api/weights?days=${days}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    renderWeightChartFromItems(data.items);
+    renderWeightsList(data.items);
+
+    const label = document.querySelector('.chart-controls label');
+    if (label && data?.range?.start && data?.range?.end) {
+      label.title = `From ${data.range.start} to ${data.range.end}`;
+    }
+  } catch (err) {
+    console.error(err);
+    showChartEmptyState(err.message || 'Failed to load data');
+  }
+}
+
+// ---------- chart & list ----------
+function renderWeightChartFromItems(items = []) {
+  const wrap = document.querySelector('.chart-wrap');
+  const canvas = document.getElementById('weightChart');
+  if (!wrap || !canvas) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    showChartEmptyState('No data in this range yet.');
+    if (window.weightChartInstance) {
+      window.weightChartInstance.destroy();
+      window.weightChartInstance = null;
+    }
+    return;
+  }
+
+  const labels = items.map(r => {
+    const d = new Date(r.entry_date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  });
+  const weights = items.map(r => Number(r.weight_kg));
+
+  const ctx = canvas.getContext('2d');
+  if (window.weightChartInstance) window.weightChartInstance.destroy();
+
+  window.weightChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Weight (kg)',
+        data: weights,
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 0,
+        borderColor: '#52c471',
+        // FIX: green when weight DROPS, red when it RISES
+        segment: {
+          borderColor: c => {
+            const i0 = c.p0DataIndex, i1 = c.p1DataIndex;
+            const prev = weights[i0], next = weights[i1];
+            if (next < prev) return 'rgb(0,200,0)';   // down = green
+            if (next > prev) return 'rgb(220,0,0)';   // up   = red
+            return '#aaa';
+          }
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false },
+      scales: {
+        x: { ticks: { maxRotation: 0, autoSkip: true, color: '#ccc' }, grid: { display: false } },
+        y: { beginAtZero: false, ticks: { color: '#ccc' }, grid: { color: 'rgba(255,255,255,.08)' } }
+      },
+      plugins: {
+        legend: { labels: { color: '#fff' } },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } }
+      },
+      animation: { duration: 260 },
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
+    }
+  });
+
+  const oldEmpty = wrap.querySelector('.chart-empty');
+  if (oldEmpty) oldEmpty.remove();
+}
+
+function showChartEmptyState(message) {
+  const wrap = document.querySelector('.chart-wrap');
+  if (!wrap) return;
+  let empty = wrap.querySelector('.chart-empty');
+  if (!empty) {
+    empty = document.createElement('div');
+    empty.className = 'chart-empty';
+    Object.assign(empty.style, {
+      position: 'absolute', inset: '0', display: 'grid', placeItems: 'center',
+      color: '#bbb', fontSize: '0.95rem', textAlign: 'center', pointerEvents: 'none', padding: '1rem'
+    });
+    wrap.style.position = 'relative';
+    wrap.appendChild(empty);
+  }
+  empty.textContent = message;
+}
 
 function renderWeightsList(items = []) {
   const lower = document.querySelector('.mainfglowerholder');
   if (!lower) return;
 
-  // clear old content
   lower.innerHTML = '';
-
   if (!Array.isArray(items) || items.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'routeoption';
@@ -418,8 +303,7 @@ function renderWeightsList(items = []) {
     return;
   }
 
-  // reverse items so newest is first
-  const reversed = [...items].reverse();
+  const reversed = [...items].reverse(); // newest first
 
   for (let i = 0; i < reversed.length; i++) {
     const cur = reversed[i];
@@ -429,177 +313,149 @@ function renderWeightsList(items = []) {
     const delta = prev ? kg - Number(prev.weight_kg) : 0;
     const deltaStr = prev ? (delta > 0 ? `+${delta.toFixed(1)} kg` : `${delta.toFixed(1)} kg`) : '—';
 
+    // FIX: up = red chip, down = green chip
+    let chipClass = 'chip-flat';
+    if (prev) chipClass = delta > 0 ? 'chip-down' : (delta < 0 ? 'chip-up' : 'chip-flat');
+
     const card = document.createElement('div');
     card.className = 'routeoption';
     card.setAttribute('data-aos', 'fade-up');
-
-    let chipClass = 'chip-flat';
-    if (prev) {
-      chipClass = delta > 0 ? 'chip-up' : (delta < 0 ? 'chip-down' : 'chip-flat');
-    }
-
     card.innerHTML = `
-  <div class="weight-row">
-    <div class="date">${formatDateShort(cur.entry_date)}</div>
-    <div class="kg">${kg.toFixed(1)} kg</div>
-  </div>
-  <div class="meta-row">
-    <span class="chip ${chipClass}">${deltaStr}</span>
-    ${cur.note ? `<span class="note">• ${cur.note}</span>` : ''}
-    ${cur.source ? `<span class="source">• ${cur.source}</span>` : ''}
-    <button class="btn btn--ghost btn--sm edit-btn" style="margin-left:auto; min-height:10px">Edit</button>
-  </div>
-`;
-
-
+      <div class="weight-row">
+        <div class="date">${formatDateShort(cur.entry_date)}</div>
+        <div class="kg">${kg.toFixed(1)} kg</div>
+      </div>
+      <div class="meta-row">
+        <span class="chip ${chipClass}">${deltaStr}</span>
+        ${cur.note ? `<span class="note">• ${cur.note}</span>` : ''}
+        ${cur.source ? `<span class="source">• ${cur.source}</span>` : ''}
+        <button class="btn btn--ghost btn--sm edit-btn" style="margin-left:auto; min-height:10px">Edit</button>
+      </div>
+    `;
     lower.appendChild(card);
-
-    card.querySelector('.edit-btn')?.addEventListener('click', () => openEditWeight(cur));
-// (Optional): double-click anywhere on the card to edit
-card.addEventListener('dblclick', () => openEditWeight(cur));
-
+    card.querySelector('.edit-btn')?.addEventListener('click', () => openWeightModalEdit(cur));
+    card.addEventListener('dblclick', () => openWeightModalEdit(cur));
   }
 
-  // refresh AOS animations
   if (window.AOS?.refreshHard) AOS.refreshHard();
 
   const mq = window.matchMedia("(min-width: 800px)");
   if (mq.matches) {
-    // 1. remove data-aos attributes so AOS won't animate
     document.querySelectorAll("[data-aos]").forEach(el => {
       el.removeAttribute("data-aos");
-      el.style.opacity = ""; // optional: let it use normal styles
-      el.style.transform = ""; // optional cleanup in case AOS touched it
+      el.style.opacity = "";
+      el.style.transform = "";
     });
-
-    // 2. stop AOS from doing anything else
     AOS.refreshHard = () => {};
     AOS.init = () => {};
   }
 }
 
-
-// track whether we are editing an existing entry (by its date)
-let editState = null;
-
-/** PATCH /api/weight/:date */
-async function patchWeight(date, { weightKg, note, source = 'manual' } = {}) {
-  const body = {};
-  if (weightKg !== undefined && weightKg !== null) body.weightKg = Number(weightKg);
-  if (note !== undefined) body.note = String(note);
-  if (source !== undefined) body.source = String(source);
-
-  return safeFetchJSON(`/api/weight/${date}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body)
-  });
+// ---------- profile fill ----------
+async function loadProfile() {
+  try {
+    const res = await fetch("/meinfo", { method: "GET", credentials: "include" });
+    if (!res.ok) {
+      if (res.status === 401) window.location.href = "/login";
+      return;
+    }
+    const profile = await res.json();
+    document.getElementById("usernameLabel").textContent = profile.username;
+    document.getElementById("roleLabel").textContent = profile.role;
+    document.getElementById("realnameLabel").textContent = profile.realName;
+    // optional: mirror into big title if you want
+    const titleName = document.getElementById("titleRealName");
+    if (titleName) titleName.textContent = "Weights";
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+  }
 }
 
-
-
-function openEditWeight(entry) {
-  // entry = { entry_date, weight_kg, note, source }
-  editState = entry.entry_date;                       // remember what we edit
-  const m = document.getElementById('weightModal');
-  m.classList.add('show');
-  document.body.classList.add('body--lock');
-
-  // Title -> Edit
-  const title = document.getElementById('weightModalTitle');
-  if (title) title.textContent = 'Edit Weight';
-
-  // Prefill fields
-  document.getElementById('wDate').value = entry.entry_date; // show the date (disabled below)
-  document.getElementById('wKg').value = Number(entry.weight_kg).toFixed(1);
-  document.getElementById('wNote').value = entry.note ?? '';
-
-  // Don’t allow changing the date for edit (keeps PK stable)
-  document.getElementById('wDate').setAttribute('disabled', 'disabled');
-
-  setTimeout(() => document.getElementById('wKg')?.focus(), 60);
-}
-
-function openWeightModal() {
-  // “Add” mode (original)
-  editState = null;
-  const m = document.getElementById('weightModal');
-  m.classList.add('show');
-  document.body.classList.add('body--lock');
-
-  const title = document.getElementById('weightModalTitle');
-  if (title) title.textContent = 'Add Weight';
-
-  const isoLocal = getLocalISODate(new Date());
-  const wDate = document.getElementById('wDate');
-  if (wDate) {
-    wDate.removeAttribute('disabled');
-    if (!wDate.value) wDate.value = isoLocal;
+// ---------- bootstrap (single DOMContentLoaded) ----------
+window.addEventListener('DOMContentLoaded', () => {
+  // AOS & reduced animations on desktop
+  AOS.init();
+  const mq = window.matchMedia("(min-width: 800px)");
+  if (mq.matches) {
+    document.querySelectorAll("[data-aos]").forEach(el => {
+      el.removeAttribute("data-aos");
+      el.style.opacity = "";
+      el.style.transform = "";
+    });
+    AOS.refreshHard = () => {};
+    AOS.init = () => {};
   }
 
-  document.getElementById('wKg').value = '';
-  document.getElementById('wNote').value = '';
+  // open/close hooks
+  document.getElementById('openWeightModal')?.addEventListener('click', openWeightModalAdd);
+  document.querySelectorAll('#weightModal [data-close]').forEach(el => el.addEventListener('click', closeWeightModal));
+  document.querySelector('#weightModal .modal__backdrop')?.addEventListener('click', closeWeightModal, { passive: true });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWeightModal(); });
 
-  setTimeout(() => document.getElementById('wKg')?.focus(), 60);
-}
+  // date shifters
+  const holder = document.querySelector('.dateOptionsHolder');
+  const wDate = document.getElementById('wDate');
+  if (holder && wDate) {
+    holder.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const shift = parseInt(btn.dataset.shift ?? '0', 10);
+      let base = wDate.value ? new Date(wDate.value) : new Date();
+      if (Number.isNaN(base.getTime())) base = new Date();
+      if (shift === 0) {
+        wDate.value = getLocalISODate(new Date());
+      } else {
+        base.setDate(base.getDate() + shift);
+        wDate.value = getLocalISODate(base);
+      }
+    });
+  }
 
-function closeWeightModal() {
-  const m = document.getElementById('weightModal');
-  if (!m) return;
-  m.classList.remove('show');
-  document.body.classList.remove('body--lock');
-  // reset edit state when closing
-  editState = null;
-  document.getElementById('wDate')?.removeAttribute('disabled');
-  const title = document.getElementById('weightModalTitle');
-  if (title) title.textContent = 'Add Weight';
-}
+  // suggestions → note field
+  const weightNoteInput = document.getElementById('wNote');
+  document.querySelectorAll('.suggestionsholder button').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      if (weightNoteInput) weightNoteInput.value = btn.textContent;
+    });
+  });
 
+  // range select
+  const select = document.getElementById('rangeSelect');
+  if (select) {
+    currentRange = parseInt(select.value, 10) || 30;
+    select.addEventListener('change', (e) => {
+      const days = parseInt(e.target.value, 10) || 30;
+      fetchAndRender(days);
+    });
+  }
 
-document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
+  // single form submit handler
+  document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
     const weightKg = parseFloat(document.getElementById('wKg').value);
     const date = document.getElementById('wDate').value || null;
     const note = document.getElementById('wNote').value || '';
-
+    
     if (editState) {
-      // EDIT existing row
       await patchWeight(editState, { weightKg, note, source: 'manual' });
     } else {
-      // ADD new row
       await uploadWeight({ weightKg, date, note, source: 'manual' });
     }
-
     closeWeightModal();
     await fetchAndRender(currentRange);
   } catch (err) {
-    alert(err.message || 'Failed to save');
+    console.error('Save failed:', err);
+    alert(err.message || 'Failed to save weight entry');
   }
 });
 
-
-
-// Get the Note input field by its ID
-const weightNoteInput = document.getElementById('wNote');
-
-// Get all the suggestion buttons within the suggestionsholder
-const suggestionButtons = document.querySelectorAll('.suggestionsholder button');
-
-// Loop through each button and attach an event listener
-suggestionButtons.forEach(button => {
-    button.addEventListener('click', function(event) {
-        // Prevent the button click from submitting the form and closing the modal
-        event.preventDefault(); 
-        
-        // Get the text from the clicked button
-        const buttonText = this.textContent;
-        
-        // Set the value of the note input field to the button's text
-        weightNoteInput.value = buttonText;
-        
-        // Optional: You might want to close the modal or focus the input after selection
-        // weightNoteInput.focus();
-    });
+  // first load
+  loadProfile();
+  fetchAndRender(currentRange);
 });
+
+
