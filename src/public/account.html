@@ -88,6 +88,10 @@
 
       <div class="mainfglowerholder">
         <div data-aos="fade-up" class="routeoption">
+          <h1>Update My Profile</h1>
+        </div>
+
+        <div data-aos="fade-up" class="routeoption">
           <h1>My Images</h1>
         </div>
 
@@ -102,6 +106,21 @@
 
       </div>
 
+    </div>
+  </div>
+
+  <!-- Profile / Avatar modal -->
+  <div id="profileModal" hidden>
+    <div class="pm-backdrop"></div>
+    <div class="pm-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+      <div class="pm-head">
+        <h2 id="pm-title">Choose a profile picture</h2>
+        <button class="pm-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div id="pm-content" class="pm-content">
+        <!-- avatars grid will be injected here -->
+        <div class="pm-loading">Loading…</div>
+      </div>
     </div>
   </div>
 
@@ -208,6 +227,13 @@
           })
           : "-";
         document.getElementById("joindatecontent").textContent = joinDateText;
+
+        const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
+        const pic = document.querySelector('.profilepic');
+        if (pic) {
+          if (me.profilePic) pic.src = `/media/${me.profilePic}`;
+          else pic.src = 'content/deafult.jpg';
+        }
       } catch (err) {
         console.error("Failed to load profile:", err);
       }
@@ -215,6 +241,104 @@
 
     loadProfile();
 
+  </script>
+
+  <script>
+    // Utility: open/close modal
+    const profileModal = document.getElementById('profileModal');
+    const pmContent = document.getElementById('pm-content');
+    const pmCloseBtn = profileModal.querySelector('.pm-close');
+    const openProfileModal = () => { profileModal.hidden = false; document.documentElement.classList.add('no-scroll'); };
+    const closeProfileModal = () => { profileModal.hidden = true; document.documentElement.classList.remove('no-scroll'); };
+
+    // Close interactions
+    pmCloseBtn.addEventListener('click', closeProfileModal);
+    profileModal.querySelector('.pm-backdrop').addEventListener('click', closeProfileModal);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !profileModal.hidden) closeProfileModal(); });
+
+    // Attach to the "Update My Profile" card (first .routeoption)
+    const updateCard = document.querySelectorAll('.routeoption')[0];
+    updateCard.addEventListener('click', async () => {
+      openProfileModal();
+      pmContent.innerHTML = '<div class="pm-loading">Loading…</div>';
+      try {
+        const res = await fetch('/api/avatars', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load');
+        const { people = [] } = await res.json();
+        if (!people.length) {
+          pmContent.innerHTML = '<p class="pm-hint">No avatar sets found yet. Ask admin to add images under <code>/media/avatars/&lt;name&gt;</code>.</p>';
+          return;
+        }
+        renderAvatars(people);
+      } catch (err) {
+        console.error(err);
+        pmContent.innerHTML = '<p class="pm-hint">Could not load avatars.</p>';
+      }
+    });
+
+    function renderAvatars(people) {
+      pmContent.innerHTML = '';
+      people.forEach(p => {
+        const sec = document.createElement('section');
+        sec.className = 'pm-person';
+        sec.innerHTML = `<h3>${escapeHtml(p.name)}</h3>`;
+        const grid = document.createElement('div');
+        grid.className = 'pm-grid';
+        (p.images || []).forEach(img => {
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'pm-pick';
+          card.innerHTML = `
+          <img src="${img.url}" alt="">
+          <small>${escapeHtml(img.file)}</small>
+        `;
+          card.addEventListener('click', () => selectAvatar(img));
+          grid.appendChild(card);
+        });
+        sec.appendChild(grid);
+        pmContent.appendChild(sec);
+      });
+    }
+
+    async function selectAvatar(img) {
+      // Persist choice
+      const rel = img.url.replace(/^\/media\//, ''); // "avatars/…"
+      try {
+        const res = await fetch('/api/me/profile-picture', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: rel })
+        });
+        if (!res.ok) throw new Error(await res.text());
+
+        // Update the visible avatar immediately
+        const pic = document.querySelector('.profilepic');
+        if (pic) pic.src = img.url + '?t=' + Date.now(); // cache-bust
+
+        // Nice little feedback
+        pmContent.scrollTo({ top: 0, behavior: 'smooth' });
+        const msg = document.createElement('div');
+        msg.className = 'pm-row';
+        msg.innerHTML = `<span class="pm-hint">✅ Profile picture updated.</span>`;
+        pmContent.prepend(msg);
+
+        // Close after a short pause
+        setTimeout(closeProfileModal, 600);
+      } catch (e) {
+        console.error(e);
+        alert('Failed to update your profile picture.');
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
   </script>
 
 

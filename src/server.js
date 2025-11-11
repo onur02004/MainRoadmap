@@ -6,10 +6,13 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { exec as execLED } from "node:child_process";
 
+import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import protectedRoutes from "./routes/protected.js";
 import requireAuth from "./middleware/requireAuth.js";
 import deviceRoutes from "./routes/devices.js";
+import fitnessRoutes from "./routes/fitnessRoutes.js";
+import avatarsRoutes from "./routes/avatars.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -20,8 +23,10 @@ const PORT = 3000;
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(fitnessRoutes);
 app.use(deviceRoutes); 
-
+app.use(adminRoutes);
+app.use(avatarsRoutes);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {

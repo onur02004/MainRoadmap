@@ -15,6 +15,14 @@ export default function requireAuth(req, res, next) {
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     console.log("User authenticated:", req.user);
+
+//    q(
+//      `INSERT INTO user_activity 
+//       (user_id, activity_type, page_path, ip_address, user_agent) 
+//       VALUES ($1, 'auth_verified', $2, $3, $4)`,
+//      [req.user.sub, req.path, req.ip, req.get('User-Agent')]
+//    ).catch(console.error);
+
     next();
     return;
   } catch {
@@ -37,7 +45,6 @@ export function requireFeature(featureKey) {
     next();
   };
 }
-
 
 export function canAccessOWNFile(req, res, next) {
   //SADECE KENDI DOSYASINA ULASABILIR

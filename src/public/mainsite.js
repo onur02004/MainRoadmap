@@ -68,7 +68,14 @@
             if (window.AOS && typeof AOS.refresh === 'function') AOS.refresh();
 
             console.log('User features (from /api/session):', uniq);
-            
+
+            const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
+            const pic = document.querySelector('.profilepic');
+            if (pic) {
+                if (me.profilePic) pic.src = `/media/${me.profilePic}`;
+                else pic.src = 'content/deafult.jpg';
+            }
+
         } else {
             loggedInInfos[0].style.display = 'none';
             label.innerHTML = `<a href="/login.html" style="text-decoration:underline">Login</a>`;

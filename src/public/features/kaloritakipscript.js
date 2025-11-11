@@ -1,5 +1,6 @@
 let currentRange = 30;
-let editState = null; // date string when editing
+let editState = null;
+let existingEntryDates = new Set(); 
 
 // ---------- helpers ----------
 function getLocalISODate(date) {
@@ -192,6 +193,11 @@ async function fetchAndRender(days = currentRange) {
       headers: { 'Accept': 'application/json' }
     });
 
+    // Build fast lookup for duplicate date check
+    existingEntryDates = new Set(
+      (data.items ?? []).map(r => toYMD(r.entry_date)).filter(Boolean)
+    );
+
     renderWeightChartFromItems(data.items);
     renderWeightsList(data.items);
 
@@ -204,6 +210,7 @@ async function fetchAndRender(days = currentRange) {
     showChartEmptyState(err.message || 'Failed to load data');
   }
 }
+
 
 // ---------- chart & list ----------
 function renderWeightChartFromItems(items = []) {
@@ -433,18 +440,32 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // single form submit handler
-  document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
+document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
     const weightKg = parseFloat(document.getElementById('wKg').value);
-    const date = document.getElementById('wDate').value || null;
-    const note = document.getElementById('wNote').value || '';
-    
-    if (editState) {
-      await patchWeight(editState, { weightKg, note, source: 'manual' });
+    const dateRaw  = document.getElementById('wDate').value || null;
+    const note     = document.getElementById('wNote').value || '';
+    const ymd      = toYMD(dateRaw);
+
+    if (!ymd) throw new Error('Invalid date');
+
+    if (!editState) {
+      // ADD mode: warn if there is an entry for that exact date in the loaded range
+      //if (existingEntryDates.has(ymd)) {
+      //  const proceed = confirm(
+      //    `You already have an entry for ${formatDateLong(ymd)}.\n` +
+      //    `Adding again may overwrite/duplicate depending on server rules.\n\n` +
+      //    `Do you want to continue?`
+      //  );
+       // if (!proceed) return; // stop submission
+      ///}
+      await uploadWeight({ weightKg, date: ymd, note, source: 'manual' });
     } else {
-      await uploadWeight({ weightKg, date, note, source: 'manual' });
+      // EDIT mode
+      await patchWeight(editState, { weightKg, note, source: 'manual' });
     }
+
     closeWeightModal();
     await fetchAndRender(currentRange);
   } catch (err) {
@@ -452,6 +473,7 @@ window.addEventListener('DOMContentLoaded', () => {
     alert(err.message || 'Failed to save weight entry');
   }
 });
+
 
   // first load
   loadProfile();

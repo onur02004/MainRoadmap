@@ -349,36 +349,28 @@ router.post('/api/weight', requireAuth, express.json(), async (req, res) => {
   try {
     const { weightKg, entry_date, note = null, source = 'manual' } = req.body || {};
 
-    // Validate
     const w = Number(weightKg);
     if (!isFinite(w) || w <= 0 || w >= 400) {
       return res.status(400).json({ error: 'Invalid weight' });
     }
 
-    // If client didn’t send a date, use today in Europe/Berlin
-    // This sets entry_date_server to a DATE in that TZ.
     const sql = `
       INSERT INTO weight_entries (user_id, entry_date, weight_kg, note, source)
-      VALUES ($1,
-              COALESCE($2::date, (now() AT TIME ZONE 'Europe/Berlin')::date),
-              $3::numeric,
-              $4,
-              $5)
-      ON CONFLICT (user_id, entry_date)
-      DO UPDATE SET
-        weight_kg = EXCLUDED.weight_kg,
-        note      = EXCLUDED.note,
-        source    = EXCLUDED.source,
-        updated_at= now()
+      VALUES ($1, COALESCE($2::date, (now() AT TIME ZONE 'Europe/Berlin')::date), $3::numeric, $4, $5)
+      ON CONFLICT (user_id, entry_date) DO NOTHING
       RETURNING user_id, entry_date, weight_kg, note, source, created_at, updated_at;
     `;
-    const params = [req.user.sub, entry_date || null, w, note, source];
-    const dbRes = await q(sql, params);
-    console.log(dbRes.rows[0]);
-    return res.status(201).json(dbRes.rows[0]);
+    const params = [req.user.sub, entry_date ?? null, w, note, source];
+
+    const { rows } = await q(sql, params);
+    if (!rows.length) {
+      // conflict happened
+      return res.status(409).json({ error: 'An entry for this date already exists. You Can only add one entry per date. If may wish to edit the entry for that day' });
+    }
+    res.json(rows[0]);
   } catch (err) {
     console.error('POST /api/weight failed:', err);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -500,5 +492,7 @@ router.patch('/api/weight/:date', requireAuth, express.json(), async (req, res) 
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
 
 export default router;

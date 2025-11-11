@@ -47,7 +47,6 @@ router.get("/account", requireAuth, (req, res) => {
 });
 
 
-// Example protected endpoint only users with feature 'x' can call:
 router.get('/kt', requireAuth, requireFeature('kt'), (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
@@ -66,6 +65,26 @@ router.get('/kt', requireAuth, requireFeature('kt'), (req, res) => {
     }
   });
 });
+
+router.get('/st', requireAuth, requireFeature('st'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'sportakip.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending sportakip.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
 
 
 
