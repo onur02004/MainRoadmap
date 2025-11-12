@@ -76,6 +76,19 @@
                 else pic.src = 'content/deafult.jpg';
             }
 
+            if (!me.profilePic) {
+                console.log('No profil pix');
+                const dialog = document.getElementById('profileWarning');
+                dialog.hidden = false;
+                document.getElementById('closeDialog').addEventListener('click', () => {
+                    dialog.hidden = true;
+                    document.getElementById('profileWarning').style.display = 'none';
+                });
+            }else{
+                console.log("has profile pic");
+                document.getElementById('profileWarning').style.display = 'none';
+            }
+
         } else {
             loggedInInfos[0].style.display = 'none';
             label.innerHTML = `<a href="/login.html" style="text-decoration:underline">Login</a>`;

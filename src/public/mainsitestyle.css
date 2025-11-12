@@ -314,3 +314,67 @@ html.leaving { transition: opacity .18s ease; opacity: 0; }
 
 
 .userinfo { view-transition-name: profileCard; }
+
+
+/* ===== Custom Dialog Styles ===== */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100000;
+}
+
+.dialog-box {
+  background: rgba(19, 19, 19, 0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.45);
+  padding: 2rem;
+  max-width: 420px;
+  text-align: center;
+  color: #fff;
+  animation: dialogPop 0.35s ease;
+}
+
+@keyframes dialogPop {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.dialog-title {
+  font-size: 1.8rem;
+  margin-bottom: 0.8rem;
+  color: #52c471;
+}
+
+.dialog-text {
+  font-size: 1.1rem;
+  color: #ccc;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.dialog-link {
+  color: #52c471;
+  text-decoration: underline;
+}
+
+.dialog-btn {
+  background: #52c471;
+  border: none;
+  border-radius: 10px;
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.dialog-btn:hover {
+  transform: scale(1.05);
+}

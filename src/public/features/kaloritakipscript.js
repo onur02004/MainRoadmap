@@ -1,6 +1,6 @@
 let currentRange = 30;
 let editState = null;
-let existingEntryDates = new Set(); 
+let existingEntryDates = new Set();
 
 // ---------- helpers ----------
 function getLocalISODate(date) {
@@ -39,13 +39,13 @@ function formatDateLong(iso) {
 function toYMD(input) {
   if (!input) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-  
+
   const d = new Date(input);
   if (Number.isNaN(d.getTime())) {
     console.error('Invalid date input:', input);
     return null;
   }
-  
+
   return getLocalISODate(d);
 }
 
@@ -353,8 +353,8 @@ function renderWeightsList(items = []) {
       el.style.opacity = "";
       el.style.transform = "";
     });
-    AOS.refreshHard = () => {};
-    AOS.init = () => {};
+    AOS.refreshHard = () => { };
+    AOS.init = () => { };
   }
 }
 
@@ -389,8 +389,8 @@ window.addEventListener('DOMContentLoaded', () => {
       el.style.opacity = "";
       el.style.transform = "";
     });
-    AOS.refreshHard = () => {};
-    AOS.init = () => {};
+    AOS.refreshHard = () => { };
+    AOS.init = () => { };
   }
 
   // open/close hooks
@@ -440,39 +440,39 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // single form submit handler
-document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    const weightKg = parseFloat(document.getElementById('wKg').value);
-    const dateRaw  = document.getElementById('wDate').value || null;
-    const note     = document.getElementById('wNote').value || '';
-    const ymd      = toYMD(dateRaw);
+  document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const weightKg = parseFloat(document.getElementById('wKg').value);
+      const dateRaw = document.getElementById('wDate').value || null;
+      const note = document.getElementById('wNote').value || '';
+      const ymd = toYMD(dateRaw);
 
-    if (!ymd) throw new Error('Invalid date');
+      if (!ymd) throw new Error('Invalid date');
 
-    if (!editState) {
-      // ADD mode: warn if there is an entry for that exact date in the loaded range
-      //if (existingEntryDates.has(ymd)) {
-      //  const proceed = confirm(
-      //    `You already have an entry for ${formatDateLong(ymd)}.\n` +
-      //    `Adding again may overwrite/duplicate depending on server rules.\n\n` +
-      //    `Do you want to continue?`
-      //  );
-       // if (!proceed) return; // stop submission
-      ///}
-      await uploadWeight({ weightKg, date: ymd, note, source: 'manual' });
-    } else {
-      // EDIT mode
-      await patchWeight(editState, { weightKg, note, source: 'manual' });
+      if (!editState) {
+        // ADD mode: warn if there is an entry for that exact date in the loaded range
+        //if (existingEntryDates.has(ymd)) {
+        //  const proceed = confirm(
+        //    `You already have an entry for ${formatDateLong(ymd)}.\n` +
+        //    `Adding again may overwrite/duplicate depending on server rules.\n\n` +
+        //    `Do you want to continue?`
+        //  );
+        // if (!proceed) return; // stop submission
+        ///}
+        await uploadWeight({ weightKg, date: ymd, note, source: 'manual' });
+      } else {
+        // EDIT mode
+        await patchWeight(editState, { weightKg, note, source: 'manual' });
+      }
+
+      closeWeightModal();
+      await fetchAndRender(currentRange);
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert(err.message || 'Failed to save weight entry');
     }
-
-    closeWeightModal();
-    await fetchAndRender(currentRange);
-  } catch (err) {
-    console.error('Save failed:', err);
-    alert(err.message || 'Failed to save weight entry');
-  }
-});
+  });
 
 
   // first load
@@ -481,3 +481,15 @@ document.getElementById('weightForm')?.addEventListener('submit', async (e) => {
 });
 
 
+async function checkProfile() {
+  const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
+  const pic = document.querySelector('.profilepic');
+  if (pic) {
+    if (me.profilePic) pic.src = `/media/${me.profilePic}`;
+    else pic.src = 'content/deafult.jpg';
+  } else {
+    window.location.pathname = "/login/";
+  }
+}
+
+checkProfile();
