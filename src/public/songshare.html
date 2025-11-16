@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Share</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better aesthetics */
+        :root {
+            --primary-color: #EF4444; /* Tailwind red-500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #DC2626; /* red-600 */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 text-center">
+            <span class="text-red-500">Music</span> Finder
+        </h1>
+        <p class="text-center text-gray-500 mb-8">Search for tracks and see album art and artist details using the Spotify API.</p>
+
+        <!-- Search Input Form -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Enter song or artist name (e.g., Bohemian Rhapsody)"
+                class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-lg shadow-sm"
+            >
+            <button 
+                id="searchButton" 
+                class="btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50"
+            >
+                Search Music
+            </button>
+        </div>
+
+        <!-- Status Message Area -->
+        <div id="statusMessage" class="text-center p-4 text-gray-600 rounded-lg bg-yellow-100 border border-yellow-300 hidden mb-6"></div>
+
+        <!-- Results Display Grid -->
+        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Music cards will be injected here -->
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingIndicator" class="text-center hidden mt-10">
+            <svg class="animate-spin h-8 w-8 text-red-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        // Debounce function to limit API calls during fast typing (currently unused, but kept for future feature)
+        const debounce = (func, delay) => {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        };
+
+        function showMessage(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.className = `text-center p-4 rounded-lg border mb-6 ${isError ? 'bg-red-100 text-red-700 border-red-400' : 'bg-yellow-100 text-gray-600 border-yellow-300'}`;
+            statusMessage.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            statusMessage.classList.add('hidden');
+        }
+
+        function toggleLoading(show) {
+            loadingIndicator.classList.toggle('hidden', !show);
+            searchButton.disabled = show;
+        }
+
+        function renderResults(tracks) {
+            resultsGrid.innerHTML = ''; // Clear previous results
+            if (tracks.length === 0) {
+                showMessage("No results found for your search. Try a different query.");
+                return;
+            }
+
+            hideMessage();
+
+            tracks.forEach(track => {
+                const trackCard = `
+                    <div class="card bg-white p-4 rounded-xl shadow-md overflow-hidden text-center hover:bg-gray-50">
+                        <img 
+                            src="${track.imageUrl}" 
+                            alt="${track.name} album cover" 
+                            class="w-full h-auto rounded-lg mb-3 object-cover shadow-sm"
+                            onerror="this.onerror=null; this.src='https://placehold.co/150x150/000000/FFFFFF?text=No+Cover';"
+                        >
+                        <h3 class="text-lg font-bold truncate text-gray-900" title="${track.name}">${track.name}</h3>
+                        <p class="text-sm text-red-500 font-medium truncate" title="${track.artist}">${track.artist}</p>
+                    </div>
+                `;
+                resultsGrid.innerHTML += trackCard;
+            });
+        }
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) {
+                showMessage("Please enter a song or artist name to start searching.");
+                return;
+            }
+
+            toggleLoading(true);
+            hideMessage();
+            resultsGrid.innerHTML = '';
+            
+            try {
+                // Call the new backend API endpoint
+                const response = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Handle API errors (4xx or 5xx from our backend)
+                    showMessage(`Search failed: ${data.error || 'Unknown server error.'}`, true);
+                } else {
+                    renderResults(data.tracks);
+                }
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                showMessage("Network error: Could not connect to the server.", true);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // Event listener for the search button
+        searchButton.addEventListener('click', performSearch);
+
+        // Event listener for the Enter key press in the input field
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Initial message on load
+        window.onload = () => {
+             showMessage("Start by typing a song or artist name above to search Spotify!");
+        };
+    </script>
+</body>
+</html>

@@ -86,8 +86,6 @@ router.get('/st', requireAuth, requireFeature('st'), (req, res) => {
 });
 
 
-
-
 router.get("/remote-control", requireAuth, (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
@@ -106,7 +104,23 @@ router.get("/remote-control", requireAuth, (req, res) => {
   });
 });
 
+router.get("/song-share", requireAuth, (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
 
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public', 
+        'songshare.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending songshare.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
 
 
 export default router;

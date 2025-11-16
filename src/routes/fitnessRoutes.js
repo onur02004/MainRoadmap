@@ -150,13 +150,14 @@ router.post("/api/workouts", requireAuth, async (req, res) => {
       await client.query("ROLLBACK");
       return res.status(400).json({ error: "Entries must be an array" });
     }
+    console.log("Adding Workut uid(sub): " + req.user.sub);
 
     // Insert workout session
     const insSession = await client.query(
       `INSERT INTO workout_sessions (user_id, session_date, note)
        VALUES ($1, COALESCE($2::date, (now() AT TIME ZONE 'Europe/Berlin')::date), $3)
        RETURNING id, user_id, session_date, note, created_at`,
-      [req.user.id, session_date, note]
+      [req.user.sub, session_date, note]
     );
     const session = insSession.rows[0];
 

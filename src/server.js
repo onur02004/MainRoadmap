@@ -13,6 +13,7 @@ import requireAuth from "./middleware/requireAuth.js";
 import deviceRoutes from "./routes/devices.js";
 import fitnessRoutes from "./routes/fitnessRoutes.js";
 import avatarsRoutes from "./routes/avatars.js";
+import songshareRoutes from "./routes/songshare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -27,6 +28,7 @@ app.use(fitnessRoutes);
 app.use(deviceRoutes); 
 app.use(adminRoutes);
 app.use(avatarsRoutes);
+app.use(songshareRoutes);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {

@@ -833,8 +833,10 @@
 
                 if (!response.ok) throw new Error(data.error);
 
+
                 document.getElementById('userModalContent').innerHTML = `
             <h3>${data.user.user_name}</h3>
+            <img src="/media/${data.user.profile_pic_path}" style="width: 100px; height: 100px">
             <div style="margin-bottom: 1rem;">
                 <button onclick="showChangePasswordForm('${data.user.id}')" class="btn btn-primary">Change Password</button>
                 <button onclick="editUser('${data.user.id}')" class="btn btn-success">Edit Profile</button>

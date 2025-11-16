@@ -227,6 +227,7 @@ section .wave span:nth-child(3) {
 .profilepic {
     height: 100%;
     grid-area: upper;
+    width: 70px;
 }
 
 

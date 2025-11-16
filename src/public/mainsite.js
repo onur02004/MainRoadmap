@@ -8,7 +8,7 @@
         if (!label) return;
 
         const loggedInInfos = document.getElementsByClassName('logged-in-infos');
-        const holder = document.querySelector('.featuresHolder');
+        const holder = document.querySelector('.mainfglowerholder');
 
         if (data.authenticated) {
             loggedInInfos[0].style.display = 'block';
@@ -44,7 +44,7 @@
             });
 
             // render tiles
-            holder.innerHTML = '';
+            //holder.innerHTML = '';
             uniq.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'routeoption';
@@ -80,6 +80,7 @@
                 console.log('No profil pix');
                 const dialog = document.getElementById('profileWarning');
                 dialog.hidden = false;
+                document.getElementById('profileWarning').style.display = 'flex';
                 document.getElementById('closeDialog').addEventListener('click', () => {
                     dialog.hidden = true;
                     document.getElementById('profileWarning').style.display = 'none';
