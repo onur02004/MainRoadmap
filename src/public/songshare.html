@@ -1,179 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Share</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom styles for better aesthetics */
-        :root {
-            --primary-color: #EF4444; /* Tailwind red-500 */
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* bg-gray-100 */
-        }
-        .card {
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .btn-primary {
-            background-color: var(--primary-color);
-            transition: background-color 0.2s;
-        }
-        .btn-primary:hover {
-            background-color: #DC2626; /* red-600 */
-        }
-    </style>
+    <title>Futuristic App Navigation</title>
+    <link rel="stylesheet" href="loginstyle.css">
+    <link rel="stylesheet" href="songsharestyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
-<body class="p-4 sm:p-8 min-h-screen">
 
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 text-center">
-            <span class="text-red-500">Music</span> Finder
-        </h1>
-        <p class="text-center text-gray-500 mb-8">Search for tracks and see album art and artist details using the Spotify API.</p>
+<body>
 
-        <!-- Search Input Form -->
-        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Enter song or artist name (e.g., Bohemian Rhapsody)"
-                class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-lg shadow-sm"
-            >
-            <button 
-                id="searchButton" 
-                class="btn-primary text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50"
-            >
-                Search Music
-            </button>
+    <section style="overflow-y: scroll;">
+        <div class="wave">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
 
-        <!-- Status Message Area -->
-        <div id="statusMessage" class="text-center p-4 text-gray-600 rounded-lg bg-yellow-100 border border-yellow-300 hidden mb-6"></div>
-
-        <!-- Results Display Grid -->
-        <div id="resultsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Music cards will be injected here -->
-        </div>
-
-        <!-- Loading Spinner -->
-        <div id="loadingIndicator" class="text-center hidden mt-10">
-            <svg class="animate-spin h-8 w-8 text-red-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-        </div>
-    </div>
-
-    <script>
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const resultsGrid = document.getElementById('resultsGrid');
-        const statusMessage = document.getElementById('statusMessage');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-
-        // Debounce function to limit API calls during fast typing (currently unused, but kept for future feature)
-        const debounce = (func, delay) => {
-            let timeoutId;
-            return (...args) => {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => func.apply(this, args), delay);
-            };
-        };
-
-        function showMessage(message, isError = false) {
-            statusMessage.textContent = message;
-            statusMessage.className = `text-center p-4 rounded-lg border mb-6 ${isError ? 'bg-red-100 text-red-700 border-red-400' : 'bg-yellow-100 text-gray-600 border-yellow-300'}`;
-            statusMessage.classList.remove('hidden');
-        }
-
-        function hideMessage() {
-            statusMessage.classList.add('hidden');
-        }
-
-        function toggleLoading(show) {
-            loadingIndicator.classList.toggle('hidden', !show);
-            searchButton.disabled = show;
-        }
-
-        function renderResults(tracks) {
-            resultsGrid.innerHTML = ''; // Clear previous results
-            if (tracks.length === 0) {
-                showMessage("No results found for your search. Try a different query.");
-                return;
-            }
-
-            hideMessage();
-
-            tracks.forEach(track => {
-                const trackCard = `
-                    <div class="card bg-white p-4 rounded-xl shadow-md overflow-hidden text-center hover:bg-gray-50">
-                        <img 
-                            src="${track.imageUrl}" 
-                            alt="${track.name} album cover" 
-                            class="w-full h-auto rounded-lg mb-3 object-cover shadow-sm"
-                            onerror="this.onerror=null; this.src='https://placehold.co/150x150/000000/FFFFFF?text=No+Cover';"
-                        >
-                        <h3 class="text-lg font-bold truncate text-gray-900" title="${track.name}">${track.name}</h3>
-                        <p class="text-sm text-red-500 font-medium truncate" title="${track.artist}">${track.artist}</p>
+        <div class="main-content">
+            <div class="page page-home is-active">
+                <h1 style="font-size: 3rem; padding-bottom: 50px;">Home Dashboard</h1>
+                <div id="suggestionFeed" class="suggestion-feed-container">
                     </div>
-                `;
-                resultsGrid.innerHTML += trackCard;
-            });
-        }
 
-        async function performSearch() {
-            const query = searchInput.value.trim();
-            if (!query) {
-                showMessage("Please enter a song or artist name to start searching.");
-                return;
-            }
+                <div id="feedLoadingSpinner" class="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Loading more...</span>
+                </div>
 
-            toggleLoading(true);
-            hideMessage();
-            resultsGrid.innerHTML = '';
-            
-            try {
-                // Call the new backend API endpoint
-                const response = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`);
-                const data = await response.json();
+                <div id="feedEndMessage" class-="feed-end-message" style="display: none;">
+                    <p>You've reached the end!</p>
+                </div>
+            </div>
 
-                if (!response.ok) {
-                    // Handle API errors (4xx or 5xx from our backend)
-                    showMessage(`Search failed: ${data.error || 'Unknown server error.'}`, true);
-                } else {
-                    renderResults(data.tracks);
-                }
+            <div id="songSearchModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem;">Find a Song on Spotify</h2>
 
-            } catch (error) {
-                console.error("Fetch error:", error);
-                showMessage("Network error: Could not connect to the server.", true);
-            } finally {
-                toggleLoading(false);
-            }
-        }
+                    <label class="field-label">
+                        Search for a song
+                        <div class="search-row">
+                            <input type="text" id="songSearchInput" placeholder="Type a song or artist..."
+                                autocomplete="off" style="font-size: 1.5rem;">
+                            <button type="button" id="songSearchButton" class="icon-button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </label>
 
-        // Event listener for the search button
-        searchButton.addEventListener('click', performSearch);
+                    <div id="searchStatus" style="color: white; padding-top: 10px;" class="search-status"></div>
+                    <ul id="searchResults" class="search-results">
+                    </ul>
 
-        // Event listener for the Enter key press in the input field
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
+                </div>
+            </div>
 
-        // Initial message on load
-        window.onload = () => {
-             showMessage("Start by typing a song or artist name above to search Spotify!");
-        };
-    </script>
+            <div id="userSearchModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem;">Select Target Users</h2>
+                    <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px;">
+                        Choose who to send this private suggestion to.
+                    </p>
+
+                    <label class="field-label">
+                        Search for a user
+                        <div class="search-row">
+                            <input type="text" id="userSearchInput" placeholder="Type a username..." autocomplete="off"
+                                style="font-size: 1.5rem;">
+                            <button type="button" id="userSearchButton" class="icon-button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </label>
+
+                    <div id="userSearchStatus" style="color: white; padding-top: 10px;" class="search-status"></div>
+                    <ul id="userSearchResults" class="search-results">
+                    </ul>
+
+                    <button type="button" id="userSearchDoneBtn" class="primary-btn" style="margin-top: 20px;">
+                        Done
+                    </button>
+                </div>
+            </div>
+
+            <div class="page page-suggest">
+                <div class="page page-suggest">
+                    <h2 style="font-size: 40px;">Pick a Song</h2>
+
+                    <button type="button" id="openSearchModalBtn" class="primary-btn">
+                        Select Song to Suggest <i class="fas fa-search"></i>
+                    </button>
+
+                    <div class="suggest-layout selected-song-display">
+                        <div class="cover-wrapper">
+                            <img id="suggestCover" src="./content/song-placeholder.svg" alt="Selected song cover"
+                                class="song-cover-placeholder" style="display: none;">
+                            <div class="selected-info">
+                                <div id="selectedSongTitle" class="selected-title" style="display: none;">No song
+                                    selected </div>
+                                <div id="selectedSongArtistName" class="selected-artist" style="display: none;">
+                                    Click 'Select Song' to search!</div>
+                            </div>
+                            <div id="spotifyPreviewContainer" class="spotify-preview-container">
+                            </div>
+                        </div>
+
+                        <div class="suggest-form final-submission-form">
+                            <input type="hidden" id="selectedSongName">
+                            <input type="hidden" id="selectedSongArtist">
+                            <input type="hidden" id="selectedSongImageUrl">
+                            <input type="hidden" id="selectedSongUriInput">
+
+                            <div class="field-group">
+                                <label for="suggestionImportance" class="field-label">Suggestion Importance</label>
+                                <div class="importance-selector" id="suggestionImportance">
+                                    <button type="button" class="imp-btn" data-value="low">Low</button>
+                                    <button type="button" class="imp-btn" data-value="neutral"
+                                        data-default="true">Neutral</button>
+                                    <button type="button" class="imp-btn" data-value="high">High</button>
+                                    <button type="button" class="imp-btn" data-value="extreme">Extreme</button>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label for="songRating" class="field-label">Your Rating (0-10)</label>
+                                <input type="range" id="songRating" min="0" max="10" step="1" value="5"
+                                    class="modern-slider">
+                                <div class="slider-labels">
+                                    <span>0</span>
+                                    <span id="ratingValue">5</span>
+                                    <span>10</span>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label for="bestTimeInput" class="field-label">Highlight Time (e.g., 1:30)
+                                    (Optional)</label>
+                                <div class="search-row time-input-row">
+                                    <input type="text" id="bestTimeInput"
+                                        placeholder="Best Seconds (e.g., 1:30 or 90) (Optional)" class="modern-input">
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label for="suggestionComment" class="field-label">Comment (Optional)</label>
+                                <textarea id="suggestionComment" placeholder="Enter your thoughts on this suggestion..."
+                                    class="modern-textarea"></textarea>
+                            </div>
+
+                            <div class="field-group visibility-toggle-row">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="suggestionVisibility" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="field-label toggle-label">Make Suggestion Public</span>
+                            </div>
+
+                            <div id="targetUsersDisplay" class="target-users-display" style="display: none;">
+                                <span class="field-label">Sending to:</span>
+                                <div id="targetUsersList" class="target-users-list">
+                                </div>
+                                <button type="button" id="editTargetUsersBtn" class="text-button">
+                                    Edit Recipients
+                                </button>
+                            </div>
+
+                            <button type="button" id="sendSuggestionButton" class="primary-btn" disabled>
+                                Suggest this song
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page page-profile">
+                <h1>User Profile</h1>
+                <p>Manage your account settings and personal information.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <nav class="fixed-bottom-nav">
+        <div class="nav-option">
+            <a href="#home" class="active" data-page="home">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Home</span>
+            </a>
+        </div>
+        <div class="nav-option">
+            <a href="#suggest" data-page="suggest">
+                <i class="fas fa-lightbulb nav-icon"></i>
+                <span>Suggest</span>
+            </a>
+        </div>
+        <div class="nav-option">
+            <a href="#profile" data-page="profile">
+                <i class="fas fa-user nav-icon"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+    </nav>
+
+    <script src="songsharescript.js"></script>
 </body>
+
 </html>

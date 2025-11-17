@@ -1,6 +1,7 @@
 import { Router } from "express";
 import requireAuth from "../middleware/requireAuth.js";
 import 'dotenv/config'; // Ensure environment variables are loaded
+import { q } from "../db/pool.js";
 
 const router = Router();
 
@@ -248,7 +249,8 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
             return {
                 name: track.name,
                 artist: artist,
-                imageUrl: imageUrl
+                imageUrl: imageUrl,
+                uri: track.uri
             };
         });
 
@@ -260,6 +262,159 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
         console.error("Error fetching data from Spotify:", error);
         return res.status(500).json({ 
             error: error.message || "An unexpected error occurred during Spotify search." 
+        });
+    }
+});
+
+router.post("/api/music/suggestions", requireAuth, async (req, res) => {
+    // 1. Get user ID from the requireAuth middleware
+    // (This assumes requireAuth adds user info to req.user)
+    const userId = req.user?.sub; 
+    console.log("Saving user recomm");
+    if (!userId) {
+        console.log("/api/music/suggestions err no user id");
+        return res.status(401).json({ error: "Authentication error: User ID not found." });
+    }
+
+    // 2. Get data from request body
+    const {
+        name,           // selectedSongNameInput
+        artist,         // selectedSongArtistInput
+        imageUrl,       // selectedSongImageUrlInput
+        uri,            // ** We need to add this to the frontend **
+        importance,     // suggestionImportance
+        rating,         // songRating
+        bestTime,       // bestTimeInput
+        comment,        // suggestionComment
+        isPublic,        // suggestionVisibility
+        targetUsers
+    } = req.body;
+
+    // 3. Validate essential data
+    if (!name || !artist || !uri) {
+        return res.status(400).json({ 
+            error: "Missing required song data (name, artist, or uri)." 
+        });
+    }
+
+    const targetUserIds = isPublic ? null : targetUsers;
+
+    // 4. Define the SQL query
+    const sql = `
+        INSERT INTO song_suggestions (
+            user_id,
+            spotify_uri,
+            song_name,
+            song_artist,
+            song_cover_url,
+            importance,
+            rating_by_user,
+            visibility_public,
+            comment_by_user,
+            recommended_time_by_user,
+            target_users
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *;
+    `;
+
+    // 5. Define parameters
+    const params = [
+        userId,
+        uri,
+        name,
+        artist,
+        imageUrl,
+        importance || 'neutral',
+        rating ? Number(rating) : null, // Convert to number, allow null
+        isPublic === true, // Ensure it's a boolean
+        comment || null,
+        bestTime || null,
+        targetUserIds
+    ];
+
+    try {
+        // 6. Execute the query
+        const result = await q(sql, params);
+        
+        // 7. Send success response
+        res.status(201).json({ 
+            message: "Suggestion added successfully!",
+            suggestion: result.rows[0] 
+        });
+
+    } catch (error) {
+        console.error("Error inserting song suggestion:", error);
+        // Check for specific DB errors (e.g., rating out of range)
+        if (error.code === '23514') { // Check constraint violation
+             return res.status(400).json({ error: "Invalid rating. Must be between 1 and 10." });
+        }
+        res.status(500).json({ 
+            error: "An unexpected error occurred while saving the suggestion." 
+        });
+    }
+});
+
+router.get("/api/music/feed", requireAuth, async (req, res) => {
+    const userId = req.user?.sub;
+
+    if (!userId) {
+        return res.status(401).json({ error: "Authentication error: User ID not found." });
+    }
+
+    // 1. Get pagination parameters from query, with defaults
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    // 2. Define the SQL query
+    // This query fetches suggestions that are:
+    //    a) Public (visibility_public = true)
+    //    b) OR targeted at the current user ($1 = ANY(target_users))
+    // It also JOINS with the users table to get the suggester's info.
+    // It orders by date_added DESC to show the newest first.
+    const sql = `
+        SELECT
+            s.id,
+            s.song_name,
+            s.song_artist,
+            s.song_cover_url,
+            s.spotify_uri,
+            s.importance,
+            s.rating_by_user,
+            s.comment_by_user,
+            s.recommended_time_by_user,
+            s.date_added,
+            s.visibility_public,
+            u.user_name AS suggester_username,
+            u.profile_pic_path AS suggester_avatar
+        FROM
+            song_suggestions s
+        JOIN
+            users u ON s.user_id = u.id
+        WHERE
+            (s.visibility_public = true OR $1 = ANY(s.target_users))
+        ORDER BY
+            s.date_added DESC
+        LIMIT $2
+        OFFSET $3;
+    `;
+    
+    // 3. Define parameters
+    const params = [userId, limit, offset];
+
+    try {
+        // 4. Execute the query
+        const result = await q(sql, params);
+        
+        // 5. Send success response
+        res.status(200).json({ 
+            suggestions: result.rows 
+        });
+
+    } catch (error) {
+        console.error("Error fetching suggestion feed:", error);
+        res.status(500).json({ 
+            error: "An unexpected error occurred while fetching the feed." 
         });
     }
 });

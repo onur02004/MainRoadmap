@@ -69,7 +69,7 @@
         <div data-aos="fade-up" class="routeoption" id="remotecontrol">
           <h1>Remote Control</h1>
         </div>
-        <div data-aos="fade-up" class="routeoption">
+        <div data-aos="fade-up" class="routeoption" id="songshare">
           <h1>Song Share</h1>
         </div>
         <div data-aos="fade-up" class="routeoption">
@@ -128,6 +128,9 @@
 
   document.getElementById('remotecontrol')?.addEventListener('click', (e)=> {
     window.location.href = '/remote-control';
+  });
+  document.getElementById('songshare')?.addEventListener('click', (e)=> {
+    window.location.href = '/song-share';
   });
 </script>
 

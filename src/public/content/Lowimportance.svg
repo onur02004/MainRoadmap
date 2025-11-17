@@ -1,0 +1,22 @@
+<svg
+  width="32"
+  height="32"
+  viewBox="0 0 48 48"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Bar 1 (active, shortest) -->
+  <rect x="10" y="30" width="4" height="8" rx="2"
+        fill="none" stroke="white" stroke-width="2.5" />
+
+  <!-- Bar 2 (inactive) -->
+  <rect x="18" y="26" width="4" height="12" rx="2"
+        fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.35" />
+
+  <!-- Bar 3 (inactive) -->
+  <rect x="26" y="22" width="4" height="16" rx="2"
+        fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.35" />
+
+  <!-- Bar 4 (inactive, tallest) -->
+  <rect x="34" y="18" width="4" height="20" rx="2"
+        fill="none" stroke="white" stroke-width="2.5" stroke-opacity="0.35" />
+</svg>

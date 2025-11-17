@@ -1,0 +1,56 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Futuristic gradient background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14141f"/>
+      <stop offset="50%" stop-color="#222244"/>
+      <stop offset="100%" stop-color="#3b1f66"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="0" y="0" width="512" height="512" rx="64" ry="64" fill="url(#bgGrad)"/>
+
+  <!-- Pixel grid (equalizer style) -->
+  <g transform="translate(96, 96)">
+    <!-- Glow behind pixels -->
+    <g filter="url(#glow)">
+      <!-- Equalizer columns made of squares (pixels) -->
+      <!-- Column 1 -->
+      <rect x="0" y="224" width="32" height="32" fill="#a855ff"/>
+      <rect x="0" y="192" width="32" height="32" fill="#a855ff"/>
+
+      <!-- Column 2 -->
+      <rect x="48" y="224" width="32" height="32" fill="#c084fc"/>
+      <rect x="48" y="192" width="32" height="32" fill="#c084fc"/>
+      <rect x="48" y="160" width="32" height="32" fill="#c084fc"/>
+
+      <!-- Column 3 -->
+      <rect x="96" y="224" width="32" height="32" fill="#e879f9"/>
+      <rect x="96" y="192" width="32" height="32" fill="#e879f9"/>
+      <rect x="96" y="160" width="32" height="32" fill="#e879f9"/>
+      <rect x="96" y="128" width="32" height="32" fill="#e879f9"/>
+
+      <!-- Column 4 -->
+      <rect x="144" y="224" width="32" height="32" fill="#c4b5fd"/>
+      <rect x="144" y="192" width="32" height="32" fill="#c4b5fd"/>
+      <rect x="144" y="160" width="32" height="32" fill="#c4b5fd"/>
+
+      <!-- Column 5 -->
+      <rect x="192" y="224" width="32" height="32" fill="#818cf8"/>
+      <rect x="192" y="192" width="32" height="32" fill="#818cf8"/>
+
+      <!-- Column 6 -->
+      <rect x="240" y="224" width="32" height="32" fill="#38bdf8"/>
+      <rect x="240" y="192" width="32" height="32" fill="#38bdf8"/>
+      <rect x="240" y="160" width="32" height="32" fill="#38bdf8"/>
+
+      <!-- Column 7 -->
+      <rect x="288" y="224" width="32" height="32" fill="#22d3ee"/>
+      <rect x="288" y="192" width="32" height="32" fill="#22d3ee"/>
+      <rect x="288" y="160" width="32" height="32" fill="#22d3ee"/>
+      <rect x="288" y="128" width="32" height="32" fill="#22d3ee"/>
+    </g>
+  </g>
+
+</svg>
