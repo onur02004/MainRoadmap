@@ -2,6 +2,7 @@ import { Router } from "express";
 import requireAuth from "../middleware/requireAuth.js";
 import 'dotenv/config'; // Ensure environment variables are loaded
 import { q } from "../db/pool.js";
+import { getDominantColors } from "../helpers/imganalyser.js";
 
 const router = Router();
 
@@ -324,8 +325,6 @@ router.get("/api/music/artist-image", requireAuth, async (req, res) => {
 });
 
 router.post("/api/music/suggestions", requireAuth, async (req, res) => {
-    // 1. Get user ID from the requireAuth middleware
-    // (This assumes requireAuth adds user info to req.user)
     const userId = req.user?.sub; 
     console.log("Saving user recomm");
     if (!userId) {
@@ -333,23 +332,21 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
         return res.status(401).json({ error: "Authentication error: User ID not found." });
     }
 
-    // 2. Get data from request body
     const {
-        name,           // selectedSongNameInput
-        artist,         // selectedSongArtistInput
-        imageUrl,       // selectedSongImageUrlInput
-        uri,            // ** We need to add this to the frontend **
-        importance,     // suggestionImportance
-        rating,         // songRating
-        bestTime,       // bestTimeInput
-        comment,        // suggestionComment
-        isPublic,        // suggestionVisibility
+        name,
+        artist,
+        imageUrl,
+        uri,
+        importance,
+        rating,
+        bestTime,
+        comment,
+        isPublic,
         targetUsers,
         song_artist_cover_url,
         song_artist_genre
     } = req.body;
 
-    // 3. Validate essential data
     if (!name || !artist || !uri) {
         return res.status(400).json({ 
             error: "Missing required song data (name, artist, or uri)." 
@@ -358,7 +355,35 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
 
     const targetUserIds = isPublic ? null : targetUsers;
 
-    // 4. Define the SQL query
+    // --- NEW: dominant color calculation (best-effort) ---
+    let overallColor = null;
+    let dominantPointsArray = null;
+
+    try {
+        if (imageUrl) {
+            const colorData = await getDominantColors(imageUrl);
+            // colorData: { overall: "#rrggbb", points: { top_left, top_right, bottom_left, bottom_right, center } }
+
+            if (colorData && colorData.overall) {
+                overallColor = colorData.overall.toLowerCase();
+            }
+
+            if (colorData && colorData.points) {
+                const p = colorData.points;
+                dominantPointsArray = [
+                    p.top_left || null,
+                    p.top_right || null,
+                    p.bottom_left || null,
+                    p.bottom_right || null,
+                    p.center || null
+                ].map(c => c ? c.toLowerCase() : null);
+            }
+        }
+    } catch (err) {
+        console.error("Error calculating dominant colors:", err);
+        // Don’t fail request just because colors failed – we keep nulls
+    }
+
     const sql = `
         INSERT INTO song_suggestions (
             user_id,
@@ -373,12 +398,13 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
             recommended_time_by_user,
             target_users,
             song_artist_cover_url,
-            song_artist_genre
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            song_artist_genre,
+            overall_dominant_color,
+            dominant_colors_points
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *;
     `;
 
-    // 5. Define parameters
     const params = [
         userId,
         uri,
@@ -386,20 +412,20 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
         artist,
         imageUrl,
         importance || 'neutral',
-        rating ? Number(rating) : null, // Convert to number, allow null
-        isPublic === true, // Ensure it's a boolean
+        rating ? Number(rating) : null,
+        isPublic === true,
         comment || null,
         bestTime || null,
         targetUserIds,
         song_artist_cover_url,
-        song_artist_genre
+        song_artist_genre,
+        overallColor,          // $14
+        dominantPointsArray    // $15
     ];
 
     try {
-        // 6. Execute the query
         const result = await q(sql, params);
         
-        // 7. Send success response
         res.status(201).json({ 
             message: "Suggestion added successfully!",
             suggestion: result.rows[0] 
@@ -407,8 +433,7 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error("Error inserting song suggestion:", error);
-        // Check for specific DB errors (e.g., rating out of range)
-        if (error.code === '23514') { // Check constraint violation
+        if (error.code === '23514') {
              return res.status(400).json({ error: "Invalid rating. Must be between 1 and 10." });
         }
         res.status(500).json({ 
@@ -416,6 +441,7 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
         });
     }
 });
+
 
 router.get("/api/music/feed", requireAuth, async (req, res) => {
     const userId = req.user?.sub;
@@ -450,6 +476,8 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
             s.visibility_public,
             s.song_artist_genre,
             s.song_artist_cover_url,
+            s.overall_dominant_color,
+            s.dominant_colors_points,
             u.user_name AS suggester_username,
             u.profile_pic_path AS suggester_avatar
         FROM
@@ -457,7 +485,7 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
         JOIN
             users u ON s.user_id = u.id
         WHERE
-            (s.visibility_public = true OR $1 = ANY(s.target_users))
+            (s.visibility_public = true OR $1 = ANY(s.target_users) OR s.user_id = $1)
         ORDER BY
             s.date_added DESC
         LIMIT $2

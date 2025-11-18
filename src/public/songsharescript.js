@@ -329,88 +329,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchArtistImage(track) {
-    try {
-        // Check if we have artist IDs from the search results
-        if (track.artistIds && track.artistIds.length > 0) {
-            // Use the first artist ID to get the image
-            const artistId = track.artistIds[0];
-            
-            const res = await fetch(`/api/music/artist-image?artistId=${encodeURIComponent(artistId)}`, {
-                credentials: 'include'
-            });
+        try {
+            // Check if we have artist IDs from the search results
+            if (track.artistIds && track.artistIds.length > 0) {
+                // Use the first artist ID to get the image
+                const artistId = track.artistIds[0];
 
-            if (res.ok) {
-                const data = await res.json();
-                artistImageUrl = data.artist.imageUrl;
-                artistGenres = data.artist.genres;
-                console.log('Artist Image URL:', data.artist.imageUrl);
-                console.log('Artist Details:', data.artist);
+                const res = await fetch(`/api/music/artist-image?artistId=${encodeURIComponent(artistId)}`, {
+                    credentials: 'include'
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    artistImageUrl = data.artist.imageUrl;
+                    artistGenres = data.artist.genres;
+                    console.log('Artist Image URL:', data.artist.imageUrl);
+                    console.log('Artist Details:', data.artist);
+                } else {
+                    console.log('Failed to fetch artist image:', res.status);
+
+                    artistImageUrl = null;
+                    artistGenres = [];
+                }
             } else {
-                console.log('Failed to fetch artist image:', res.status);
-                
-                artistImageUrl = null;
-                artistGenres = [];
+                console.log('No artist IDs available for this track');
+                console.log('Track object:', track);
             }
-        } else {
-            console.log('No artist IDs available for this track');
-            console.log('Track object:', track);
+        } catch (error) {
+            console.error('Error fetching artist image:', error);
         }
-    } catch (error) {
-        console.error('Error fetching artist image:', error);
     }
-}
 
     async function searchSpotify() {
-    const query = searchInput.value.trim();
-    if (!query) {
-        searchStatus.textContent = 'Type a song or artist to search.';
-        searchResults.innerHTML = '';
-        selectedSongTitle.textContent = 'No song selected';
-        selectedSongArtistName.textContent = 'Search for a song!';
-        spotifyPreviewContainer.innerHTML = ''; // Clear preview (New!)
-        return;
-    }
-
-    searchStatus.textContent = 'Searching...';
-    searchResults.innerHTML = '';
-    sendSuggestionButton.disabled = true;
-    spotifyPreviewContainer.innerHTML = '';
-
-    try {
-        const res = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`, {
-            credentials: 'include'
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || `HTTP ${res.status}`);
-        }
-
-        const tracks = data.tracks || [];
-        currentResults = tracks;
-
-        if (tracks.length === 0) {
-            searchStatus.textContent = 'No results found.';
+        const query = searchInput.value.trim();
+        if (!query) {
+            searchStatus.textContent = 'Type a song or artist to search.';
             searchResults.innerHTML = '';
+            selectedSongTitle.textContent = 'No song selected';
+            selectedSongArtistName.textContent = 'Search for a song!';
+            spotifyPreviewContainer.innerHTML = ''; // Clear preview (New!)
             return;
         }
 
-        searchStatus.textContent = `Found ${tracks.length} result${tracks.length > 1 ? 's' : ''}. Click one to select.`;
-        renderResults(tracks);
+        searchStatus.textContent = 'Searching...';
+        searchResults.innerHTML = '';
+        sendSuggestionButton.disabled = true;
+        spotifyPreviewContainer.innerHTML = '';
 
-        // NEW: Log artist IDs for debugging
-        tracks.forEach((track, index) => {
-            if (track.artistIds) {
-                console.log(`Track ${index}: ${track.name} - Artist IDs:`, track.artistIds);
+        try {
+            const res = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`, {
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || `HTTP ${res.status}`);
             }
-        });
 
-    } catch (err) {
-        console.error(err);
-        searchStatus.textContent = 'Error searching Spotify. Please try again.';
+            const tracks = data.tracks || [];
+            currentResults = tracks;
+
+            if (tracks.length === 0) {
+                searchStatus.textContent = 'No results found.';
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            searchStatus.textContent = `Found ${tracks.length} result${tracks.length > 1 ? 's' : ''}. Click one to select.`;
+            renderResults(tracks);
+
+            // NEW: Log artist IDs for debugging
+            tracks.forEach((track, index) => {
+                if (track.artistIds) {
+                    console.log(`Track ${index}: ${track.name} - Artist IDs:`, track.artistIds);
+                }
+            });
+
+        } catch (err) {
+            console.error(err);
+            searchStatus.textContent = 'Error searching Spotify. Please try again.';
+        }
     }
-}
 
     function renderResults(tracks) {
         searchResults.innerHTML = '';
@@ -478,9 +478,9 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.bestTime = bestTimeInput.value;
             payload.comment = document.getElementById('suggestionComment').value;
             payload.isPublic = document.getElementById('suggestionVisibility').checked;
-            payload.song_artist_cover_url =  artistImageUrl;
-            payload.song_artist_genre =  artistGenres;
-            
+            payload.song_artist_cover_url = artistImageUrl;
+            payload.song_artist_genre = artistGenres;
+
 
             console.log('Sending suggestion:', payload);
 
@@ -632,14 +632,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'suggestion-card';
 
             // Sanitize comment to prevent HTML injection
-            const safeComment = s.comment_by_user ? 
-                s.comment_by_user.replace(/</g, "&lt;").replace(/>/g, "&gt;") : 
+            const safeComment = s.comment_by_user ?
+                s.comment_by_user.replace(/</g, "&lt;").replace(/>/g, "&gt;") :
                 '';
-            
+
             // Format rating and importance
             const rating = s.rating_by_user ? `<b>${s.rating_by_user}/10</b>` : 'No rating';
             const importance = s.importance || 'neutral';
-            
+
             // Simple date formatting
             const date = new Date(s.date_added).toLocaleDateString();
 
@@ -652,10 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <img class="artistCover"
                 src="${s.song_artist_cover_url}">
             <img class="playBtn" src="./content/playIcon.svg">
-            <div class="SongInfoContainer">
-                <p    style="font-size: 2rem; text-overflow: ellipsis;" class="titleElement">${s.song_name}</p>
-                <p class="artistElement">${s.song_artist}</p>
-            </div>
+            <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
+    <p class="titleElement">${s.song_name}</p>
+    <p class="artistElement">${s.song_artist}</p>
+</div>
             <div class="importanceHolder">
                 <img src="./content/Highimportance.svg">
             </div>
@@ -693,6 +693,58 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
             `;
+
+            const mainPrefab = card.querySelector('.mainPrefab');
+        let points = s.dominant_colors_points || [];
+        if (!Array.isArray(points) && typeof points === 'string') {
+            points = points
+                .replace(/[{}]/g, '')
+                .split(',')
+                .map(v => v.trim())
+                .filter(Boolean);
+        }
+
+        if (mainPrefab && points.length >= 5) {
+            const fallback = s.overall_dominant_color || '#111827';
+            const [tlRaw, trRaw, blRaw, brRaw, cRaw] = points;
+            const tl = tlRaw || fallback;
+            const tr = trRaw || fallback;
+            const bl = blRaw || fallback;
+            const br = brRaw || fallback;
+            const c  = cRaw  || fallback;
+
+            mainPrefab.style.backgroundColor = fallback;
+            mainPrefab.style.backgroundImage = `
+                radial-gradient(circle at 0% 0%,     ${tl} 0, transparent 55%),
+                radial-gradient(circle at 100% 0%,   ${tr} 0, transparent 55%),
+                radial-gradient(circle at 0% 100%,   ${bl} 0, transparent 55%),
+                radial-gradient(circle at 100% 100%, ${br} 0, transparent 55%),
+                radial-gradient(circle at 50% 50%,   ${c}  0, transparent 70%)
+            `;
+        }
+
+        if (mainPrefab) {
+            const baseColor = s.overall_dominant_color 
+                || (Array.isArray(points) && points[4])  // center color as fallback
+                || '#111827';
+
+            const textColor = getReadableTextColor(baseColor);
+
+            // Let all text inside the card inherit this by default
+            mainPrefab.style.color = textColor;
+
+            // Add a theme class for finer tuning in CSS
+            if (textColor === '#ffffff') {
+                mainPrefab.classList.add('card-on-dark');
+                mainPrefab.classList.remove('card-on-light');
+            } else {
+                mainPrefab.classList.add('card-on-light');
+                mainPrefab.classList.remove('card-on-dark');
+            }
+        }
+
+
+
             feedContainer.appendChild(card);
         });
     }
@@ -715,5 +767,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load of the first page of suggestions
     fetchSuggestions(feedPage);
+
+    function getReadableTextColor(hex) {
+        if (!hex || typeof hex !== 'string') return '#ffffff';
+        const clean = hex.replace('#', '');
+        if (clean.length !== 6) return '#ffffff';
+
+        const r = parseInt(clean.substring(0, 2), 16);
+        const g = parseInt(clean.substring(2, 4), 16);
+        const b = parseInt(clean.substring(4, 6), 16);
+
+        // YIQ brightness formula
+        const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+
+        // threshold ~ 150: tweak if needed
+        return yiq >= 150 ? '#000000' : '#ffffff';
+    }
 
 });

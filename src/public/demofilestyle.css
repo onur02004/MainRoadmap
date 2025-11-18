@@ -38,11 +38,18 @@
                 "SongInfoContainer SongInfoContainer SongInfoContainer SongInfoContainer userInfo userInfo"
                 "commentsIcon addIcon likeIcon meh meh dislikeIcon"
                 "highlightTimeContainer publisherCommentHolder publisherCommentHolder publisherCommentHolder publicStatusHolder publicStatusHolder";
-            grid-template-rows: repeat(7, 1fr);
+            /* We will use 'auto' for the row containing SongInfoContainer (row 5) 
+               to let it grow with its content. We'll also update the total number of rows.
+               The rows are: 
+               1, 2, 3, 4, 5 (SongInfoContainer), 6, 7.
+               Row 5 is the one we want to be 'auto'.
+            */
+            grid-template-rows: 1fr 1fr 1fr 1fr auto 1fr 1fr; /* Updated to make SongInfoContainer row auto-height */
             grid-template-columns: repeat(6, 1fr);
             max-width: 400px;
             width: 100%;
-            aspect-ratio: 6 / 7;
+            /* Remove 'aspect-ratio' so height can grow */
+            /* aspect-ratio: 6 / 7; */ 
             gap: 0.75rem;
         }
 
@@ -82,6 +89,12 @@
             flex-direction: column;
             justify-content: center;
             padding: 0.5rem;
+
+            border-width: 1px;
+            border-color: white;
+            border-style: solid;
+            border-radius: 11px;
+            box-shadow: 3px 3px 3px black;
         }
 
         .userProfilePic {
@@ -162,9 +175,8 @@
             line-height: 1.3;
         }
 
-        .SongInfoContainer p:first-child,
         .userInfo p:last-child {
-            font-size: 1.2rem;
+            font-size: 1.7rem;
         }
 
         .SongInfoContainer p:last-child,
@@ -174,9 +186,13 @@
         }
 
         .titleElement {
-            font-size: 1.5rem;
+            font-size: 2.2rem;
             font-weight: 200;
             color: white;
+            /* New lines below: */
+            white-space: normal; /* Allows text to wrap */
+            line-height: 1.1; /* Adjust for better two-line fit */
+            overflow-wrap: break-word; /* Ensures long words break */
         }
 
         .artistElement {

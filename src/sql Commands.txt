@@ -430,3 +430,10 @@ ADD COLUMN target_users uuid[];
 
 ALTER TABLE song_suggestions
 ADD COLUMN song_artist_genre text[];
+
+
+pip install pillow requests
+
+ALTER TABLE public.song_suggestions
+    ADD COLUMN overall_dominant_color text,
+    ADD COLUMN dominant_colors_points text[5];
