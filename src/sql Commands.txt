@@ -1,0 +1,432 @@
+CREATE TABLE images (
+    id              BIGSERIAL PRIMARY KEY,
+    file_path       TEXT NOT NULL,
+    caption         TEXT,                   -- optional short caption/title
+    description     TEXT,                   -- single long description field
+    location_label  TEXT,                   -- e.g. 'Weingarten', 'Izmir'
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE image_members (
+    image_id        BIGINT NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    user_id         UUID   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    can_view        BOOLEAN NOT NULL DEFAULT TRUE,
+    can_share       BOOLEAN NOT NULL DEFAULT TRUE,
+    allow_public    BOOLEAN NOT NULL DEFAULT TRUE,
+
+    PRIMARY KEY (image_id, user_id)
+);
+
+CREATE TABLE image_likes (
+    image_id    BIGINT NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    user_id     UUID   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (image_id, user_id)
+);
+
+CREATE TABLE people (
+    id          BIGSERIAL PRIMARY KEY,
+    name        TEXT NOT NULL,
+    user_id     UUID REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE image_people (
+    image_id    BIGINT NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    person_id   BIGINT NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    PRIMARY KEY (image_id, person_id)
+);
+
+
+
+
+//kullanim: 
+INSERT INTO images (file_path, caption, description, location_label)
+VALUES ('uploads/2025-10-26-abc.jpg', 'Beach Day', 'We spent the afternoon at the sea.', 'Izmir')
+RETURNING id;
+
+
+
+INSERT INTO image_members (image_id, user_id)
+VALUES ($imageId, $onurUUID), ($imageId, $aliUUID);
+
+
+
+INSERT INTO image_likes (image_id, user_id)
+VALUES ($imageId, $currentUser)
+ON CONFLICT DO NOTHING;
+
+
+
+UPDATE images
+SET description = $newText
+WHERE id = $imageId;
+
+
+
+//herseyi al
+SELECT i.id,
+       i.file_path,
+       i.caption,
+       i.description,
+       i.location_label,
+       i.created_at,
+       COUNT(l.user_id) AS like_count
+FROM images i
+LEFT JOIN image_likes l ON l.image_id = i.id
+JOIN image_members m ON m.image_id = i.id
+WHERE m.user_id = $currentUserId
+  AND m.can_view = TRUE
+GROUP BY i.id
+ORDER BY i.created_at DESC;
+
+
+
+
+
+
+
+//forgot password
+CREATE TABLE password_resets (
+  token        TEXT PRIMARY KEY,     -- random string, unguessable
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at   TIMESTAMPTZ NOT NULL,
+  used         BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+
+
+
+//kisiye ozel ozellikler
+CREATE TABLE IF NOT EXISTS features (
+  id    SERIAL PRIMARY KEY,
+  key   TEXT UNIQUE NOT NULL,   -- e.g. 'x', 'y'
+  label TEXT NOT NULL           -- e.g. 'Option X'
+);
+
+-- join table that grants a feature to a specific user
+CREATE TABLE IF NOT EXISTS user_features (
+  user_id   UUID REFERENCES users(id) ON DELETE CASCADE,
+  feature_id INT  REFERENCES features(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, feature_id)
+);
+
+
+INSERT INTO features (key, label) VALUES
+  ('x','Option X'),
+  ('y','Option Y')
+ON CONFLICT (key) DO NOTHING;
+
+//ornek:
+INSERT INTO user_features (user_id, feature_id)
+SELECT u.id, f.id
+FROM users u, features f
+WHERE u.username='onur' AND f.key='x'
+ON CONFLICT DO NOTHING;
+
+
+
+
+
+//kilo takibi
+-- 1) One row per user per calendar day
+CREATE TABLE IF NOT EXISTS weight_entries (
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  entry_date  DATE NOT NULL,            -- user's local calendar date
+  weight_kg   NUMERIC(5,2) NOT NULL,    -- store in kg; convert on frontend if needed
+  note        TEXT,                     -- optional user note (e.g., "after workout")
+  source      TEXT,                     -- 'manual' | 'scale_sync' | 'import' ... (optional)
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  PRIMARY KEY (user_id, entry_date),
+  CHECK (weight_kg > 0 AND weight_kg < 400)  -- sanity bounds; adjust if you prefer
+);
+
+-- Keep updated_at fresh
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER weight_entries_set_updated_at
+BEFORE UPDATE ON weight_entries
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+//api dan ekleme
+-- Insert or overwrite the same day’s value
+INSERT INTO weight_entries (user_id, entry_date, weight_kg, note, source)
+VALUES ($1, $2::date, $3::numeric, $4, $5)
+ON CONFLICT (user_id, entry_date)
+DO UPDATE SET
+  weight_kg = EXCLUDED.weight_kg,
+  note      = EXCLUDED.note,
+  source    = EXCLUDED.source,
+  updated_at= now();
+
+
+//api dan alma
+SELECT entry_date, weight_kg
+FROM weight_entries
+WHERE user_id = $1
+  AND entry_date BETWEEN $2::date AND $3::date
+ORDER BY entry_date;
+
+
+// bos gunler doldurma???
+-- returns every day in range; weight_kg present where recorded, NULL otherwise
+WITH days AS (
+  SELECT generate_series($2::date, $3::date, interval '1 day')::date AS d
+)
+SELECT d.d AS entry_date, we.weight_kg
+FROM days d
+LEFT JOIN weight_entries we
+  ON we.user_id = $1 AND we.entry_date = d.d
+ORDER BY d.d;
+
+
+
+
+
+
+//remote control icin
+-- What kind of thing it is (used to decide UI + which handler runs)
+create table device_kinds (
+  key text primary key,          -- 'led_strip','motor','sensor.temp','sensor.motion','laptop','phone','tablet','watch'
+  label text not null,
+  is_smart boolean not null default false  -- smart devices share a generic handler
+);
+
+-- Each controllable item the user owns
+create table devices (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid not null references users(id) on delete cascade,
+  kind_key text not null references device_kinds(key),
+  display_name text not null,            -- "Desk LEDs", "Ali’s Phone"
+  status text not null default 'offline',-- 'online' | 'offline'
+  last_seen timestamptz,
+  meta jsonb not null default '{}'::jsonb,  -- freeform: { "pixels":60, "pin":"D18" } or {"platform":"android"}
+  created_at timestamptz not null default now()
+);
+
+-- Capabilities drive the UI (which controls to show) and permissioning at action level
+create table device_capabilities (
+  device_id uuid references devices(id) on delete cascade,
+  capability text not null,              -- 'on_off','rgb','brightness','vibrate','notify','read','write','open_url'
+  primary key (device_id, capability)
+);
+
+-- Declarative action list per device so clients know what can be invoked
+create table device_actions (
+  device_id uuid references devices(id) on delete cascade,
+  action text not null,                  -- 'on','off','set_color','set_brightness','vibrate','notify','read_value'
+  param_schema jsonb not null default '{}'::jsonb, -- optional JSON Schema for params
+  handler_key text not null,             -- which Node handler to route to (see below)
+  unique (device_id, action)
+);
+
+-- Pairing by short code (used for “smart” devices and any agent that can display/enter a code)
+create table pairing_codes (
+  code text primary key,                 -- 6 digits
+  device_id uuid not null references devices(id) on delete cascade,
+  expires_at timestamptz not null,
+  used boolean not null default false
+);
+
+-- Optional long-lived token for agents that call home (Pi/ESP32/phone app)
+create table device_tokens (
+  device_id uuid references devices(id) on delete cascade,
+  token text primary key,
+  created_at timestamptz not null default now()
+);
+
+-- Helpful indexes
+create index on devices(owner_user_id);
+create index on devices(kind_key);
+create index on devices(status, last_seen);
+
+
+//adding devices:
+insert into devices (owner_user_id, kind_key, display_name, meta)
+values (
+  'YOUR_USER_ID',
+  'led_strip',
+  'Desk LEDs',
+  '{"pixels":60, "pin":"GPIO18"}'
+)
+returning *;
+
+
+insert into device_capabilities (device_id, capability)
+values
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'on_off'),
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'rgb'),
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'brightness');
+
+
+insert into device_actions (device_id, action, handler_key, param_schema)
+values
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'on', 'led_control.on', '{}'),
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'off', 'led_control.off', '{}'),
+  ('c9e1b8e6-8b42-4df6-9ea3-8b62f12ef67b', 'set_color', 'led_control.setColor', 
+   '{"type":"object","properties":{"r":{"type":"integer"},"g":{"type":"integer"},"b":{"type":"integer"}}}');
+
+
+
+
+
+//workut
+-- 0) One-time helpers
+CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- for gen_random_uuid()
+
+-- 1) A simple catalog of machine types (you can seed a few rows)
+CREATE TABLE IF NOT EXISTS machines (
+  id           SERIAL PRIMARY KEY,
+  name         CITEXT NOT NULL UNIQUE,  -- e.g., 'Treadmill', 'Leg Press', 'Rowing Machine'
+  body_part    TEXT,                    -- optional metadata
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2) A workout session per user (one date, many entries)
+CREATE TABLE IF NOT EXISTS workout_sessions (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_date DATE NOT NULL DEFAULT (now() AT TIME ZONE 'Europe/Berlin')::date,
+  note         TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_date
+  ON workout_sessions (user_id, session_date DESC);
+
+-- 3) Entries inside a workout session, each tied to a machine
+CREATE TABLE IF NOT EXISTS workout_entries (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id    UUID NOT NULL REFERENCES workout_sessions(id) ON DELETE CASCADE,
+  machine_id    INT  NOT NULL REFERENCES machines(id)        ON DELETE RESTRICT,
+  -- “fitness input” fields (keep optional so cardio/strength both fit)
+  minutes       INT,                   -- e.g., cardio duration
+  sets          INT,
+  reps          INT,
+  weight_kg     NUMERIC(6,2),
+  distance_km   NUMERIC(8,3),
+  calories      NUMERIC(8,1),
+  comment       TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_workout_entries_session
+  ON workout_entries (session_id);
+
+-- 4) (Optional) seed some machine names
+INSERT INTO machines (name, body_part) VALUES
+  ('Treadmill','Cardio'), ('Stationary Bike','Cardio'),
+  ('Rowing Machine','Cardio'), ('Bench Press','Chest'),
+  ('Squat Rack','Legs'), ('Leg Press','Legs')
+ON CONFLICT DO NOTHING;
+
+
+INSERT INTO machines (name, body_part) VALUES
+  ('Treadmill','Cardio'), ('Stationary Bike','Cardio'),
+  ('Rowing Machine','Cardio'), ('Bench Press','Chest'),
+  ('Squat Rack','Legs'), ('Pull-up Bar','Back')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO exercises (name, category, primary_muscle, is_bodyweight) VALUES
+  ('Squat','Strength','Legs', false),
+  ('Bench Press','Strength','Chest', false),
+  ('Deadlift','Strength','Back', false),
+  ('Pull-up','Strength','Back', true),
+  ('Rowing','Cardio','Back', false),
+  ('Treadmill Run','Cardio','Legs', false)
+ON CONFLICT DO NOTHING;
+
+
+
+-- User activity tracking table
+CREATE TABLE user_activity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    activity_type TEXT NOT NULL, -- 'page_visit', 'api_call', 'login', 'logout'
+    page_path TEXT,
+    http_method TEXT,
+    endpoint TEXT,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Last online tracking (denormalized for performance)
+ALTER TABLE users ADD COLUMN last_online TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN last_activity JSONB;
+
+ALTER TABLE images ADD COLUMN IF NOT EXISTS file_hash text;
+CREATE UNIQUE INDEX IF NOT EXISTS images_file_hash_uniq ON images (file_hash);
+-- If you prefer to dedupe by path:
+-- CREATE UNIQUE INDEX IF NOT EXISTS images_file_path_uniq ON images (file_path);
+
+
+
+-- 1. (Optional but recommended) Create a custom type for importance.
+-- This ensures 'importance' can only be one of these values.
+CREATE TYPE suggestion_importance AS ENUM (
+    'low', 
+    'neutral', 
+    'high', 
+    'extreme'
+);
+
+-- 2. Create the song suggestions table
+CREATE TABLE song_suggestions (
+    -- Primary Key
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Foreign Key to your 'users' table
+    user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+
+    -- Core Song Info (from Spotify)
+    song_name text NOT NULL,
+    song_artist text NOT NULL,
+    spotify_uri text, -- This is your 'songIdSpotify'
+    song_cover_url text,
+    
+    -- User's Personal Data
+    importance suggestion_importance DEFAULT 'neutral' NOT NULL,
+    rating_by_user smallint CHECK (rating_by_user >= 1 AND rating_by_user <= 10),
+    visibility_public boolean DEFAULT true NOT NULL,
+    comment_by_user text,
+    recommended_time_by_user varchar(10), -- Stores "MM:SS" format
+    
+    -- Timestamps
+    date_added timestamp with time zone DEFAULT now() NOT NULL,
+    date_edited timestamp with time zone,
+
+    -- Stats (for later features)
+    likes_count integer DEFAULT 0 NOT NULL,
+    mehs_count integer DEFAULT 0 NOT NULL,
+    
+    -- Extra fields you requested
+    song_url text,
+    song_url_backup text,
+    song_artist_cover_url text,
+    song_cover_url_backup text,
+    song_artist_cover_url_backup text,
+    song_release_date date,
+    song_played_by_user boolean DEFAULT false
+);
+
+-- 3. Add an index to quickly find all suggestions by a specific user
+CREATE INDEX idx_song_suggestions_user_id ON song_suggestions(user_id);
+
+ALTER TABLE song_suggestions
+ADD COLUMN target_users uuid[];
+
+ALTER TABLE song_suggestions
+ADD COLUMN song_artist_genre text[];
