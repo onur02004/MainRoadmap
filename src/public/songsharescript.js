@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let feedPage = 1;
     let isLoadingFeed = false;
     let hasMoreSuggestions = true;
+    let artistImageUrl = null;
+    let artistGenres = [];
 
     function openUserSearchModal() {
         userSearchModal.classList.add('is-active');
@@ -320,58 +322,99 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable "Suggest this song" button
         sendSuggestionButton.disabled = false;
 
+        fetchArtistImage(track);
 
         // Close the modal after selecting the track!
         closeModal();
     }
 
-    async function searchSpotify() {
-        const query = searchInput.value.trim();
-        if (!query) {
-            searchStatus.textContent = 'Type a song or artist to search.';
-            searchResults.innerHTML = '';
-            selectedSongTitle.textContent = 'No song selected';
-            selectedSongArtistName.textContent = 'Search for a song!';
-            spotifyPreviewContainer.innerHTML = ''; // Clear preview (New!)
-            return;
-        }
-
-        searchStatus.textContent = 'Searching...';
-        searchResults.innerHTML = '';
-        sendSuggestionButton.disabled = true;
-        spotifyPreviewContainer.innerHTML = '';
-
-        try {
-            const res = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`, {
+    async function fetchArtistImage(track) {
+    try {
+        // Check if we have artist IDs from the search results
+        if (track.artistIds && track.artistIds.length > 0) {
+            // Use the first artist ID to get the image
+            const artistId = track.artistIds[0];
+            
+            const res = await fetch(`/api/music/artist-image?artistId=${encodeURIComponent(artistId)}`, {
                 credentials: 'include'
             });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || `HTTP ${res.status}`);
+            if (res.ok) {
+                const data = await res.json();
+                artistImageUrl = data.artist.imageUrl;
+                artistGenres = data.artist.genres;
+                console.log('Artist Image URL:', data.artist.imageUrl);
+                console.log('Artist Details:', data.artist);
+            } else {
+                console.log('Failed to fetch artist image:', res.status);
+                
+                artistImageUrl = null;
+                artistGenres = [];
             }
-
-            const tracks = data.tracks || [];
-            currentResults = tracks;
-
-            if (tracks.length === 0) {
-                searchStatus.textContent = 'No results found.';
-                searchResults.innerHTML = '';
-                return;
-            }
-
-            searchStatus.textContent = `Found ${tracks.length} result${tracks.length > 1 ? 's' : ''}. Click one to select.`;
-            renderResults(tracks);
-
-        } catch (err) {
-            console.error(err);
-            searchStatus.textContent = 'Error searching Spotify. Please try again.';
+        } else {
+            console.log('No artist IDs available for this track');
+            console.log('Track object:', track);
         }
+    } catch (error) {
+        console.error('Error fetching artist image:', error);
     }
+}
+
+    async function searchSpotify() {
+    const query = searchInput.value.trim();
+    if (!query) {
+        searchStatus.textContent = 'Type a song or artist to search.';
+        searchResults.innerHTML = '';
+        selectedSongTitle.textContent = 'No song selected';
+        selectedSongArtistName.textContent = 'Search for a song!';
+        spotifyPreviewContainer.innerHTML = ''; // Clear preview (New!)
+        return;
+    }
+
+    searchStatus.textContent = 'Searching...';
+    searchResults.innerHTML = '';
+    sendSuggestionButton.disabled = true;
+    spotifyPreviewContainer.innerHTML = '';
+
+    try {
+        const res = await fetch(`/api/music/search?track=${encodeURIComponent(query)}`, {
+            credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        const tracks = data.tracks || [];
+        currentResults = tracks;
+
+        if (tracks.length === 0) {
+            searchStatus.textContent = 'No results found.';
+            searchResults.innerHTML = '';
+            return;
+        }
+
+        searchStatus.textContent = `Found ${tracks.length} result${tracks.length > 1 ? 's' : ''}. Click one to select.`;
+        renderResults(tracks);
+
+        // NEW: Log artist IDs for debugging
+        tracks.forEach((track, index) => {
+            if (track.artistIds) {
+                console.log(`Track ${index}: ${track.name} - Artist IDs:`, track.artistIds);
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        searchStatus.textContent = 'Error searching Spotify. Please try again.';
+    }
+}
 
     function renderResults(tracks) {
         searchResults.innerHTML = '';
+
 
         tracks.forEach((track, index) => {
             const li = document.createElement('li');
@@ -415,7 +458,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: selectedSongNameInput.value,
                 artist: selectedSongArtistInput.value,
                 imageUrl: selectedSongImageUrlInput.value,
-                uri: document.getElementById('selectedSongUriInput')?.value
+                uri: document.getElementById('selectedSongUriInput')?.value,
+
             };
 
             // Check if a song is selected
@@ -434,6 +478,9 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.bestTime = bestTimeInput.value;
             payload.comment = document.getElementById('suggestionComment').value;
             payload.isPublic = document.getElementById('suggestionVisibility').checked;
+            payload.song_artist_cover_url =  artistImageUrl;
+            payload.song_artist_genre =  artistGenres;
+            
 
             console.log('Sending suggestion:', payload);
 
@@ -603,10 +650,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
             </div>
             <img class="artistCover"
-                src="https://www.musikblog.de/wp-content/uploads/2017/12/Gorillaz_Credit_Warner_Music.jpg">
+                src="${s.song_artist_cover_url}">
             <img class="playBtn" src="./content/playIcon.svg">
             <div class="SongInfoContainer">
-                <p class="titleElement">${s.song_name}</p>
+                <p    style="font-size: 2rem; text-overflow: ellipsis;" class="titleElement">${s.song_name}</p>
                 <p class="artistElement">${s.song_artist}</p>
             </div>
             <div class="importanceHolder">

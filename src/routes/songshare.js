@@ -246,11 +246,15 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
             // Concatenate all artist names
             const artist = track.artists.map(a => a.name).join(', ');
 
+            const artistIds = track.artists.map(artist => artist.id);
+
+
             return {
                 name: track.name,
                 artist: artist,
                 imageUrl: imageUrl,
-                uri: track.uri
+                uri: track.uri,
+                artistIds: artistIds
             };
         });
 
@@ -262,6 +266,59 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
         console.error("Error fetching data from Spotify:", error);
         return res.status(500).json({ 
             error: error.message || "An unexpected error occurred during Spotify search." 
+        });
+    }
+});
+
+router.get("/api/music/artist-image", requireAuth, async (req, res) => {
+    const artistId = req.query.artistId;
+
+    if (!artistId || artistId.trim() === "") {
+        return res.status(400).json({ error: "Artist ID is required." });
+    }
+
+    try {
+        const token = await getSpotifyToken();
+        
+        // Construct the Spotify API request URL for artist details
+        const artistUrl = `https://api.spotify.com/v1/artists/${artistId}`;
+
+        const artistResponse = await fetch(artistUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!artistResponse.ok) {
+            if (artistResponse.status === 404) {
+                return res.status(404).json({ 
+                    error: "Artist not found." 
+                });
+            }
+            console.error(`Spotify API failed: ${artistResponse.status} ${artistResponse.statusText}`);
+            return res.status(502).json({ 
+                error: "External API error. Could not retrieve artist data." 
+            });
+        }
+
+        const artistData = await artistResponse.json();
+        
+        // Get the largest available artist image (first image in the array is largest)
+        const artistImageUrl = artistData.images?.[0]?.url || null;
+
+        return res.json({ 
+            artist: {
+                id: artistData.id,
+                name: artistData.name,
+                imageUrl: artistImageUrl,
+                genres: artistData.genres || []
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching artist image from Spotify:", error);
+        return res.status(500).json({ 
+            error: error.message || "An unexpected error occurred while fetching artist image." 
         });
     }
 });
@@ -287,7 +344,9 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
         bestTime,       // bestTimeInput
         comment,        // suggestionComment
         isPublic,        // suggestionVisibility
-        targetUsers
+        targetUsers,
+        song_artist_cover_url,
+        song_artist_genre
     } = req.body;
 
     // 3. Validate essential data
@@ -312,8 +371,10 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
             visibility_public,
             comment_by_user,
             recommended_time_by_user,
-            target_users
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            target_users,
+            song_artist_cover_url,
+            song_artist_genre
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *;
     `;
 
@@ -329,7 +390,9 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
         isPublic === true, // Ensure it's a boolean
         comment || null,
         bestTime || null,
-        targetUserIds
+        targetUserIds,
+        song_artist_cover_url,
+        song_artist_genre
     ];
 
     try {
@@ -385,6 +448,8 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
             s.recommended_time_by_user,
             s.date_added,
             s.visibility_public,
+            s.song_artist_genre,
+            s.song_artist_cover_url,
             u.user_name AS suggester_username,
             u.profile_pic_path AS suggester_avatar
         FROM

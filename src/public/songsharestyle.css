@@ -132,10 +132,12 @@
 
 .page {
     display: none;
+    padding-bottom: 50px;
 }
 
 .page.is-active {
     display: block;
+    padding-bottom: 50px;
 }
 
 
