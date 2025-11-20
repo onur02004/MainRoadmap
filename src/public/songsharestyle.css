@@ -354,7 +354,7 @@
 }
 
 .modal-content {
-    background-color: #6366f1;
+    background-color: #131313;
     /* Use your app's background color */
     margin: 5% auto;
     /* 5% from the top and centered */
@@ -611,7 +611,7 @@ section {
                 "albumCover albumCover albumCover albumCover playBtn userProfilePic"
                 "SongInfoContainer SongInfoContainer SongInfoContainer SongInfoContainer userInfo userInfo"
                 "commentsIcon addIcon likeIcon meh meh dislikeIcon"
-                "highlightTimeContainer publisherCommentHolder publisherCommentHolder publisherCommentHolder publicStatusHolder publicStatusHolder";
+                "highlightTimeContainer publisherCommentHolder publisherCommentHolder publisherCommentHolder publicStatusHolder LyricsBtnHolder";
             /* We will use 'auto' for the row containing SongInfoContainer (row 5) 
                to let it grow with its content. We'll also update the total number of rows.
                The rows are: 
@@ -620,7 +620,7 @@ section {
             */
             grid-template-rows: 1fr 1fr 1fr 1fr auto 1fr 1fr; /* Updated to make SongInfoContainer row auto-height */
             grid-template-columns: repeat(6, 1fr);
-            max-width: 400px;
+            max-width: 550px;
             width: 100%;
             /* Remove 'aspect-ratio' so height can grow */
             /* aspect-ratio: 6 / 7; */ 
@@ -740,6 +740,7 @@ section {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            padding: 25px;
         }
 
         .meh {
@@ -762,6 +763,7 @@ section {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            padding: 25px;
         }
 
         .playBtn,
@@ -840,7 +842,7 @@ section {
             font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-weight: 700;
             font-size: 1rem;
-            color: #1a202c;
+            color: #ffffff;
             user-select: none;
         }
 
@@ -899,7 +901,7 @@ section {
     gap: 2rem;               /* 🔥 Cards have space around them */
     padding: 2rem;           /* 🔥 Give breathing room so overflow is visible */
     
-    max-width: 90vw;         /* 🔥 Wider than before */
+    max-width: 95vw;         /* 🔥 Wider than before */
     margin: 0 auto;
     
     overflow: visible !important; /* 🔥 Critical!! Allows gradients to go out */
@@ -944,7 +946,8 @@ section {
 /* Chips / labels / info boxes: darker overlay on bright, lighter overlay on dark */
 .mainPrefab.card-on-dark .highlightTimeContainer,
 .mainPrefab.card-on-dark .publisherCommentHolder,
-.mainPrefab.card-on-dark .publicStatusHolder {
+.mainPrefab.card-on-dark .publicStatusHolder,
+.LyricsBtnHolder{
     background-color: rgba(0, 0, 0, 0.35);
     border-radius: 0.5rem;
 }
@@ -986,3 +989,120 @@ section {
 }
 
 
+.SongInfoContainer p,
+        .userInfo p {
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .userInfo p:last-child {
+            font-size: 1.7rem;
+            /* --- NEW STYLES FOR ELLIPSIS TRUNCATION --- */
+            white-space: nowrap; /* Forces text onto a single line */
+            overflow: hidden; /* Hides content that exceeds the box */
+            text-overflow: ellipsis; /* Displays "..." where text is cut off */
+            max-width: 100%; /* Ensures it respects the parent's width */
+        }
+
+        .ratingHolder {
+    grid-area: ratingHolder;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* New SVG Styling */
+.rating-star {
+    width: 100%;
+    height: 100%;
+    /* Ensure the SVG itself doesn't have an unnecessary fill/stroke that overrides the polygon */
+    overflow: visible;
+}
+
+/* Class for the star polygon element */
+.star-polygon {
+    /* Set up initial state for stroke animation */
+    stroke-dasharray: 100; /* Approximate length of the path */
+    stroke-dashoffset: 100;
+    animation: drawStar 1s ease-out forwards;
+}
+
+#rating-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    user-select: none;
+    z-index: 1; /* Ensure text is above the star */
+}
+
+/* Keyframe animation for the stroke effect */
+@keyframes drawStar {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Optional: Add a subtle pulse to the entire holder on hover */
+.mainPrefab:hover .ratingHolder {
+    animation: ratingPulse 0.5s infinite alternate;
+}
+
+@keyframes ratingPulse {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.05);
+    }
+}
+
+.rating-star {
+    width: 60%; /* Reduced from 100% */
+    height: 60%; /* Reduced from 100% */
+    /* Ensure the SVG itself doesn't have an unnecessary fill/stroke that overrides the polygon */
+    overflow: visible;
+}
+
+.LyricsBtnHolder{
+    grid-area: LyricsBtnHolder;
+    display: flex;    
+    flex-direction: column;
+    justify-content: center;
+    padding: .5rem;
+}
+
+.lyricsIcon{
+    height: 40%;
+    width: 40%;
+}
+
+.lyrics-content {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    background: rgba(15, 23, 42, 0.9);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    color: #e5e7eb;
+}
+
+/* Make the lyrics area in the card obviously clickable */
+.LyricsBtnHolder {
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.08s ease;
+}
+
+.LyricsBtnHolder:hover {
+    background-color: rgba(0, 0, 0, 0.45);
+    transform: translateY(-1px);
+}

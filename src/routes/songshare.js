@@ -3,6 +3,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import 'dotenv/config'; // Ensure environment variables are loaded
 import { q } from "../db/pool.js";
 import { getDominantColors } from "../helpers/imganalyser.js";
+import { getFreeLyricsSmart } from "../helpers/lyricsService.js";
 
 const router = Router();
 
@@ -511,5 +512,36 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
         });
     }
 });
+
+router.get("/api/lyrics", async (req, res) => {
+  const { artist, track } = req.query;
+
+  console.log("Loading Lyrics: " + artist + "-" + track);
+
+  if (!artist || !track) {
+    return res.status(400).json({
+      error: "artist and track are required",
+    });
+  }
+
+  try {
+    const lyrics = await getFreeLyricsSmart(artist, track);
+
+    if (!lyrics) {
+        console.log("Lyrics Not found");
+      return res.status(404).json({
+        error: "Lyrics not found",
+      });
+    }
+    
+    console.log("Lyrics found");
+
+    res.json({ artist, track, lyrics });
+  } catch (err) {
+    console.log("Error fetching lyrics");
+    res.status(500).json({ error: "Error fetching lyrics" });
+  }
+});
+
 
 export default router;

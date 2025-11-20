@@ -23,7 +23,7 @@
             <div class="page page-home is-active">
                 <h1 style="font-size: 3rem; padding-bottom: 50px;">Home Dashboard</h1>
                 <div id="suggestionFeed" class="suggestion-feed-container">
-                    </div>
+                </div>
 
                 <div id="feedLoadingSpinner" class="loading-spinner" style="display: none;">
                     <div class="spinner"></div>
@@ -32,6 +32,44 @@
 
                 <div id="feedEndMessage" class-="feed-end-message" style="display: none;">
                     <p>You've reached the end!</p>
+                </div>
+            </div>
+
+            <div id="lyricsModal" class="modal">
+                <div class="modal-content">
+                    <span id="lyricsCloseButton" class="close-button">&times;</span>
+                    <h2 id="lyricsSongTitle" style="font-size: 2rem; margin-bottom: 0.25rem;"></h2>
+                    <p id="lyricsSongArtist"
+                        style="color: #ccc; margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem;">
+                    </p>
+
+                    <pre id="lyricsContent" class="lyrics-content">
+      Loading lyrics...
+    </pre>
+                </div>
+            </div>
+
+
+            <div id="playbackModal" class="modal">
+                <div class="modal-content">
+                    <span id="playbackCloseButton" class="close-button">&times;</span>
+                    <h2 id="playbackTitle" style="font-size: 2.5rem; margin-bottom: 0;"></h2>
+                    <p id="playbackArtist"
+                        style="color: #ccc; margin-top: 5px; margin-bottom: 20px; font-size: 1.5rem;"></p>
+
+                    <div id="playbackSpotifyPreview" class="spotify-preview-container" style="margin-bottom: 20px;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <a id="openSpotifyBtn" href="#" target="_blank" class="primary-btn"
+                            style="background: #1DB954;">
+                            Open on Spotify <i class="fab fa-spotify"></i>
+                        </a>
+                        <a id="openYoutubeBtn" href="#" target="_blank" class="primary-btn"
+                            style="background: #FF0000;">
+                            Open on YouTube <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 

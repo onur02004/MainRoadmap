@@ -77,6 +77,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedEndMessage = document.getElementById('feedEndMessage');
     const mainScrollSection = document.querySelector('section[style*="overflow-y: scroll"]');
 
+    const playbackModal = document.getElementById('playbackModal');
+    const playbackCloseButton = document.getElementById('playbackCloseButton');
+    const playbackTitle = document.getElementById('playbackTitle');
+    const playbackArtist = document.getElementById('playbackArtist');
+    const playbackSpotifyPreview = document.getElementById('playbackSpotifyPreview');
+    const openSpotifyBtn = document.getElementById('openSpotifyBtn');
+    const openYoutubeBtn = document.getElementById('openYoutubeBtn');
+
+    const lyricsModal = document.getElementById('lyricsModal');
+    const lyricsCloseButton = document.getElementById('lyricsCloseButton');
+    const lyricsSongTitle = document.getElementById('lyricsSongTitle');
+    const lyricsSongArtist = document.getElementById('lyricsSongArtist');
+    const lyricsContent = document.getElementById('lyricsContent');
+
+
     const spotifyPreviewContainer = document.getElementById('spotifyPreviewContainer');
     let currentResults = [];
     let selectedTargetUsers = [];
@@ -459,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 artist: selectedSongArtistInput.value,
                 imageUrl: selectedSongImageUrlInput.value,
                 uri: document.getElementById('selectedSongUriInput')?.value,
-
             };
 
             // Check if a song is selected
@@ -481,7 +495,11 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.song_artist_cover_url = artistImageUrl;
             payload.song_artist_genre = artistGenres;
 
+            payload.targetUsers = payload.isPublic
+                ? null
+                : selectedTargetUsers.map(u => u.id);
 
+            console.log('payload target users: ' + payload.targetUsers);
             console.log('Sending suggestion:', payload);
 
             // 3. Send to backend
@@ -631,119 +649,159 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'suggestion-card';
 
+            // 1. Determine Importance SVG
+            let importanceSvgFile = 'Neutralimportance.svg'; // Default
+            switch (s.importance) {
+                case 'low':
+                    importanceSvgFile = 'Lowimportance.svg';
+                    break;
+                case 'high':
+                    importanceSvgFile = 'Highimportance.svg';
+                    break;
+                case 'extreme':
+                    importanceSvgFile = 'Extremeimportance.svg';
+                    break;
+                // 'neutral' case is handled by the default
+            }
+
             // Sanitize comment to prevent HTML injection
             const safeComment = s.comment_by_user ?
-                s.comment_by_user.replace(/</g, "&lt;").replace(/>/g, "&gt;") :
+                s.comment_by_user.replace(/</g, "&lt;").replace(/>/g, "&gt;") : // Correct sanitization
                 '';
-
-            // Format rating and importance
-            const rating = s.rating_by_user ? `<b>${s.rating_by_user}/10</b>` : 'No rating';
-            const importance = s.importance || 'neutral';
 
             // Simple date formatting
             const date = new Date(s.date_added).toLocaleDateString();
 
+            // 2. Updated Card InnerHTML
             card.innerHTML = `
-
-                <div class="mainPrefab">
-            <div class="albumCover">
-                <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
-            </div>
-            <img class="artistCover"
-                src="${s.song_artist_cover_url}">
-            <img class="playBtn" src="./content/playIcon.svg">
-            <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
-    <p class="titleElement">${s.song_name}</p>
-    <p class="artistElement">${s.song_artist}</p>
-</div>
-            <div class="importanceHolder">
-                <img src="./content/Highimportance.svg">
-            </div>
-            <div class="ratingHolder">
-                <svg class="star-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <polygon
-                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                    </polygon>
-                </svg>
-
-                <span id="rating-number">${s.rating_by_user}</span>
-            </div>
-            <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
-            <div class="userInfo">
-                <p>${date}</p>
-                <p>${s.suggester_username}</p>
-            </div>
-            <img class="commentsIcon" src="./content/commentsIcon.svg">
-            <img class="addIcon" src="./content/addIcon.svg">
-            <img class="likeIcon" src="./content/likeIcon.svg">
-            <p class="meh">MEH</p>
-            <img class="dislikeIcon" src="./content/dislikeIcon.svg">
-            <div class="highlightTimeContainer">
-                <p>Highlight time:</p>
-                <p>${s.recommended_time_by_user}</p>
-            </div>
-            <div class="publisherCommentHolder">
-                <p>Publisher Comment:</p>
-                <p>${s.comment_by_user}</p>
-            </div>
-            <div class="publicStatusHolder">
-                <p>Is Pubic:</p>
-                <p>${s.visibility_public}</p>
-            </div>
+            <div class="mainPrefab">
+        <div class="albumCover">
+            <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
         </div>
-            `;
+        <img class="artistCover"
+            src="${s.song_artist_cover_url}">
+        <img class="playBtn" src="./content/playIcon.svg">
+        <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
+<p class="titleElement">${s.song_name}</p>
+<p class="artistElement">${s.song_artist}</p>
+</div>
+        <div class="importanceHolder">
+            <img src="./content/${importanceSvgFile}">
+        </div>
+        <div class="ratingHolder" data-rating="${s.rating_by_user}">
+            <svg class="rating-star" viewBox="0 0 24 24">
+                <defs>
+                    <linearGradient id="star-fill-${s.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="${s.rating_by_user * 10}%" stop-color="#FFC107" />
+                        <stop offset="${s.rating_by_user * 10}%" stop-color="#334155" />
+                    </linearGradient>
+                </defs>
+                <polygon
+                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                    fill="url(#star-fill-${s.id})"
+                    stroke="#FFC107"
+                    stroke-width="1.5"
+                    class="star-polygon"
+                    style="opacity: 0.3"
+                    />
+            </svg>
+            <span id="rating-number">${s.rating_by_user}</span>
+        </div>
+        <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
+        <div class="userInfo">
+            <p>${date}</p>
+            <p>${s.suggester_username}</p>
+        </div>
+        <img class="commentsIcon" src="./content/commentsIcon.svg">
+        <img class="addIcon" src="./content/addIcon.svg">
+        <img class="likeIcon" src="./content/likeIcon.svg">
+        <p class="meh">MEH</p>
+        <img class="dislikeIcon" src="./content/dislikeIcon.svg">
+        <div class="highlightTimeContainer">
+            <p>Highlight time:</p>
+            <p>${s.recommended_time_by_user || 'N/A'}</p>
+        </div>
+        <div class="publisherCommentHolder">
+            <p>Publisher Comment:</p>
+            <p>${safeComment || 'No comment.'}</p>
+        </div>
+        <div class="publicStatusHolder">
+            <p>Visibility:</p>
+            <p>${s.visibility_public ? 'Public' : 'Private'}</p>
+        </div>
+        <div class="LyricsBtnHolder">
+            <p>Lyrics:</p>
+            <img class="lyricsIcon" src="./content/lyricsicon.svg">
+        </div>
+
+    </div>
+        `;
 
             const mainPrefab = card.querySelector('.mainPrefab');
-        let points = s.dominant_colors_points || [];
-        if (!Array.isArray(points) && typeof points === 'string') {
-            points = points
-                .replace(/[{}]/g, '')
-                .split(',')
-                .map(v => v.trim())
-                .filter(Boolean);
-        }
+            let points = s.dominant_colors_points || [];
+            if (!Array.isArray(points) && typeof points === 'string') {
+                points = points
+                    .replace(/[{}]/g, '')
+                    .split(',')
+                    .map(v => v.trim())
+                    .filter(Boolean);
+            }
 
-        if (mainPrefab && points.length >= 5) {
-            const fallback = s.overall_dominant_color || '#111827';
-            const [tlRaw, trRaw, blRaw, brRaw, cRaw] = points;
-            const tl = tlRaw || fallback;
-            const tr = trRaw || fallback;
-            const bl = blRaw || fallback;
-            const br = brRaw || fallback;
-            const c  = cRaw  || fallback;
+            if (mainPrefab && points.length >= 5) {
+                const fallback = s.overall_dominant_color || '#111827';
+                const [tlRaw, trRaw, blRaw, brRaw, cRaw] = points;
+                const tl = tlRaw || fallback;
+                const tr = trRaw || fallback;
+                const bl = blRaw || fallback;
+                const br = brRaw || fallback;
+                const c = cRaw || fallback;
 
-            mainPrefab.style.backgroundColor = fallback;
-            mainPrefab.style.backgroundImage = `
+                mainPrefab.style.backgroundColor = fallback;
+                mainPrefab.style.backgroundImage = `
                 radial-gradient(circle at 0% 0%,     ${tl} 0, transparent 55%),
                 radial-gradient(circle at 100% 0%,   ${tr} 0, transparent 55%),
                 radial-gradient(circle at 0% 100%,   ${bl} 0, transparent 55%),
                 radial-gradient(circle at 100% 100%, ${br} 0, transparent 55%),
                 radial-gradient(circle at 50% 50%,   ${c}  0, transparent 70%)
             `;
-        }
-
-        if (mainPrefab) {
-            const baseColor = s.overall_dominant_color 
-                || (Array.isArray(points) && points[4])  // center color as fallback
-                || '#111827';
-
-            const textColor = getReadableTextColor(baseColor);
-
-            // Let all text inside the card inherit this by default
-            mainPrefab.style.color = textColor;
-
-            // Add a theme class for finer tuning in CSS
-            if (textColor === '#ffffff') {
-                mainPrefab.classList.add('card-on-dark');
-                mainPrefab.classList.remove('card-on-light');
-            } else {
-                mainPrefab.classList.add('card-on-light');
-                mainPrefab.classList.remove('card-on-dark');
             }
-        }
+
+            if (mainPrefab) {
+                const baseColor = s.overall_dominant_color
+                    || (Array.isArray(points) && points[4])  // center color as fallback
+                    || '#111827';
+
+                const textColor = getReadableTextColor(baseColor);
+
+                // Let all text inside the card inherit this by default
+                mainPrefab.style.color = textColor;
+
+                // Add a theme class for finer tuning in CSS
+                if (textColor === '#ffffff') {
+                    mainPrefab.classList.add('card-on-dark');
+                    mainPrefab.classList.remove('card-on-light');
+                } else {
+                    mainPrefab.classList.add('card-on-light');
+                    mainPrefab.classList.remove('card-on-dark');
+                }
+            }
 
 
+            const playButton = card.querySelector('.playBtn');
+            if (playButton) {
+                playButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPlaybackModal(s); // Call the new handler
+                });
+            }
+
+            const lyricsBtn = card.querySelector('.LyricsBtnHolder');
+            if (lyricsBtn) {
+                lyricsBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openLyricsForSuggestion(s);
+                });
+            }
 
             feedContainer.appendChild(card);
         });
@@ -783,5 +841,149 @@ document.addEventListener('DOMContentLoaded', () => {
         // threshold ~ 150: tweak if needed
         return yiq >= 150 ? '#000000' : '#ffffff';
     }
+
+    // Add these functions near your existing openModal/closeModal functions
+    function openPlaybackModal() {
+        playbackModal.classList.add('is-active');
+    }
+
+    function closePlaybackModal() {
+        playbackModal.classList.remove('is-active');
+        playbackSpotifyPreview.innerHTML = ''; // Clear the iframe
+    }
+
+    function openLyricsModal() {
+        if (!lyricsModal) return;
+        lyricsModal.classList.add('is-active');
+    }
+
+    function closeLyricsModal() {
+        if (!lyricsModal) return;
+        lyricsModal.classList.remove('is-active');
+        if (lyricsContent) {
+            lyricsContent.textContent = '';
+        }
+    }
+
+    if (lyricsCloseButton) {
+        lyricsCloseButton.addEventListener('click', closeLyricsModal);
+    }
+
+    // Close lyrics modal if user clicks outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === lyricsModal) {
+            closeLyricsModal();
+        }
+    });
+
+
+    if (playbackCloseButton) {
+        playbackCloseButton.addEventListener('click', closePlaybackModal);
+    }
+
+    // Close modal if user clicks outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target === playbackModal) {
+            closePlaybackModal();
+        }
+    });
+
+
+    function showPlaybackModal(suggestion) {
+        // 1. **CRITICAL FIX**: Use the correct property: 'spotify_uri'
+        const songUri = suggestion.spotify_uri;
+
+        // 2. Updated conditional check using the correct variable
+        if (!songUri || typeof songUri !== 'string') {
+            console.error("Cannot open playback modal: Spotify URI is missing or invalid.", suggestion);
+            return;
+        }
+
+
+        const trackId = songUri.split(':')[2]; // Gets "1GwuB8Vq48Q82kXzV1Lw0Q"
+
+        const iframeSrc = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+
+        const iframeHTML = `
+    <iframe 
+        data-testid="embed-iframe" 
+        style="border-radius:12px" 
+        src="${iframeSrc}&theme=0" 
+        width="100%" 
+        height="352"
+        frameBorder="0" 
+        allowfullscreen="true" 
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+        loading="lazy">
+    </iframe>
+    `;
+
+
+        // 5. Populate the modal content
+        playbackTitle.textContent = suggestion.song_name;
+        playbackArtist.textContent = `by ${suggestion.song_artist}`;
+        playbackSpotifyPreview.innerHTML = iframeHTML;
+
+        // 6. Set the button links
+        const spotifyWebUrl = `https://open.spotify.com/track/${trackId}`; // Use standard Spotify Web URL
+
+        const youtubeQuery = `${suggestion.song_name} ${suggestion.song_artist} official audio`;
+        const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}`;
+
+        openSpotifyBtn.href = spotifyWebUrl;
+        openYoutubeBtn.href = youtubeSearchUrl;
+
+        // 7. Open the modal
+        openPlaybackModal();
+    }
+
+        async function openLyricsForSuggestion(suggestion) {
+        if (!suggestion) return;
+
+        const trackName = suggestion.song_name || '';
+        const artistName = suggestion.song_artist || '';
+
+        if (!trackName || !artistName) {
+            console.error('Missing song name or artist for lyrics:', suggestion);
+            return;
+        }
+
+        // Set header + placeholder text
+        lyricsSongTitle.textContent = trackName;
+        lyricsSongArtist.textContent = `by ${artistName}`;
+        lyricsContent.textContent = 'Loading lyrics...';
+
+        openLyricsModal();
+
+        try {
+            const res = await fetch(
+                `/api/lyrics?artist=${encodeURIComponent(artistName)}&track=${encodeURIComponent(trackName)}`,
+                { credentials: 'include' }
+            );
+
+            let data = null;
+            try {
+                data = await res.json();
+            } catch {
+                data = null;
+            }
+
+            if (!res.ok) {
+                throw new Error(data?.error || `Error ${res.status}`);
+            }
+
+            const lyricsText = data?.lyrics || data?.lyrics_text || null;
+
+            if (!lyricsText) {
+                lyricsContent.textContent = 'Lyrics not found for this track.';
+            } else {
+                lyricsContent.textContent = lyricsText;
+            }
+        } catch (err) {
+            console.error('Error fetching lyrics:', err);
+            lyricsContent.textContent = 'Error loading lyrics. Please try again later.';
+        }
+    }
+
 
 });
