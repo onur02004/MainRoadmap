@@ -437,3 +437,34 @@ pip install pillow requests
 ALTER TABLE public.song_suggestions
     ADD COLUMN overall_dominant_color text,
     ADD COLUMN dominant_colors_points text[5];
+
+
+    
+
+    CREATE TYPE song_reaction_type AS ENUM ('like', 'meh', 'dislike');
+
+CREATE TABLE song_suggestion_reactions (
+    suggestion_id UUID NOT NULL REFERENCES song_suggestions(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    song_reaction_type song_reaction_type NOT NULL,
+    date_reacted TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (suggestion_id, user_id) -- Ensures a user can only react once per suggestion
+);
+
+CREATE INDEX idx_song_reaction_suggestion_id ON song_suggestion_reactions(suggestion_id);
+
+CREATE TABLE song_suggestion_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    suggestion_id UUID NOT NULL REFERENCES song_suggestions(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    comment_text TEXT NOT NULL,
+    date_added TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_song_comment_suggestion_id ON song_suggestion_comments(suggestion_id);
+
+
+ALTER TABLE song_suggestions
+ADD COLUMN like_count integer NOT NULL DEFAULT 0,
+ADD COLUMN meh_count integer NOT NULL DEFAULT 0,
+ADD COLUMN dislike_count integer NOT NULL DEFAULT 0;

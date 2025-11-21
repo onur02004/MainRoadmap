@@ -49,6 +49,27 @@
                 </div>
             </div>
 
+            <div id="commentsModal" class="modal">
+                <div class="modal-content">
+                    <span id="commentsCloseButton" class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Comments for:</h2>
+                    <p id="commentSongTitleArtist"
+                        style="color: #ccc; margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem;"></p>
+
+                    <div id="commentsList" class="search-results" style="max-height: 350px;">
+                    </div>
+
+                    <div class="field-group" style="margin-top: 1.5rem;">
+                        <label for="newCommentInput" class="field-label">Add a Comment</label>
+                        <textarea id="newCommentInput" placeholder="Share your thoughts..." class="modern-textarea"
+                            rows="2"></textarea>
+                        <button type="button" id="submitCommentBtn" class="primary-btn"
+                            style="margin-top: 0.5rem; width: 100%;">
+                            Post Comment
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div id="playbackModal" class="modal">
                 <div class="modal-content">

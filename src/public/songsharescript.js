@@ -91,6 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const lyricsSongArtist = document.getElementById('lyricsSongArtist');
     const lyricsContent = document.getElementById('lyricsContent');
 
+    const commentsModal = document.getElementById('commentsModal');
+    const commentsCloseButton = document.getElementById('commentsCloseButton');
+    const commentSongTitleArtist = document.getElementById('commentSongTitleArtist');
+    const commentsList = document.getElementById('commentsList');
+    const newCommentInput = document.getElementById('newCommentInput');
+    const submitCommentBtn = document.getElementById('submitCommentBtn');
+    let currentSuggestionId = null; // To store the suggestion ID being viewed/commented on
 
     const spotifyPreviewContainer = document.getElementById('spotifyPreviewContainer');
     let currentResults = [];
@@ -712,11 +719,20 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>${date}</p>
             <p>${s.suggester_username}</p>
         </div>
-        <img class="commentsIcon" src="./content/commentsIcon.svg">
-        <img class="addIcon" src="./content/addIcon.svg">
-        <img class="likeIcon" src="./content/likeIcon.svg">
-        <p class="meh">MEH</p>
-        <img class="dislikeIcon" src="./content/dislikeIcon.svg">
+        <img class="commentsIcon" data-action="comment" data-id="${s.id}" src="./content/commentsIcon.svg">
+                <img class="addIcon" src="./content/addIcon.svg">
+                <div class="likeIcon-wrapper reaction-ring">
+    <img class="likeIcon" data-action="like" data-id="${s.id}" src="./content/likeIcon.svg">
+</div>
+
+<div class="meh-wrapper reaction-ring">
+    <p class="meh" data-action="meh" data-id="${s.id}">MEH</p>
+</div>
+
+<div class="dislikeIcon-wrapper reaction-ring">
+    <img class="dislikeIcon" data-action="dislike" data-id="${s.id}" src="./content/dislikeIcon.svg">
+</div>
+
         <div class="highlightTimeContainer">
             <p>Highlight time:</p>
             <p>${s.recommended_time_by_user || 'N/A'}</p>
@@ -733,7 +749,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>Lyrics:</p>
             <img class="lyricsIcon" src="./content/lyricsicon.svg">
         </div>
-
     </div>
         `;
 
@@ -803,7 +818,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            const commentsIcon = card.querySelector('.commentsIcon');
+            if (commentsIcon) {
+                commentsIcon.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showCommentsModal(s);
+                });
+            }
+
+            const reactionElements = card.querySelectorAll('[data-action="like"], [data-action="meh"], [data-action="dislike"]');
+            reactionElements.forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const action = el.getAttribute('data-action');
+                    handleReaction(s.id, action);
+                });
+            });
+
             feedContainer.appendChild(card);
+
+            updateReactionUI(s.id, s.current_user_reaction || null);
         });
     }
 
@@ -888,6 +922,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function openCommentsModal() {
+        if (!commentsModal) return;
+        commentsModal.classList.add('is-active');
+    }
+
+    function closeCommentsModal() {
+        if (!commentsModal) return;
+        commentsModal.classList.remove('is-active');
+        commentsList.innerHTML = '';
+        newCommentInput.value = '';
+    }
+
+    if (commentsCloseButton) {
+        commentsCloseButton.addEventListener('click', closeCommentsModal);
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === commentsModal) {
+            closeCommentsModal();
+        }
+    });
+
 
     function showPlaybackModal(suggestion) {
         // 1. **CRITICAL FIX**: Use the correct property: 'spotify_uri'
@@ -937,7 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openPlaybackModal();
     }
 
-        async function openLyricsForSuggestion(suggestion) {
+    async function openLyricsForSuggestion(suggestion) {
         if (!suggestion) return;
 
         const trackName = suggestion.song_name || '';
@@ -985,5 +1041,136 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function showCommentsModal(suggestion) {
+        currentSuggestionId = suggestion.id; // Store the ID
+        commentSongTitleArtist.textContent = `${suggestion.song_name} by ${suggestion.song_artist}`;
+        openCommentsModal();
+        await fetchAndRenderComments(suggestion.id);
+    }
+
+    // Function to fetch and render comments
+    async function fetchAndRenderComments(suggestionId) {
+        commentsList.innerHTML = '<li>Loading comments...</li>';
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${suggestionId}/comments`, {
+                credentials: 'include'
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch comments');
+
+            const data = await res.json();
+            const comments = data.comments;
+
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<li>No comments yet. Be the first!</li>';
+                return;
+            }
+
+            commentsList.innerHTML = '';
+            comments.forEach(c => {
+                const li = document.createElement('li');
+                li.className = 'search-result-item'; // Reuse existing list item style
+                li.style.flexDirection = 'column';
+                li.style.alignItems = 'flex-start';
+                li.innerHTML = `
+                    <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+                        <img src="media/${c.commenter_avatar || './content/default.jpg'}" alt="Avatar" class="search-result-cover" style="width: 25px; height: 25px;">
+                        <span class="search-result-title" style="font-size: 1rem; color: #22d3ee; margin-right: auto;">${c.commenter_username}</span>
+                        <span style="font-size: 0.8rem; color: #64748b;">${new Date(c.date_added).toLocaleDateString()}</span>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.4;">${c.comment_text}</p>
+                `;
+                commentsList.appendChild(li);
+            });
+
+        } catch (err) {
+            console.error('Error fetching comments:', err);
+            commentsList.innerHTML = '<li>Error loading comments.</li>';
+        }
+    }
+
+    // Function to submit a new comment
+    if (submitCommentBtn) {
+        submitCommentBtn.addEventListener('click', async () => {
+            const commentText = newCommentInput.value.trim();
+            if (!commentText || !currentSuggestionId) return;
+
+            submitCommentBtn.textContent = 'Posting...';
+            submitCommentBtn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/music/suggestions/${currentSuggestionId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ commentText })
+                });
+
+                if (!res.ok) throw new Error('Failed to post comment');
+
+                newCommentInput.value = ''; // Clear input
+                submitCommentBtn.textContent = 'Posted!';
+
+                // Re-fetch comments to update the list
+                await fetchAndRenderComments(currentSuggestionId);
+
+                setTimeout(() => {
+                    submitCommentBtn.textContent = 'Post Comment';
+                    submitCommentBtn.disabled = false;
+                }, 1500);
+
+            } catch (err) {
+                console.error('Error posting comment:', err);
+                alert('Failed to post comment.');
+                submitCommentBtn.textContent = 'Post Comment';
+                submitCommentBtn.disabled = false;
+            }
+        });
+    }
+
+    async function handleReaction(suggestionId, action) {
+        console.log(`Reacting to ${suggestionId} with ${action}`);
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${suggestionId}/react`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ action })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to submit reaction');
+            }
+
+            console.log('New reaction state:', data.currentReaction);
+            updateReactionUI(suggestionId, data.currentReaction || null);
+
+        } catch (err) {
+            console.error('Error with reaction:', err);
+            alert(`Could not process reaction: ${err.message}`);
+        }
+    }
+
+
+    function updateReactionUI(suggestionId, currentReaction) {
+        // Get the 3 reaction elements for this suggestion
+        const likeEl = document.querySelector(`.likeIcon[data-id="${suggestionId}"]`);
+        const mehEl = document.querySelector(`.meh[data-id="${suggestionId}"]`);
+        const dislikeEl = document.querySelector(`.dislikeIcon[data-id="${suggestionId}"]`);
+
+        // Clear previous state
+        [likeEl, mehEl, dislikeEl].forEach(el => el && el.classList.remove('active'));
+
+        // Highlight the new one (if any)
+        if (currentReaction === 'like' && likeEl) likeEl.classList.add('active');
+        if (currentReaction === 'meh' && mehEl) mehEl.classList.add('active');
+        if (currentReaction === 'dislike' && dislikeEl) dislikeEl.classList.add('active');
+    }
+
+    
 
 });

@@ -480,11 +480,15 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
             s.overall_dominant_color,
             s.dominant_colors_points,
             u.user_name AS suggester_username,
-            u.profile_pic_path AS suggester_avatar
+            u.profile_pic_path AS suggester_avatar,
+            r.song_reaction_type AS current_user_reaction
         FROM
             song_suggestions s
         JOIN
             users u ON s.user_id = u.id
+        LEFT JOIN
+            song_suggestion_reactions r
+            ON r.suggestion_id = s.id AND r.user_id = $1 
         WHERE
             (s.visibility_public = true OR $1 = ANY(s.target_users) OR s.user_id = $1)
         ORDER BY
@@ -543,5 +547,155 @@ router.get("/api/lyrics", async (req, res) => {
   }
 });
 
+// New API for handling Likes, Mehs, and Dislikes
+router.post("/api/music/suggestions/:id/react", requireAuth, async (req, res) => {
+    const userId = req.user?.sub;
+    const suggestionId = req.params.id;
+    const { action } = req.body; // 'like', 'meh', 'dislike', 'remove'
+
+    if (!userId) {
+        return res.status(401).json({ error: "Authentication error: User ID not found." });
+    }
+    if (!['like', 'meh', 'dislike', 'remove'].includes(action)) {
+        return res.status(400).json({ error: "Invalid reaction action." });
+    }
+
+    try {
+        await q('BEGIN');
+
+        // Lock existing row (if any) for this user+suggestion
+        const existingRes = await q(`
+            SELECT song_reaction_type
+            FROM song_suggestion_reactions
+            WHERE suggestion_id = $1 AND user_id = $2
+            FOR UPDATE;
+        `, [suggestionId, userId]);
+
+        const existing = existingRes.rows[0]?.song_reaction_type || null;
+        let newReaction = existing;
+
+        if (action === 'remove') {
+            // Explicit remove
+            if (existing) {
+                await q(`
+                    DELETE FROM song_suggestion_reactions
+                    WHERE suggestion_id = $1 AND user_id = $2;
+                `, [suggestionId, userId]);
+                newReaction = null;
+            }
+        } else {
+            // like / meh / dislike
+            if (!existing) {
+                // no reaction -> set one
+                await q(`
+                    INSERT INTO song_suggestion_reactions (suggestion_id, user_id, song_reaction_type)
+                    VALUES ($1, $2, $3);
+                `, [suggestionId, userId, action]);
+                newReaction = action;
+            } else if (existing === action) {
+                // same reaction clicked again -> toggle off
+                await q(`
+                    DELETE FROM song_suggestion_reactions
+                    WHERE suggestion_id = $1 AND user_id = $2;
+                `, [suggestionId, userId]);
+                newReaction = null;
+            } else {
+                // change opinion -> update reaction
+                await q(`
+                    UPDATE song_suggestion_reactions
+                    SET song_reaction_type = $3
+                    WHERE suggestion_id = $1 AND user_id = $2;
+                `, [suggestionId, userId, action]);
+                newReaction = action;
+            }
+        }
+
+        await q('COMMIT');
+
+        res.status(200).json({
+            message: "Reaction updated.",
+            currentReaction: newReaction // 'like' | 'meh' | 'dislike' | null
+        });
+
+    } catch (error) {
+        await q('ROLLBACK');
+        console.error("Error processing reaction:", error);
+        res.status(500).json({
+            error: "An unexpected error occurred while processing reaction."
+        });
+    }
+});
+
+
+// New API to fetch comments for a suggestion
+router.get("/api/music/suggestions/:id/comments", requireAuth, async (req, res) => {
+    const suggestionId = req.params.id;
+
+    const sql = `
+        SELECT
+            c.id,
+            c.comment_text,
+            c.date_added,
+            u.user_name AS commenter_username,
+            u.profile_pic_path AS commenter_avatar
+        FROM
+            song_suggestion_comments c
+        JOIN
+            users u ON c.user_id = u.id
+        WHERE
+            c.suggestion_id = $1
+        ORDER BY
+            c.date_added DESC;
+    `;
+
+    try {
+        const result = await q(sql, [suggestionId]);
+
+        res.status(200).json({ 
+            comments: result.rows 
+        });
+
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ 
+            error: "An unexpected error occurred while fetching comments." 
+        });
+    }
+});
+
+// New API to add a comment
+router.post("/api/music/suggestions/:id/comments", requireAuth, async (req, res) => {
+    const userId = req.user?.sub;
+    const suggestionId = req.params.id;
+    const { commentText } = req.body;
+
+    if (!userId) {
+        return res.status(401).json({ error: "Authentication error: User ID not found." });
+    }
+    if (!commentText || commentText.trim() === "") {
+        return res.status(400).json({ error: "Comment text cannot be empty." });
+    }
+
+    const sql = `
+        INSERT INTO song_suggestion_comments (suggestion_id, user_id, comment_text)
+        VALUES ($1, $2, $3)
+        RETURNING *;
+    `;
+
+    try {
+        const result = await q(sql, [suggestionId, userId, commentText.trim()]);
+        
+        res.status(201).json({ 
+            message: "Comment added successfully!",
+            comment: result.rows[0] 
+        });
+
+    } catch (error) {
+        console.error("Error inserting comment:", error);
+        res.status(500).json({ 
+            error: "An unexpected error occurred while saving the comment." 
+        });
+    }
+});
 
 export default router;
