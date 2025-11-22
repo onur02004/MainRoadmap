@@ -468,3 +468,56 @@ ALTER TABLE song_suggestions
 ADD COLUMN like_count integer NOT NULL DEFAULT 0,
 ADD COLUMN meh_count integer NOT NULL DEFAULT 0,
 ADD COLUMN dislike_count integer NOT NULL DEFAULT 0;
+
+
+INSERT INTO features (id, key, label)
+VALUES (4, 'wl', 'Wishlist')
+
+CREATE TABLE wishlist_items (
+    item_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    user_id VARCHAR(128) NOT NULL,
+
+    article_name VARCHAR(255) NOT NULL,
+    article_img_path VARCHAR(512),
+    marka VARCHAR(100),
+
+    estimated_price DECIMAL(10, 2),
+
+    importance VARCHAR(16) NOT NULL DEFAULT 'Medium',
+
+    available_stores JSONB,
+    article_details TEXT,
+
+    product_url VARCHAR(512),
+    target_price DECIMAL(10,2),
+    current_price DECIMAL(10,2),
+
+    status VARCHAR(32) DEFAULT 'wanted',
+    purchased_at TIMESTAMP NULL,
+
+    last_price_update TIMESTAMP NULL,
+    user_note TEXT,
+
+    rating SMALLINT,
+    notify_price_drop BOOLEAN DEFAULT FALSE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger to auto-update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER wishlist_update_timestamp
+BEFORE UPDATE ON wishlist_items
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_user_importance ON wishlist_items (user_id, importance);

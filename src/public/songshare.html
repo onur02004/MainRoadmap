@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Futuristic App Navigation</title>
+    <title>Song-Share</title>
     <link rel="stylesheet" href="loginstyle.css">
     <link rel="stylesheet" href="songsharestyle.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -143,6 +143,56 @@
                     <button type="button" id="userSearchDoneBtn" class="primary-btn" style="margin-top: 20px;">
                         Done
                     </button>
+                </div>
+            </div>
+
+            <div id="reactionsListModal" class="modal">
+                <div class="modal-content">
+                    <span id="reactionsListCloseBtn" class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem;">Reactions</h2>
+                    <ul id="reactionsList" class="search-results">
+                    </ul>
+                </div>
+            </div>
+
+            <div id="editSuggestionModal" class="modal">
+                <div class="modal-content">
+                    <span id="editSuggestionCloseBtn" class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem;">Edit Suggestion</h2>
+
+                    <input type="hidden" id="editSuggestionId">
+
+                    <div class="field-group">
+                        <label class="field-label">Importance</label>
+                        <div class="importance-selector" id="editImportanceSelector">
+                            <button type="button" class="imp-btn" data-value="low">Low</button>
+                            <button type="button" class="imp-btn" data-value="neutral">Neutral</button>
+                            <button type="button" class="imp-btn" data-value="high">High</button>
+                            <button type="button" class="imp-btn" data-value="extreme">Extreme</button>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Rating (0-10)</label>
+                        <input type="range" id="editSongRating" min="0" max="10" step="1" class="modern-slider">
+                        <div class="slider-labels">
+                            <span>0</span>
+                            <span id="editRatingValue">5</span>
+                            <span>10</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Comment</label>
+                        <textarea id="editSuggestionComment" class="modern-textarea" rows="3"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" id="saveEditBtn" class="primary-btn" style="flex: 2;">Save
+                            Changes</button>
+                        <button type="button" id="deleteSuggestionBtn" class="primary-btn"
+                            style="flex: 1; background: #ef4444;">Delete Post</button>
+                    </div>
                 </div>
             </div>
 

@@ -85,6 +85,25 @@ router.get('/st', requireAuth, requireFeature('st'), (req, res) => {
   });
 });
 
+router.get('/wl', requireAuth, requireFeature('wl'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'wishlist.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending wishlist.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
 
 router.get("/remote-control", requireAuth, (req, res) => {
   const projectRoot = path.join(__dirname, '../..');

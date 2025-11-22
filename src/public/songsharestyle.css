@@ -6,7 +6,6 @@
     font-style: normal;
 }
 
-
 .fixed-bottom-nav {
     position: fixed;
     bottom: 0;
@@ -109,7 +108,6 @@
     section {
         /* On desktop, the wave should only be in the background, not covering the nav */
         padding-left: 80px;
-
     }
 }
 
@@ -140,7 +138,6 @@
     padding-bottom: 50px;
 }
 
-
 .song-cover-placeholder {
     width: auto;
     height: 240px;
@@ -164,7 +161,6 @@
     padding: 10px;
     flex-shrink: 0;
 }
-
 
 .suggest-form {
     padding: 10px;
@@ -320,7 +316,6 @@
     .cover-wrapper {
         gap: 20px;
         padding: 10px;
-
         /*display: flex; SPOTIFY PREVIEW YOKKEN AC*/
         justify-content: center;
         flex-direction: inherit;
@@ -419,10 +414,9 @@
     border-radius: 999px;
     background: transparent;
     color: #e5e7eb;
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     cursor: pointer;
     transition: background 0.2s ease;
-    font-size: 1.2rem;
 }
 
 .imp-btn:hover {
@@ -530,7 +524,6 @@
     padding: 0.75rem 1rem;
 }
 
-
 /* Visibility Toggle Styling */
 .visibility-toggle-row {
     display: flex;
@@ -563,7 +556,7 @@
     right: 0;
     bottom: 0;
     background-color: #334155;
-    transition: .4s;
+    transition: 0.4s;
 }
 
 .slider:before {
@@ -574,18 +567,18 @@
     left: 4px;
     bottom: 4px;
     background-color: white;
-    transition: .4s;
+    transition: 0.4s;
 }
 
-input:checked+.slider {
+input:checked + .slider {
     background-color: #22d3ee;
 }
 
-input:focus+.slider {
+input:focus + .slider {
     box-shadow: 0 0 1px #22d3ee;
 }
 
-input:checked+.slider:before {
+input:checked + .slider:before {
     transform: translateX(22px);
 }
 
@@ -601,98 +594,92 @@ section {
     overflow-y: scroll;
 }
 
-        .mainPrefab {
-            object-fit: contain;
-            display: grid;
-            grid-template-areas:
-            
-                "albumCover albumCover albumCover albumCover artistCover artistCover"
-                "albumCover albumCover albumCover albumCover artistCover artistCover"
-                "albumCover albumCover albumCover albumCover importanceHolder ratingHolder"
-                "albumCover albumCover albumCover albumCover playBtn userProfilePic"
-                "SongInfoContainer SongInfoContainer SongInfoContainer SongInfoContainer userInfo userInfo"
-                "commentsIcon addIcon likeIcon meh meh dislikeIcon"
-                "highlightTimeContainer publisherCommentHolder publisherCommentHolder publisherCommentHolder publicStatusHolder LyricsBtnHolder";
-            /* We will use 'auto' for the row containing SongInfoContainer (row 5) 
-               to let it grow with its content. We'll also update the total number of rows.
-               The rows are: 
-               1, 2, 3, 4, 5 (SongInfoContainer), 6, 7.
-               Row 5 is the one we want to be 'auto'.
-            */
-            grid-template-rows: 1fr 1fr 1fr 1fr auto 1fr 1fr; /* Updated to make SongInfoContainer row auto-height */
-            grid-template-columns: repeat(6, 1fr);
-            max-width: 550px;
-            width: 100%;
-            /* Remove 'aspect-ratio' so height can grow */
-            /* aspect-ratio: 6 / 7; */ 
-            gap: 0.75rem;
-
-            border-radius: 11px;
-
-
-
-
-            position: relative;
-    overflow: visible;      /* IMPORTANT */
+.mainPrefab {
+    object-fit: contain;
+    display: grid;
+    grid-template-areas:
+        "targetInformationHolder targetInformationHolder targetInformationHolder targetInformationHolder seenByHolder editHolder"
+        "albumCover albumCover albumCover albumCover artistCover artistCover"
+        "albumCover albumCover albumCover albumCover artistCover artistCover"
+        "albumCover albumCover albumCover albumCover importanceHolder ratingHolder"
+        "albumCover albumCover albumCover albumCover playBtn userProfilePic"
+        "SongInfoContainer SongInfoContainer SongInfoContainer SongInfoContainer userInfo userInfo"
+        "commentsIcon addIcon likeIcon meh dislikeIcon reatcionsHolder"
+        "highlightTimeContainer publisherCommentHolder publisherCommentHolder publisherCommentHolder publicStatusHolder LyricsBtnHolder";
+    /* We will use 'auto' for the row containing SongInfoContainer (row 5) 
+       to let it grow with its content. We'll also update the total number of rows.
+       The rows are: 
+       1, 2, 3, 4, 5 (SongInfoContainer), 6, 7.
+       Row 5 is the one we want to be 'auto'.
+    */
+    grid-template-rows: auto 1fr 1fr 1fr 1fr auto 1fr 1fr;
+    /* Updated to make SongInfoContainer row auto-height */
+    grid-template-columns: repeat(6, 1fr);
+    max-width: 550px;
+    width: 100%;
+    /* Remove 'aspect-ratio' so height can grow */
+    /* aspect-ratio: 6 / 7; */
+    gap: 0.75rem;
+    border-radius: 11px;
+    position: relative;
+    overflow: visible;
+    /* IMPORTANT */
     border-radius: 16px;
     padding: 1rem;
     transition: all 0.3s ease-in-out;
-        }
-        
+}
 
-        .albumCover {
-            grid-area: albumCover;
-            border-radius: 11px;
-            display: flex;
-            overflow: hidden;
-        }
+.albumCover {
+    grid-area: albumCover;
+    border-radius: 11px;
+    display: flex;
+    overflow: hidden;
+}
 
-        .albumCoverMAIN {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 11px;
-        }
+.albumCoverMAIN {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 11px;
+}
 
-        .artistCover {
-            grid-area: artistCover;
-            border-radius: 11px;
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-        }
+.artistCover {
+    grid-area: artistCover;
+    border-radius: 11px;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
 
-        .playBtn {
-            grid-area: playBtn;
-            padding: 0.5rem;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
+.playBtn {
+    grid-area: playBtn;
+    padding: 0.5rem;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
 
-        .SongInfoContainer {
-            grid-area: SongInfoContainer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0.8rem;
+.SongInfoContainer {
+    grid-area: SongInfoContainer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.8rem;
+    border-width: 0.3px;
+    border-color: rgba(255, 255, 255, 0.173);
+    border-style: solid;
+    border-radius: 11px;
+    box-shadow: 3px 3px 3px black;
+    position: relative;
+}
 
-            
-            border-width: .3px;
-            border-color: rgba(255, 255, 255, 0.173);
-            border-style: solid;
-            border-radius: 11px;
-            box-shadow: 3px 3px 3px black;
-
-            position: relative;
-        }
-
-        .SongInfoContainer::before {
+.SongInfoContainer::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: rgba(0,0,0,0.25); /* subtle dark overlay */
+    background: rgba(0, 0, 0, 0.25);
+    /* subtle dark overlay */
     pointer-events: none;
     z-index: 0;
 }
@@ -702,228 +689,236 @@ section {
     z-index: 1;
 }
 
-        .userProfilePic {
-            grid-area: userProfilePic;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
+.userProfilePic {
+    grid-area: userProfilePic;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
 
-        .userInfo {
-            grid-area: userInfo;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0.5rem;
-        }
+.userInfo {
+    grid-area: userInfo;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem;
+}
 
-        .commentsIcon {
-            grid-area: commentsIcon;
-            padding: 25px;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background-color: rgba(0, 0, 0, 0.15);
-        }
+.commentsIcon {
+    grid-area: commentsIcon;
+    padding: 25px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: rgba(0, 0, 0, 0.15);
+}
 
-        .addIcon {
-            grid-area: addIcon;
-            padding: 25px;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background-color: rgba(0, 0, 0, 0.15);
-        }
+.addIcon {
+    grid-area: addIcon;
+    padding: 25px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: rgba(0, 0, 0, 0.15);
+}
 
-        .likeIcon {
-            grid-area: likeIcon;
-            padding: .8rem;
-            background-color: #52c471;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 25px;
-        }
+.likeIcon {
+    grid-area: likeIcon;
+    padding: 0.8rem;
+    background-color: #52c471;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 25px;
+}
 
-        .meh {
-            grid-area: meh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            background-color: #0199c2;
-            height: 100%;
-            margin: 0;
-            border-radius: 11px;
-        }
+.meh {
+    grid-area: meh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    background-color: #0199c2;
+    height: 100%;
+    margin: 0;
+    border-radius: 11px;
+}
 
-        .dislikeIcon {
-            grid-area: dislikeIcon;
-            padding: .8rem;
-            background-color: #F87B1B;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 25px;
-        }
+.dislikeIcon {
+    grid-area: dislikeIcon;
+    padding: 0.8rem;
+    background-color: #F87B1B;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 25px;
+}
 
-        .playBtn,
-        .commentsIcon,
-        .addIcon,
-        .likeIcon,
-        .dislikeIcon {
-            object-fit: contain;
-            border-radius: 11px;
-        }
+.playBtn,
+.commentsIcon,
+.addIcon,
+.likeIcon,
+.dislikeIcon {
+    object-fit: contain;
+    border-radius: 11px;
+}
 
-        .SongInfoContainer p,
-        .userInfo p {
-            margin: 0;
-            line-height: 1.3;
-        }
+.SongInfoContainer p,
+.userInfo p {
+    margin: 0;
+    line-height: 1.3;
+}
 
-        .userInfo p:last-child {
-            font-size: 1.7rem;
-        }
+.userInfo p:last-child {
+    font-size: 1.7rem;
+}
 
-        .SongInfoContainer p:last-child,
-        .userInfo p:first-child {
-            font-size: 0.9rem;
-            color: #aaa;
-        }
+.SongInfoContainer p:last-child,
+.userInfo p:first-child {
+    font-size: 0.9rem;
+    color: #aaa;
+}
 
-        .titleElement {
-            font-size: 2.2rem;
-            font-weight: 200;
-            color: white;
-            /* New lines below: */
-            white-space: normal; /* Allows text to wrap */
-            line-height: 1.1; /* Adjust for better two-line fit */
-            overflow-wrap: break-word; /* Ensures long words break */
-        }
+.titleElement {
+    font-size: 2.2rem;
+    font-weight: 200;
+    color: white;
+    white-space: normal;
+    /* Allows text to wrap */
+    line-height: 1.1;
+    /* Adjust for better two-line fit */
+    overflow-wrap: break-word;
+    /* Ensures long words break */
+}
 
-        .artistElement {
-            font-size: 1rem;
-            color: #aaa;
-        }
+.artistElement {
+    font-size: 1rem;
+    color: #aaa;
+}
 
-        .importanceHolder {
-            grid-area: importanceHolder;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+.importanceHolder {
+    grid-area: importanceHolder;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .importanceHolder img {
-            width: 80%;
-            height: auto;
-        }
+.importanceHolder img {
+    width: 80%;
+    height: auto;
+}
 
-        .ratingHolder {
-            grid-area: ratingHolder;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+.ratingHolder {
+    grid-area: ratingHolder;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .star-outline {
-            width: 100%;
-            height: 100%;
-            stroke: #4a5568;
-            fill: #fff;
-            stroke-width: 1.5;
-        }
+.star-outline {
+    width: 100%;
+    height: 100%;
+    stroke: #4a5568;
+    fill: #fff;
+    stroke-width: 1.5;
+}
 
-        #rating-number {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #ffffff;
-            user-select: none;
-        }
+#rating-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #ffffff;
+    user-select: none;
+}
 
-        .highlightTimeContainer {
-            grid-area: highlightTimeContainer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0.5rem;
-        }
+.highlightTimeContainer {
+    grid-area: highlightTimeContainer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem;
+}
 
-        .publisherCommentHolder {
-            grid-area: publisherCommentHolder;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0.5rem;
-        }
+.publisherCommentHolder {
+    grid-area: publisherCommentHolder;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem;
+}
 
-        .publicStatusHolder {
-            grid-area: publicStatusHolder;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0.5rem;
-        }
+.publicStatusHolder {
+    grid-area: publicStatusHolder;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem;
+}
 
-        .highlightTimeContainer p,
-        .publisherCommentHolder p,
-        .publicStatusHolder p {
-            margin: 0;
-            line-height: 1.3;
-        }
+.highlightTimeContainer p,
+.publisherCommentHolder p,
+.publicStatusHolder p {
+    margin: 0;
+    line-height: 1.3;
+}
 
-        .highlightTimeContainer p:first-child,
-        .publisherCommentHolder p:first-child,
-        .publicStatusHolder p:first-child {
-            font-size: 0.8rem;
-            color: #aaa;
-        }
+.highlightTimeContainer p:first-child,
+.publisherCommentHolder p:first-child,
+.publicStatusHolder p:first-child {
+    font-size: 0.8rem;
+    color: #aaa;
+}
 
-        .highlightTimeContainer p:last-child,
-        .publisherCommentHolder p:last-child,
-        .publicStatusHolder p:last-child {
-            font-size: 0.9rem;
-        }
+.highlightTimeContainer p:last-child,
+.publisherCommentHolder p:last-child,
+.publicStatusHolder p:last-child {
+    font-size: 0.9rem;
+}
 
-        .suggestion-card{
-            padding-bottom: 150px;
-        }
+.suggestion-card {
+    padding-bottom: 150px;
+}
 
-        .suggestionFeedContainer {
+.suggestionFeedContainer {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 2rem;               /* 🔥 Cards have space around them */
-    padding: 2rem;           /* 🔥 Give breathing room so overflow is visible */
-    
-    max-width: 95vw;         /* 🔥 Wider than before */
+    gap: 2rem;
+    /* 🔥 Cards have space around them */
+    padding: 2rem;
+    /* 🔥 Give breathing room so overflow is visible */
+    max-width: 95vw;
+    /* 🔥 Wider than before */
     margin: 0 auto;
-    
-    overflow: visible !important; /* 🔥 Critical!! Allows gradients to go out */
+    overflow: visible !important;
+    /* 🔥 Critical!! Allows gradients to go out */
 }
 
 .mainPrefab::after {
     content: "";
     position: absolute;
-    inset: -15px;                   /* bleed outside */
+    inset: -15px;
+    /* bleed outside */
     border-radius: inherit;
-    background: inherit;            /* take gradient from mainPrefab */
-    filter: blur(30px);             /* glow effect */
-    z-index: -1;                    /* behind card */
+    background: inherit;
+    /* take gradient from mainPrefab */
+    filter: blur(30px);
+    /* glow effect */
+    z-index: -1;
+    /* behind card */
     opacity: 0.5;
 }
 
 .mainPrefab:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     z-index: 2;
 }
 
@@ -938,19 +933,19 @@ section {
 
 .mainPrefab.card-on-dark,
 .mainPrefab.card-on-dark p {
-    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .mainPrefab.card-on-light,
 .mainPrefab.card-on-light p {
-    text-shadow: 0 1px 3px rgba(255,255,255,0.3);
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.3);
 }
 
 /* Chips / labels / info boxes: darker overlay on bright, lighter overlay on dark */
 .mainPrefab.card-on-dark .highlightTimeContainer,
 .mainPrefab.card-on-dark .publisherCommentHolder,
 .mainPrefab.card-on-dark .publicStatusHolder,
-.LyricsBtnHolder{
+.LyricsBtnHolder {
     background-color: rgba(0, 0, 0, 0.35);
     border-radius: 0.5rem;
 }
@@ -966,64 +961,39 @@ section {
 .mainPrefab.card-on-dark .likeIcon,
 .mainPrefab.card-on-dark .dislikeIcon,
 .mainPrefab.card-on-dark .addIcon {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)) brightness(1.3);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) brightness(1.3);
 }
 
 .mainPrefab.card-on-light .commentsIcon,
 .mainPrefab.card-on-light .likeIcon,
 .mainPrefab.card-on-light .dislikeIcon,
 .mainPrefab.card-on-light .addIcon {
-    filter: drop-shadow(0 1px 1px rgba(255,255,255,0.7)) brightness(0.9);
+    filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.7)) brightness(0.9);
 }
 
 /* ---------- MOBILE SCROLL SNAP ---------- */
-@media (max-width: 700px) {
-    /* The main scrollable area (you already have inline overflow-y: scroll) */
-    section[style*="overflow-y: scroll"] {
-        scroll-snap-type: y mandatory;      /* Enable vertical snapping */
-        -webkit-overflow-scrolling: touch;  /* Smooth iOS scrolling */
-    }
-
-    /* Each song card should snap into place */
-    .suggestion-card {
-        scroll-snap-align: start;           /* Snap so top of card lines up */
-        scroll-margin-top: 80px;            /* Adjust if nav/header overlaps */
-    }
-
-    .dislikeIcon{
-        padding: .7rem;
-    }
-    .likeIcon{
-        padding: .7rem;
-    }
-
-    .commentsIcon{
-        padding: .7rem;
-    }
-
-    .addIcon{
-        padding: .7rem;
-    }
-
-}
 
 
 .SongInfoContainer p,
-        .userInfo p {
-            margin: 0;
-            line-height: 1.3;
-        }
+.userInfo p {
+    margin: 0;
+    line-height: 1.3;
+}
 
-        .userInfo p:last-child {
-            font-size: 1.7rem;
-            /* --- NEW STYLES FOR ELLIPSIS TRUNCATION --- */
-            white-space: nowrap; /* Forces text onto a single line */
-            overflow: hidden; /* Hides content that exceeds the box */
-            text-overflow: ellipsis; /* Displays "..." where text is cut off */
-            max-width: 100%; /* Ensures it respects the parent's width */
-        }
+.userInfo p:last-child {
+    font-size: 1.7rem;
+    /* --- NEW STYLES FOR ELLIPSIS TRUNCATION --- */
+    white-space: nowrap;
+    /* Forces text onto a single line */
+    overflow: hidden;
+    /* Hides content that exceeds the box */
+    text-overflow: ellipsis;
+    /* Displays "..." where text is cut off */
+    max-width: 100%;
+    /* Ensures it respects the parent's width */
+}
 
-        .ratingHolder {
+.ratingHolder {
     grid-area: ratingHolder;
     position: relative;
     display: flex;
@@ -1042,7 +1012,8 @@ section {
 /* Class for the star polygon element */
 .star-polygon {
     /* Set up initial state for stroke animation */
-    stroke-dasharray: 100; /* Approximate length of the path */
+    stroke-dasharray: 100;
+    /* Approximate length of the path */
     stroke-dashoffset: 100;
     animation: drawStar 1s ease-out forwards;
 }
@@ -1056,7 +1027,8 @@ section {
     font-weight: 700;
     font-size: 1rem;
     user-select: none;
-    z-index: 1; /* Ensure text is above the star */
+    z-index: 1;
+    /* Ensure text is above the star */
 }
 
 /* Keyframe animation for the stroke effect */
@@ -1075,27 +1047,30 @@ section {
     from {
         transform: scale(1);
     }
+
     to {
         transform: scale(1.05);
     }
 }
 
 .rating-star {
-    width: 60%; /* Reduced from 100% */
-    height: 60%; /* Reduced from 100% */
+    width: 60%;
+    /* Reduced from 100% */
+    height: 60%;
+    /* Reduced from 100% */
     /* Ensure the SVG itself doesn't have an unnecessary fill/stroke that overrides the polygon */
     overflow: visible;
 }
 
-.LyricsBtnHolder{
+.LyricsBtnHolder {
     grid-area: LyricsBtnHolder;
-    display: flex;    
+    display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: .5rem;
+    padding: 0.5rem;
 }
 
-.lyricsIcon{
+.lyricsIcon {
     height: 40%;
     width: 40%;
 }
@@ -1142,9 +1117,11 @@ section {
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.3);
     }
+
     100% {
         transform: scale(1.05);
     }
@@ -1155,6 +1132,7 @@ section {
     0% {
         box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.7);
     }
+
     100% {
         box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
     }
@@ -1165,7 +1143,8 @@ section {
 .dislikeIcon,
 .meh {
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-    cursor: pointer; /* Ensure the cursor indicates interactivity */
+    cursor: pointer;
+    /* Ensure the cursor indicates interactivity */
 }
 
 /* 4. Use the reactionPop animation when the element is clicked (active) */
@@ -1174,7 +1153,6 @@ section {
     /* Existing styles from songsharestyle.css for active state */
     box-shadow: 0 0 0 3px #ffffffaa;
     transform: scale(1.05);
-    
     /* NEW: Apply the pop on click */
     animation: reactionPop 0.3s ease-out forwards;
 }
@@ -1183,7 +1161,6 @@ section {
     /* Existing styles from songsharestyle.css for active state */
     outline: 2px solid #ffffffaa;
     box-shadow: 0 0 10px #ffffff55;
-    
     /* NEW: Apply the pop on click (meh is a paragraph, so need a wrapper/different style) */
     animation: reactionPop 0.3s ease-out forwards;
 }
@@ -1206,23 +1183,98 @@ section {
 
 @keyframes border-rotate {
     to {
-        background-position: 200% center; /* Shift the gradient pattern */
+        background-position: 200% center;
+        /* Shift the gradient pattern */
     }
 }
 
-
-.targetInformationHolder{
+.targetInformationHolder {
     grid-area: targetInformationHolder;
 }
 
-.seenByHolder{
+.seenByHolder {
     grid-area: seenByHolder;
 }
 
-.reatcionsHolder{
+.reatcionsHolder {
     grid-area: reatcionsHolder;
 }
 
-.editHolder{
+.editHolder {
     grid-area: editHolder;
+}
+
+.tragetInfoText {
+    font-size: 3rem;
+}
+
+.targetInformationHolder {
+    display: flex;
+    align-items: center;
+    padding: 3px;
+}
+
+.eyeIcon {
+    padding: 1rem;
+    color: white;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.editHolder {
+    padding: 1rem;
+    color: white;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.reactionsIcon {
+    padding: 0.8rem;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 15px;
+}
+
+
+@media (max-width: 700px) {
+
+    /* The main scrollable area (you already have inline overflow-y: scroll) */
+    section[style*="overflow-y: scroll"] {
+        scroll-snap-type: y mandatory;
+        /* Enable vertical snapping */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth iOS scrolling */
+    }
+
+    /* Each song card should snap into place */
+    .suggestion-card {
+        scroll-snap-align: start;
+        /* Snap so top of card lines up */
+        scroll-margin-top: 80px;
+        /* Adjust if nav/header overlaps */
+    }
+
+    .dislikeIcon {
+        padding: 0.99rem;
+    }
+
+    .likeIcon {
+        padding: 0.7rem;
+    }
+
+    .commentsIcon {
+        padding: 0.7rem;
+    }
+
+    .addIcon {
+        padding: 0.7rem;
+    }
+
+    
 }

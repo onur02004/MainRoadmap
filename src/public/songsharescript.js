@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-option a');
     const pages = document.querySelectorAll('.page');
 
+
     function showPage(pageName) {
         pages.forEach(p => {
             const isTarget = p.classList.contains(`page-${pageName}`);
@@ -97,7 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentsList = document.getElementById('commentsList');
     const newCommentInput = document.getElementById('newCommentInput');
     const submitCommentBtn = document.getElementById('submitCommentBtn');
-    let currentSuggestionId = null; // To store the suggestion ID being viewed/commented on
+
+    const editModal = document.getElementById('editSuggestionModal');
+    const editCloseBtn = document.getElementById('editSuggestionCloseBtn');
+    const editIdInput = document.getElementById('editSuggestionId');
+    const editRatingInput = document.getElementById('editSongRating');
+    const editRatingVal = document.getElementById('editRatingValue');
+    const editCommentInput = document.getElementById('editSuggestionComment');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const deleteSuggestionBtn = document.getElementById('deleteSuggestionBtn');
+
+    const reactionsListModal = document.getElementById('reactionsListModal');
+    const reactionsList = document.getElementById('reactionsList');
+    const reactionsListCloseBtn = document.getElementById('reactionsListCloseBtn');
+
+    let currentLoggedInUserId = null; // <--- NEW VARIABLE
+    let currentSuggestionId = null;
 
     const spotifyPreviewContainer = document.getElementById('spotifyPreviewContainer');
     let currentResults = [];
@@ -652,6 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSuggestions(suggestions) {
         const placeholder = 'https://placehold.co/150x150/000000/FFFFFF?text=No+Cover';
 
+
         suggestions.forEach(s => {
             const card = document.createElement('div');
             card.className = 'suggestion-card';
@@ -676,81 +693,133 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.comment_by_user.replace(/</g, "&lt;").replace(/>/g, "&gt;") : // Correct sanitization
                 '';
 
+            const suggestionUserId = s.user_id || s.suggester_id;
+
+            const isOwner = String(suggestionUserId) === String(currentLoggedInUserId);
+            const isPublic = s.visibility_public;
+            console.log("Checking owner:" + s.user_id + "==>" + (currentLoggedInUserId) + "|");
+
+            let topBarDisplay = '';      // Controls the holder (visible by default)
+            let optionsDisplay = '';     // Controls edit/seen icons (visible by default)
+            let targetText = '';         // The text to show
+
+            if (isPublic && !isOwner) {
+                // Scenario 1: Public & Not Owner -> Hide everything
+                topBarDisplay = 'display: none !important;';
+                targetText = '';
+            }
+            else if (isPublic && isOwner) {
+                // Scenario 2: Public & Owner -> "Created by you", options visible
+                targetText = 'Created by you';
+                optionsDisplay = '';
+                console.log("Created By Us");
+            }
+            else if (!isPublic && !isOwner) {
+                // Scenario 3: Private & Not Owner -> "Addressed for YOU!", options HIDDEN
+                targetText = 'Addressed for YOU!';
+                optionsDisplay = 'display: none !important;';
+                console.log("Created FOR Us");
+            }
+            else if (!isPublic && isOwner) {
+                // Scenario 4: Private & Owner -> "Sent Privately", options visible
+                targetText = 'Sent Privately';
+                optionsDisplay = '';
+                console.log("SENT by us");
+            }
+
             // Simple date formatting
             const date = new Date(s.date_added).toLocaleDateString();
 
             // 2. Updated Card InnerHTML
             card.innerHTML = `
             <div class="mainPrefab">
-        <div class="albumCover">
-            <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
-        </div>
-        <img class="artistCover"
-            src="${s.song_artist_cover_url}">
-        <img class="playBtn" src="./content/playIcon.svg">
-        <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
-<p class="titleElement">${s.song_name}</p>
-<p class="artistElement">${s.song_artist}</p>
-</div>
-        <div class="importanceHolder">
-            <img src="./content/${importanceSvgFile}">
-        </div>
-        <div class="ratingHolder" data-rating="${s.rating_by_user}">
-            <svg class="rating-star" viewBox="0 0 24 24">
-                <defs>
-                    <linearGradient id="star-fill-${s.id}" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="${s.rating_by_user * 10}%" stop-color="#FFC107" />
-                        <stop offset="${s.rating_by_user * 10}%" stop-color="#334155" />
-                    </linearGradient>
-                </defs>
-                <polygon
-                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                    fill="url(#star-fill-${s.id})"
-                    stroke="#FFC107"
-                    stroke-width="1.5"
-                    class="star-polygon"
-                    style="opacity: 0.3"
-                    />
-            </svg>
-            <span id="rating-number">${s.rating_by_user}</span>
-        </div>
-        <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
-        <div class="userInfo">
-            <p>${date}</p>
-            <p>${s.suggester_username}</p>
-        </div>
-        <img class="commentsIcon" data-action="comment" data-id="${s.id}" src="./content/commentsIcon.svg">
+                
+                <div class="targetInformationHolder" style="${topBarDisplay}">
+                    <p class="tragetInfoText">${targetText}</p>
+                </div>
+                
+                <div class="seenByHolder" style="${topBarDisplay} ${optionsDisplay}">
+                    <svg class="eyeIcon" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 12C3.8 8.8 7 6 12 6C17 6 20.2 8.8 21.5 12C20.2 15.2 17 18 12 18C7 18 3.8 15.2 2.5 12Z"
+                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+                        <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+                    </svg>
+                </div>
+
+                <div class="editHolder" style="${topBarDisplay} ${optionsDisplay}">
+                    <svg class="editIcon" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 15.5L14.5 6L18 9.5L8.5 19H5V15.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M13.8 6.7L17.3 10.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M4 20H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                </div>
+
+                <div class="albumCover">
+                    <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
+                </div>
+                <img class="artistCover" src="${s.song_artist_cover_url}">
+                <img class="playBtn" src="./content/playIcon.svg">
+                
+                <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
+                    <p class="titleElement">${s.song_name}</p>
+                    <p class="artistElement">${s.song_artist}</p>
+                </div>
+                
+                <div class="importanceHolder">
+                    <img src="./content/${importanceSvgFile}">
+                </div>
+                
+                <div class="ratingHolder" data-rating="${s.rating_by_user}">
+                    <svg class="rating-star" viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="star-fill-${s.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="${s.rating_by_user * 10}%" stop-color="#FFC107" />
+                                <stop offset="${s.rating_by_user * 10}%" stop-color="#334155" />
+                            </linearGradient>
+                        </defs>
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                            fill="url(#star-fill-${s.id})" stroke="#FFC107" stroke-width="1.5" class="star-polygon" style="opacity: 0.3" />
+                    </svg>
+                    <span id="rating-number">${s.rating_by_user}</span>
+                </div>
+                
+                <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
+                <div class="userInfo">
+                    <p>${date}</p>
+                    <p>${s.suggester_username}</p>
+                </div>
+
+                <img class="commentsIcon" data-action="comment" data-id="${s.id}" src="./content/commentsIcon.svg">
                 <img class="addIcon" src="./content/addIcon.svg">
-                <div class="likeIcon-wrapper reaction-ring">
-    <img class="likeIcon" data-action="like" data-id="${s.id}" src="./content/likeIcon.svg">
-</div>
+                <img class="likeIcon" data-action="like" data-id="${s.id}" src="./content/likeIcon.svg">
+                <p class="meh" data-action="meh" data-id="${s.id}">MEH</p>
+                <img class="dislikeIcon" data-action="dislike" data-id="${s.id}" src="./content/dislikeIcon.svg">
 
-<div class="meh-wrapper reaction-ring">
-    <p class="meh" data-action="meh" data-id="${s.id}">MEH</p>
-</div>
+                <div class="reatcionsHolder">
+                    <img class="reactionsIcon" data-id="${s.id}" src="./content/reactionsIcon.svg">
+                </div>
 
-<div class="dislikeIcon-wrapper reaction-ring">
-    <img class="dislikeIcon" data-action="dislike" data-id="${s.id}" src="./content/dislikeIcon.svg">
-</div>
-
-        <div class="highlightTimeContainer">
-            <p>Highlight time:</p>
-            <p>${s.recommended_time_by_user || 'N/A'}</p>
-        </div>
-        <div class="publisherCommentHolder">
-            <p>Publisher Comment:</p>
-            <p>${safeComment || 'No comment.'}</p>
-        </div>
-        <div class="publicStatusHolder">
-            <p>Visibility:</p>
-            <p>${s.visibility_public ? 'Public' : 'Private'}</p>
-        </div>
-        <div class="LyricsBtnHolder">
-            <p>Lyrics:</p>
-            <img class="lyricsIcon" src="./content/lyricsicon.svg">
-        </div>
-    </div>
-        `;
+                <div class="highlightTimeContainer">
+                    <p>Highlight time:</p>
+                    <p>${s.recommended_time_by_user || 'N/A'}</p>
+                </div>
+                <div class="publisherCommentHolder">
+                    <p>Publisher Comment:</p>
+                    <p>${safeComment || 'No comment.'}</p>
+                </div>
+                <div class="publicStatusHolder">
+                    <p>Visibility:</p>
+                    <p>${s.visibility_public ? 'Public' : 'Private'}</p>
+                </div>
+                <div class="LyricsBtnHolder">
+                    <p>Lyrics:</p>
+                    <img class="lyricsIcon" src="./content/lyricsicon.svg">
+                </div>
+            </div>
+                `;
 
             const mainPrefab = card.querySelector('.mainPrefab');
             let points = s.dominant_colors_points || [];
@@ -835,6 +904,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
+            const editHolder = card.querySelector('.editHolder');
+            if (editHolder) {
+                editHolder.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openEditModal(s); // We will define this function below
+                });
+            }
+
+            // 2. HANDLE REACTIONS LIST CLICK (New)
+            const reactionsHolder = card.querySelector('.reatcionsHolder');
+            if (reactionsHolder) {
+                reactionsHolder.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openReactionsModal(s.id); // We will define this function below
+                });
+            }
+
+            // 3. HANDLE ADD BUTTON WARNING (New)
+            const addIcon = card.querySelector('.addIcon');
+            if (addIcon) {
+                addIcon.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert("⚠️ This feature is still in development! Coming soon.");
+                });
+            }
+
             feedContainer.appendChild(card);
 
             updateReactionUI(s.id, s.current_user_reaction || null);
@@ -848,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check if user is ~300px from the bottom
         if (scrollTop + clientHeight >= scrollHeight - 300) {
-            fetchSuggestions(feedPage);
+            startup();
         }
     }
 
@@ -857,8 +952,15 @@ document.addEventListener('DOMContentLoaded', () => {
         mainScrollSection.addEventListener('scroll', handleFeedScroll);
     }
 
-    // Initial load of the first page of suggestions
-    fetchSuggestions(feedPage);
+    function startup() {
+        // Initial load of the first page of suggestions
+        (async function initFeed() {
+            await checkLogin();           // make sure currentLoggedInUserId is set
+            fetchSuggestions(feedPage);   // now render suggestions
+        })();
+    }
+
+    startup();
 
     function getReadableTextColor(hex) {
         if (!hex || typeof hex !== 'string') return '#ffffff';
@@ -1171,6 +1273,161 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentReaction === 'dislike' && dislikeEl) dislikeEl.classList.add('active');
     }
 
-    
+    async function checkLogin() {
+        try {
+            console.log('Checking authentication status...');
+            const res = await fetch('/api/session', { credentials: 'include' });
+            const data = await res.json();
 
+            if (data.authenticated) {
+                // FIXED: Store user ID in the dedicated variable
+                currentLoggedInUserId = data.user.id;
+                console.log("Logged in as: " + data.user.uname + " (ID: " + data.user.id + ")");
+                console.log("checking again id: " + currentLoggedInUserId);
+            } else {
+                console.log('User is not authenticated');
+            }
+        } catch (err) {
+            console.error('Auth check failed:', err);
+        }
+    }
+
+
+    reactionsListCloseBtn.onclick = () => reactionsListModal.classList.remove('is-active');
+    window.onclick = (e) => { if (e.target == reactionsListModal) reactionsListModal.classList.remove('is-active'); }
+
+    async function openReactionsModal(suggestionId) {
+        reactionsListModal.classList.add('is-active');
+        reactionsList.innerHTML = '<li>Loading reactions...</li>';
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${suggestionId}/reactions-list`, { credentials: 'include' });
+            const data = await res.json();
+
+            if (!data.reactions || data.reactions.length === 0) {
+                reactionsList.innerHTML = '<li style="justify-content:center; color:#ccc;">No reactions yet.</li>';
+                return;
+            }
+
+            reactionsList.innerHTML = '';
+            data.reactions.forEach(r => {
+                let iconSrc = '';
+                if (r.song_reaction_type === 'like') iconSrc = './content/likeIcon.svg';
+                else if (r.song_reaction_type === 'dislike') iconSrc = './content/dislikeIcon.svg';
+                else if (r.song_reaction_type === 'meh') iconSrc = null; // Text based
+
+                const li = document.createElement('li');
+                li.className = 'search-result-item';
+                li.innerHTML = `
+                <img src="media/${r.profile_pic_path || './content/default.jpg'}" class="search-result-cover" style="width:30px;height:30px;">
+                <span class="search-result-title" style="font-size:1rem;">${r.user_name}</span>
+                <div style="margin-left:auto;">
+                    ${iconSrc ? `<img src="${iconSrc}" style="width:24px;">` : '<span style="font-weight:bold; color:#0199c2;">MEH</span>'}
+                </div>
+            `;
+                reactionsList.appendChild(li);
+            });
+
+        } catch (err) {
+            console.error(err);
+            reactionsList.innerHTML = '<li>Error loading reactions.</li>';
+        }
+    }
+
+    editCloseBtn.onclick = () => editModal.classList.remove('is-active');
+
+    // Handle Rating Slider in Edit Modal
+    editRatingInput.addEventListener('input', function () {
+        editRatingVal.textContent = this.value;
+    });
+
+    // Handle Importance Selection in Edit Modal
+    const editImpSelector = document.getElementById('editImportanceSelector');
+    const editImpBtns = editImpSelector.querySelectorAll('.imp-btn');
+    editImpBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            editImpBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    function openEditModal(s) {
+        editModal.classList.add('is-active');
+
+        // Populate Data
+        editIdInput.value = s.id;
+        editRatingInput.value = s.rating_by_user || 5;
+        editRatingVal.textContent = s.rating_by_user || 5;
+        editCommentInput.value = s.comment_by_user || '';
+
+        // Set Importance
+        editImpBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.value === s.importance) btn.classList.add('active');
+        });
+        // Default to neutral if none matches (fallback)
+        if (!s.importance) editImpSelector.querySelector('[data-value="neutral"]').classList.add('active');
+    }
+
+    // SAVE CHANGES
+    saveEditBtn.addEventListener('click', async () => {
+        const id = editIdInput.value;
+        const rating = editRatingInput.value;
+        const comment = editCommentInput.value;
+        const activeImp = editImpSelector.querySelector('.imp-btn.active');
+        const importance = activeImp ? activeImp.dataset.value : 'neutral';
+
+        saveEditBtn.textContent = 'Saving...';
+        saveEditBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ rating, comment, importance })
+            });
+
+            if (res.ok) {
+                alert("Suggestion updated!");
+                editModal.classList.remove('is-active');
+                location.reload(); // Simplest way to refresh feed
+            } else {
+                throw new Error("Update failed");
+            }
+        } catch (err) {
+            alert("Error updating: " + err.message);
+        } finally {
+            saveEditBtn.textContent = 'Save Changes';
+            saveEditBtn.disabled = false;
+        }
+    });
+
+    // DELETE SUGGESTION
+    deleteSuggestionBtn.addEventListener('click', async () => {
+        if (!confirm("Are you sure you want to delete this suggestion? This cannot be undone.")) return;
+
+        const id = editIdInput.value;
+        deleteSuggestionBtn.textContent = 'Deleting...';
+        deleteSuggestionBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                alert("Suggestion deleted.");
+                editModal.classList.remove('is-active');
+                location.reload(); // Refresh feed
+            } else {
+                throw new Error("Delete failed");
+            }
+        } catch (err) {
+            alert("Error deleting: " + err.message);
+            deleteSuggestionBtn.textContent = 'Delete';
+            deleteSuggestionBtn.disabled = false;
+        }
+    });
 });

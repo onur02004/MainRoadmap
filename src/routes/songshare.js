@@ -479,6 +479,7 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
             s.song_artist_cover_url,
             s.overall_dominant_color,
             s.dominant_colors_points,
+            s.user_id,
             u.user_name AS suggester_username,
             u.profile_pic_path AS suggester_avatar,
             r.song_reaction_type AS current_user_reaction
@@ -695,6 +696,79 @@ router.post("/api/music/suggestions/:id/comments", requireAuth, async (req, res)
         res.status(500).json({ 
             error: "An unexpected error occurred while saving the comment." 
         });
+    }
+});
+
+// 1. GET ALL REACTIONS FOR A SUGGESTION
+router.get("/api/music/suggestions/:id/reactions-list", requireAuth, async (req, res) => {
+    const suggestionId = req.params.id;
+
+    const sql = `
+        SELECT 
+            u.user_name, 
+            u.profile_pic_path, 
+            r.song_reaction_type
+        FROM song_suggestion_reactions r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.suggestion_id = $1
+        ORDER BY r.song_reaction_type;
+    `;
+
+    try {
+        const result = await q(sql, [suggestionId]);
+        res.json({ reactions: result.rows });
+    } catch (err) {
+        console.error("Error fetching reactions list:", err);
+        res.status(500).json({ error: "Failed to fetch reactions" });
+    }
+});
+
+// 2. DELETE SUGGESTION (Only Owner)
+router.delete("/api/music/suggestions/:id", requireAuth, async (req, res) => {
+    const userId = req.user?.sub;
+    const suggestionId = req.params.id;
+
+    try {
+        // Verify ownership and delete in one go
+        const result = await q(
+            `DELETE FROM song_suggestions WHERE id = $1 AND user_id = $2 RETURNING *`,
+            [suggestionId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(403).json({ error: "Not authorized or suggestion not found." });
+        }
+
+        res.json({ message: "Suggestion deleted successfully" });
+    } catch (err) {
+        console.error("Delete error:", err);
+        res.status(500).json({ error: "Server error deleting suggestion" });
+    }
+});
+
+// 3. EDIT SUGGESTION (Only Owner)
+router.put("/api/music/suggestions/:id", requireAuth, async (req, res) => {
+    const userId = req.user?.sub;
+    const suggestionId = req.params.id;
+    const { importance, rating, comment } = req.body;
+
+    try {
+        const result = await q(
+            `UPDATE song_suggestions 
+             SET importance = $1, rating_by_user = $2, comment_by_user = $3
+             WHERE id = $4 AND user_id = $5
+             RETURNING *`,
+            [importance, rating, comment, suggestionId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(403).json({ error: "Not authorized or suggestion not found." });
+        }
+
+        res.json({ message: "Updated successfully", suggestion: result.rows[0] });
+    } catch (err) {
+        console.error("Update error:", err);
+        res.status(500).json({ error: "Server error updating suggestion" });
     }
 });
 

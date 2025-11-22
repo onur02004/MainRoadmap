@@ -15,6 +15,7 @@ import fitnessRoutes from "./routes/fitnessRoutes.js";
 import avatarsRoutes from "./routes/avatars.js";
 import songshareRoutes from "./routes/songshare.js";
 import userRoutes from "./routes/userRoutes.js";
+import wishlistRouter from './routes/wishlistRoutes.js'; // whatever you named it
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -31,6 +32,7 @@ app.use(adminRoutes);
 app.use(avatarsRoutes);
 app.use(songshareRoutes);
 app.use(userRoutes);
+app.use(wishlistRouter);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {
