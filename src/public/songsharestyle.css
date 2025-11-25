@@ -791,3 +791,7 @@ section { overflow-y: auto; }
         /* Shift the gradient pattern */
     }
 }
+
+.suggestion-card {
+    padding-bottom: 150px;
+}
