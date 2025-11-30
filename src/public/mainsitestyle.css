@@ -133,7 +133,7 @@ img {
         top: 40px; /* Distance from top of screen */
         flex-direction: column; /* Standard order on desktop */
         max-height: calc(100vh - 80px); /* Prevent overflow if sidebar is huge */
-        height: 95vh;
+        height: 98vh;
         display: flex;
         flex-direction: column-reverse;
     }
@@ -208,7 +208,7 @@ img {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1.1rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -257,6 +257,8 @@ img {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     color: #52c471;
     width: 100%;
+
+    -webkit-text-stroke: .3px #131313 ;
 }
 
 .featuresHolder {

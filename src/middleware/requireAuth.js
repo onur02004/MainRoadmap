@@ -8,22 +8,32 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 export const getJwtSecret = () => JWT_SECRET;
 
 export default function requireAuth(req, res, next) {
-  const token = req.cookies?.token;
-  if (!token) {
-      return res.redirect("/login");
-  }
-  
-  try {
-    // 1. Verify Token
-    req.user = jwt.verify(token, JWT_SECRET);
-    // console.log("User authenticated:", req.user);
+  let token = req.cookies?.token;
 
+  // NEW: also accept Authorization: Bearer <token>
+  if (!token) {
+    const auth = req.headers['authorization'] || req.headers['Authorization'];
+    if (auth && auth.startsWith('Bearer ')) {
+      token = auth.slice(7);
+    }
+  }
+
+  if (!token) {
+    // For APIs you might prefer JSON; for now keep redirect for browser:
+    return res.redirect("/login");
+    // or: return res.status(401).send("Not authorized");
+  }
+
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    console.log("User authenticated:", req.user);
     next();
     return;
-  } catch (err) {
+  } catch {
     return res.status(401).send("Session expired. <a href='/login.html'>Login again</a>");
   }
 }
+
 
 export function requireFeature(featureKey) {
   return async (req, res, next) => {

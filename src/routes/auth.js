@@ -215,6 +215,44 @@ router.get("/meinfo", async (req, res) => {
   }
 });
 
+router.post("/api/mobile-login", async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    return res.status(400).json({ error: "Missing credentials" });
+  }
+
+  const { rows } = await q(
+    `SELECT id, user_name, real_name, role, is_verified, password_hash
+     FROM users
+     WHERE user_name = $1
+     LIMIT 1`,
+    [username]
+  );
+
+  const user = rows[0];
+  if (!user) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const ok = await bcrypt.compare(password, user.password_hash);
+  if (!ok) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const payload = {
+    sub: user.id,
+    uname: user.user_name,
+    name: user.real_name || "",
+    role: user.role
+  };
+
+  const token = jwt.sign(payload, getJwtSecret(), {
+    expiresIn: process.env.JWT_EXPIRES || "1h"
+  });
+
+  return res.json({ token, user: payload });
+});
+
 
 //FORGOT PASSWORD
 router.post("/forgot-password", async (req, res) => {
