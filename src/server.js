@@ -15,7 +15,8 @@ import fitnessRoutes from "./routes/fitnessRoutes.js";
 import avatarsRoutes from "./routes/avatars.js";
 import songshareRoutes from "./routes/songshare.js";
 import userRoutes from "./routes/userRoutes.js";
-import wishlistRouter from './routes/wishlistRoutes.js'; // whatever you named it
+import wishlistRouter from './routes/wishlistRoutes.js'; 
+import { trackActivity } from "./middleware/activityTracker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -33,6 +34,7 @@ app.use(avatarsRoutes);
 app.use(songshareRoutes);
 app.use(userRoutes);
 app.use(wishlistRouter);
+app.use(trackActivity);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {
@@ -117,3 +119,12 @@ app.post("/api/led", (req, res) => {
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });
+
+//setInterval(async () => {
+//    try {
+//        console.log("Running daily log cleanup...");
+//        await q("DELETE FROM user_activity WHERE created_at < NOW() - INTERVAL '10 days'");
+//    } catch (err) {
+//        console.error("Cleanup failed:", err);
+//    }
+//}, 864000);

@@ -795,3 +795,24 @@ section { overflow-y: auto; }
 .suggestion-card {
     padding-bottom: 150px;
 }
+
+.suggestion-card.is-owner .mainPrefab {
+    border: 2px solid #636363; /* Bright Cyan Border */
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.25); /* Cyan Glow */
+    transform: scale(1.01); /* Slightly larger */
+    transition: all 0.3s ease;
+}
+
+/* 2. Highlight the "Created by you" / "Sent Privately" text */
+.suggestion-card.is-owner .tragetInfoText {
+    color: #22d3ee;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1rem;
+    background: rgba(34, 211, 238, 0.1);
+    padding: 4px 12px;
+    border-radius: 99px;
+    display: inline-block;
+}
+

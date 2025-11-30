@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sendSuggestionButton) {
         sendSuggestionButton.addEventListener('click', async () => {
 
-            // 1. Get the core song data from hidden inputs
+            // 1. Validate Input
             const payload = {
                 name: selectedSongNameInput.value,
                 artist: selectedSongArtistInput.value,
@@ -499,17 +499,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 uri: document.getElementById('selectedSongUriInput')?.value,
             };
 
-            // Check if a song is selected
-            console.log('payload name: ' + payload.name);
-            console.log('payload artist: ' + payload.artist);
-            console.log('payload imgurl: ' + payload.imageUrl);
-            console.log('payload uri: ' + payload.uri);
             if (!payload.name || !payload.uri) {
                 alert('Please search for and select a song first.');
                 return;
             }
 
-            // 2. Get the additional user inputs
+            // 2. Gather remaining data
             payload.importance = importanceSelector.querySelector('.imp-btn.active')?.getAttribute('data-value') || 'neutral';
             payload.rating = songRatingInput.value;
             payload.bestTime = bestTimeInput.value;
@@ -522,23 +517,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? null
                 : selectedTargetUsers.map(u => u.id);
 
-            console.log('payload target users: ' + payload.targetUsers);
-            console.log('Sending suggestion:', payload);
-
-            // 3. Send to backend
+            // 3. Prevent Double Posting (Disable Button Immediately)
             sendSuggestionButton.textContent = 'Sending...';
             sendSuggestionButton.disabled = true;
 
             try {
                 const response = await fetch('/api/music/suggestions', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',     // 👈 moved here, correct place
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify(payload)
                 });
-
 
                 const result = await response.json();
 
@@ -546,22 +535,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(result.error || `Error ${response.status}`);
                 }
 
-                // Success!
-                sendSuggestionButton.textContent = 'Suggested';
+                // --- SUCCESS HANDLING ---
+
+                // A. Visual Feedback
+                sendSuggestionButton.textContent = 'Success! Redirecting...';
+                sendSuggestionButton.style.background = '#22c55e'; // Green color
+
+                // B. Wait a moment so user sees the "Success" message
                 setTimeout(() => {
-                    sendSuggestionButton.textContent = 'Suggest this song';
+                    // C. Clear the Form Data
+                    resetSuggestionForm();
+
+                    // D. Switch to Home Tab automatically
+                    document.querySelector('a[data-page="home"]').click();
+
+                    // E. Refresh the Feed to show the new song
+                    resetAndReloadFeed();
+
+                    // F. Reset button state (for next time)
                     sendSuggestionButton.disabled = false;
-                    // TODO: You could clear the form here if you want
-                }, 2000);
+                    sendSuggestionButton.textContent = 'Suggest this song';
+                    sendSuggestionButton.style.background = ''; // Reset color
+                }, 1000);
 
             } catch (err) {
                 console.error('Suggestion failed:', err);
                 alert(`Error submitting suggestion: ${err.message}`);
+
+                // Re-enable button so they can try again if it failed
                 sendSuggestionButton.textContent = 'Suggest this song';
                 sendSuggestionButton.disabled = false;
             }
         });
-
     }
 
 
@@ -698,6 +703,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isOwner = String(suggestionUserId) === String(currentLoggedInUserId);
             const isPublic = s.visibility_public;
             console.log("Checking owner:" + s.user_id + "==>" + (currentLoggedInUserId) + "|");
+
+            if (isOwner) {
+                card.classList.add('is-owner');
+            }
 
             let topBarDisplay = '';      // Controls the holder (visible by default)
             let optionsDisplay = '';     // Controls edit/seen icons (visible by default)
@@ -952,12 +961,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mainScrollSection.addEventListener('scroll', handleFeedScroll);
     }
 
-    function startup() {
-        // Initial load of the first page of suggestions
-        (async function initFeed() {
-            await checkLogin();           // make sure currentLoggedInUserId is set
-            fetchSuggestions(feedPage);   // now render suggestions
-        })();
+    async function startup() {
+        await checkLogin(); // Wait for this to finish completely
+        fetchSuggestions(feedPage);
     }
 
     startup();
@@ -1430,4 +1436,56 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteSuggestionBtn.disabled = false;
         }
     });
+
+    function resetSuggestionForm() {
+        // 1. Clear text inputs
+        document.getElementById('suggestionComment').value = '';
+        bestTimeInput.value = '';
+        songRatingInput.value = '5';
+        document.getElementById('ratingValue').textContent = '5';
+
+        // 2. Clear hidden song data
+        selectedSongNameInput.value = '';
+        selectedSongArtistInput.value = '';
+        selectedSongImageUrlInput.value = '';
+        document.getElementById('selectedSongUriInput').value = '';
+
+        // 3. Reset Visuals (Hide cover, show search button)
+        document.getElementById('suggestCover').style.display = 'none';
+        document.getElementById('suggestCover').src = './content/song-placeholder.svg';
+        selectedSongTitle.style.display = 'none';
+        selectedSongArtistName.style.display = 'none';
+
+        // 4. Clear Spotify Preview
+        document.getElementById('spotifyPreviewContainer').innerHTML = '';
+
+        // 5. Reset Importance to Neutral
+        const importanceBtns = document.querySelectorAll('.importance-selector .imp-btn');
+        importanceBtns.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.importance-selector .imp-btn[data-value="neutral"]').classList.add('active');
+
+        // 6. Reset Visibility
+        document.getElementById('suggestionVisibility').checked = true;
+        document.getElementById('targetUsersDisplay').style.display = 'none';
+        selectedTargetUsers = [];
+        renderSelectedUsers();
+    }
+
+    function resetAndReloadFeed() {
+        // 1. Reset feed state variables
+        feedPage = 1;
+        hasMoreSuggestions = true;
+        isLoadingFeed = false; // Ensure lock is released
+
+        // 2. Clear existing cards
+        const feedContainer = document.getElementById('suggestionFeed');
+        feedContainer.innerHTML = '';
+
+        // 3. Hide "End of Feed" message if it was visible
+        const feedEndMessage = document.getElementById('feedEndMessage');
+        if (feedEndMessage) feedEndMessage.style.display = 'none';
+
+        // 4. Fetch fresh data
+        fetchSuggestions(feedPage);
+    }
 });

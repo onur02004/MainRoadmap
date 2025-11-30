@@ -8,9 +8,18 @@ import json
 import time
 
 DRY_RUN = False
-pixels = None
+pixels = 60
 num_pixels = int(os.getenv("LED_PIXELS", "8"))
 pin_env = os.getenv("LED_PIN", "D18")  # informational only in DRY_RUN
+
+pixel_pin = board.D18
+num_pixels = 60  # <-- set to 60
+pixels = neopixel.NeoPixel(
+    pixel_pin,
+    num_pixels,
+    brightness=0.3,
+    auto_write=False  # important: we'll call show() manually
+)
 
 # Try to import neopixel stack; fall back to dry-run if unavailable
 try:
@@ -144,3 +153,27 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
+
+def apply_frame_from_line(line: str):
+    """
+    line format: 'r,g,b;r,g,b;...'(one triplet per LED)
+    """
+    line = line.strip()
+    if not line:
+        return
+
+    parts = line.split(";")
+    for i, part in enumerate(parts):
+        if i >= num_pixels:
+            break
+        try:
+            r_str, g_str, b_str = part.split(",")
+            r = int(r_str)
+            g = int(g_str)
+            b = int(b_str)
+            pixels[i] = (r, g, b)
+        except ValueError:
+            # skip malformed triplets
+            continue
+
+    pixels.show()

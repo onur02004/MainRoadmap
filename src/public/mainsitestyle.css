@@ -1,16 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
 
-.jersey-10-regular {
-    font-family: "Jersey 10", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-}
-
-body {
-    background-color: #131313;
-    height: 100%;
-}
-
+/* Base Reset & Fonts */
 * {
     margin: 0;
     padding: 0;
@@ -18,21 +8,26 @@ body {
     box-sizing: border-box;
 }
 
-img {
-    border-radius: 50%;
+body {
+    background-color: #131313;
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
 }
 
+img {
+    border-radius: 50%;
+    object-fit: cover;
+}
 
+/* #region Wave Animation (Background) */
 .waveanim {
     position: fixed;
-    /* makes it stay in place */
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
     z-index: -100;
-    /* keeps it behind everything */
-    overflow: hidden;
 }
 
 .waveanim .wave {
@@ -44,29 +39,7 @@ img {
     transition: 0.5s;
 }
 
-/* #region Wave Anim */
-section {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-section .wave {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #52c471;
-    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
-    transition: 0.5s;
-}
-
-section .wave span {
+.waveanim .wave span {
     content: "";
     position: absolute;
     width: 325vh;
@@ -77,305 +50,259 @@ section .wave span {
     background: #000;
 }
 
-section .wave span:nth-child(1) {
+.waveanim .wave span:nth-child(1) {
     border-radius: 45%;
     background: rgba(20, 20, 20, 1);
     animation: animate 15s linear infinite;
 }
 
-section .wave span:nth-child(2) {
+.waveanim .wave span:nth-child(2) {
     border-radius: 40%;
     background: rgba(20, 20, 20, 0.5);
     animation: animate 20s linear infinite;
 }
 
-section .wave span:nth-child(3) {
+.waveanim .wave span:nth-child(3) {
     border-radius: 42.5%;
     background: rgba(20, 20, 20, 0.5);
     animation: animate 25s linear infinite;
 }
 
 @keyframes animate {
-    0% {
-        transform: translate(-50%, -75%) rotate(0deg);
-    }
-
-    100% {
-        transform: translate(-50%, -75%) rotate(360deg);
-    }
+    0% { transform: translate(-50%, -75%) rotate(0deg); }
+    100% { transform: translate(-50%, -75%) rotate(360deg); }
 }
-
 /* #endregion */
 
-
-.mainfgupperholder {
-    grid-area: upper;
-    height: 95vh;
-    /* This height might be an issue when side-by-side; consider removing or adjusting */
-    max-width:  700px;
-    /* Optional: Use this in addition if you went with '1fr 1fr' columns */
-
+/* #region Main Layout Grid */
+.mainbggrid {
+    min-height: 100vh;
     display: flex;
-    flex-direction: column-reverse;
-    gap: 30px;
+    justify-content: start;
 }
-
 
 .mainfgholder {
     position: relative;
     z-index: 1;
-    color: #fff;
-
-    /* use padding instead of margin so we can use exact 100vh later */
-    padding: 15px;
-
+    width: 100%;
+    max-width: 1600px; /* Prevent it from getting too wide on 4k screens */
+    padding: 20px;
     display: grid;
-    gap: 1.25rem;
+    gap: 2rem;
+    
+    /* Mobile First: Stacked */
     grid-template-columns: 1fr;
     grid-template-areas:
         "upper"
         "lower";
 }
 
+/* The Left/Top Column (User Info) */
+.mainfgupperholder {
+    grid-area: upper;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 20px;
+    /* Removed fixed height to allow sticky to work correctly */
+    height: 90vh;
+}
+
+/* The Right/Bottom Column (Buttons) */
 .mainfglowerholder {
-    display: grid;
     grid-area: lower;
-
-    /* Auto-fit as many cards as possible; falls back to single column on narrow widths */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1rem;
-
-    /* Make sure placement starts top-left and fills rows first (default) */
-    grid-auto-flow: row;
-    align-content: start;
-    padding-bottom: 30vh;
+    display: grid;
+    /* improved grid sizing for cards */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    align-content: end;
+    padding-bottom: 1.5rem;
+    height: 100%;
 }
 
-.profilbilgi {
-    grid-area: bilgi;
-}
-
-
-@media screen and (min-width: 800px) {
+/* Desktop View */
+@media screen and (min-width: 900px) {
     .mainfgholder {
-        /* Sets the first column to be at most 700px, but shrinks if the screen is smaller. 
-           The second column takes the remaining space (1fr). */
-        grid-template-columns: minmax(auto, 400px) auto;
+        grid-template-columns: 420px 1fr; /* Fixed sidebar width, rest fluid */
         grid-template-areas: "upper lower";
-        align-items: start;
-        min-height: 100vh;
-    }
-
-    .mainfglowerholder {
-        padding: 20px;
-        padding-bottom: 1px;
-        align-content: end;
-        height: 100%;
-    }
-
-    .mainfgholder {
-        padding-bottom: 100px;
+        align-items: start; /* Crucial for sticky */
     }
 
     .mainfgupperholder {
-        
+        /* STICKY LOGIC HERE */
+        position: sticky;
+        top: 40px; /* Distance from top of screen */
+        flex-direction: column; /* Standard order on desktop */
+        max-height: calc(100vh - 80px); /* Prevent overflow if sidebar is huge */
+        height: 95vh;
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
+    .maintitleholder {
+        margin-top: 2rem;
     }
 }
+/* #endregion */
 
+/* #region Components */
 
-
-
-
-.routeoption {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 1rem;
-    cursor: pointer;
-}
-
-/* routeoption anim */
-.routeoption:active,
-.routeoption:hover {
-    transform: scale(0.98);
-
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
-    transition: all 0.15s ease-out;
-}
-
-.routeoption {
-    transition: all 0.3s ease;
-}
-
-
+/* User Info Card */
 .userinfo {
-    height: 100px;
-    padding: 1rem;
+    position: relative;
     display: flex;
-    gap: 25px;
-    grid-template-areas: "pic bilgi account";
-
-    background: rgba(19, 19, 19, 0.34);
+    align-items: center;
+    gap: 20px;
+    padding: 1rem;
+    
+    background: rgba(19, 19, 19, 0.6);
     border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(7.9px);
-    -webkit-backdrop-filter: blur(7.9px);
-    border: 1px solid rgba(19, 19, 19, 0.31);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden; /* Contains the rainbow wrapper */
 }
 
 .profilepic {
-    height: 100%;
-    grid-area: upper;
-    width: 70px;
+    width: 80px;
+    height: 80px;
+    border: 2px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+    z-index: 20000;
 }
 
+.profilbilgi {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 2;
+}
 
-
-
-
+/* Animated Rainbow Background (Subtler) */
 .wrapper { 
-    z-index: -100;
-    border-radius: 15px;
-    opacity: 0.1;
-  height: 100%;
-  width: 100%;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  position: absolute;
-background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8,#dd00f3, #dd00f3);
-background-size: 1800% 1800%;
-
--webkit-animation: rainbow 18s ease infinite;
--z-animation: rainbow 18s ease infinite;
--o-animation: rainbow 18s ease infinite;
-  animation: rainbow 18s ease infinite;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0.15;
+    background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8,#dd00f3, #dd00f3);
+    background-size: 1800% 1800%;
+    animation: rainbow 18s ease infinite;
 }
 
-@-webkit-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
-}
-@-moz-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
-}
-@-o-keyframes rainbow {
-    0%{background-position:0% 82%}
-    50%{background-position:100% 19%}
-    100%{background-position:0% 82%}
-}
 @keyframes rainbow { 
     0%{background-position:0% 82%}
     50%{background-position:100% 19%}
     100%{background-position:0% 82%}
 }
 
+/* Titles */
+.maintitleholder p {
+    line-height: 0.9;
+}
+.maintitleholder p:nth-child(1) { font-size: 3rem; opacity: 0.8; }
+.maintitleholder p:nth-child(2) { font-size: 4rem; color: #52c471; -webkit-text-stroke: .5px rgb(0, 0, 0);}
+.maintitleholder p:nth-child(3) { font-size: 1.2rem; opacity: 0.5; margin-top: 10px; letter-spacing: 1px;}
 
-
-
-
-
-
-
-
-
-/* Smooth cross-page blur/fade */
-html::view-transition-old(root),
-html::view-transition-new(root) {
-  animation-duration: 320ms;
-  animation-timing-function: ease;
+/* Route Cards */
+.routeoption {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-@keyframes vt-fade-out {
-  from { opacity: 1; filter: blur(0); }
-  to   { opacity: 0; filter: blur(12px); }
-}
-@keyframes vt-fade-in {
-  from { opacity: 0; filter: blur(12px); }
-  to   { opacity: 1; filter: blur(0); }
+.routeoption h1 {
+    font-size: 2rem;
+    font-weight: 400;
 }
 
-/* Leaving current page */
-html::view-transition-old(root) { animation-name: vt-fade-out; }
-/* Entering new page */
-html::view-transition-new(root) { animation-name: vt-fade-in; }
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  html::view-transition-old(root),
-  html::view-transition-new(root) { animation: none !important; }
+.routeoption:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    border-color: rgba(82, 196, 113, 0.5); /* Highlight color */
 }
 
-/* Fallback (non-supporting browsers): quick fade-out before nav */
-html.leaving { transition: opacity .18s ease; opacity: 0; }
+.routeoption:active {
+    transform: scale(0.98);
+}
 
+.routeoption[notavailable] {
+    cursor: not-allowed;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+.routeoption[notavailable]:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.routeoption[notavailable] h1 {
+    color: #666;
+    font-size: 1.5rem;
+}
 
-.userinfo { view-transition-name: profileCard; }
+/* Features Label Section Break */
+#featuresyazisi {
+    /* Forces this element to take up the full width of the grid row */
+    grid-column: 1 / -1;
+    
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-top: 40px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #52c471;
+    width: 100%;
+}
 
+.featuresHolder {
+    /* Use display contents so children participate in the main grid, 
+       OR just hide it if JS appends to mainfglowerholder directly */
+    display: contents; 
+}
+/* #endregion */
 
-/* ===== Custom Dialog Styles ===== */
+/* #region Dialog & Transitions */
 .dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100000;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
 }
 
 .dialog-box {
-  background: rgba(19, 19, 19, 0.85);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.45);
-  padding: 2rem;
-  max-width: 420px;
-  text-align: center;
-  color: #fff;
-  animation: dialogPop 0.35s ease;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 18px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 90%;
+    width: 400px;
 }
 
-@keyframes dialogPop {
-  from { opacity: 0; transform: scale(0.9); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.dialog-title {
-  font-size: 1.8rem;
-  margin-bottom: 0.8rem;
-  color: #52c471;
-}
-
-.dialog-text {
-  font-size: 1.1rem;
-  color: #ccc;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-}
-
-.dialog-link {
-  color: #52c471;
-  text-decoration: underline;
-}
-
+.dialog-title { color: #52c471; font-size: 2rem; margin-bottom: 10px; }
 .dialog-btn {
-  background: #52c471;
-  border: none;
-  border-radius: 10px;
-  color: #0a0a0a;
-  font-weight: 700;
-  font-size: 1.1rem;
-  padding: 10px 24px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+    background: #52c471;
+    border: none;
+    padding: 10px 30px;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
 }
 
-.dialog-btn:hover {
-  transform: scale(1.05);
+/* View Transitions */
+html::view-transition-old(root),
+html::view-transition-new(root) {
+  animation-duration: 300ms;
 }
+.userinfo { view-transition-name: profileCard; }
+/* #endregion */
