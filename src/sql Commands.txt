@@ -537,3 +537,31 @@ CREATE TABLE push_subscriptions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, endpoint) -- Prevent duplicate subs for same device
 );
+
+
+
+DROP TABLE IF EXISTS device_tokens;
+
+CREATE TABLE device_tokens (
+  id           BIGSERIAL PRIMARY KEY,
+  user_id      uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token        TEXT NOT NULL UNIQUE,
+  platform     TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+
+ALTER TABLE device_tokens
+  ADD COLUMN IF NOT EXISTS expo_token text,
+  ADD COLUMN IF NOT EXISTS platform text,
+  ADD COLUMN IF NOT EXISTS last_seen timestamptz DEFAULT now();
+
+
+CREATE TABLE IF NOT EXISTS device_tokens (
+  user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expo_token text NOT NULL,
+  platform   text,
+  last_seen  timestamptz DEFAULT now(),
+  PRIMARY KEY (user_id, expo_token)
+);

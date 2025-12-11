@@ -4,11 +4,33 @@ import 'dotenv/config'; // Ensure environment variables are loaded
 import { q } from "../db/pool.js";
 import { getDominantColors } from "../helpers/imganalyser.js";
 import { getFreeLyricsSmart } from "../helpers/lyricsService.js";
+import { sendPush } from "../helpers/sendPush.js";
 
 const router = Router();
 
+async function notifyUser(userId, title, body, extraData = {}) {
+    console.log("Notifying User: " + userId);
+  try {
+    const { rows } = await q(
+      "SELECT expo_token FROM device_tokens WHERE user_id = $1 AND expo_token IS NOT NULL",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      console.log(`notifyUser: no devices found for user ${userId}`);
+      return;
+    }
+
+    for (const row of rows) {
+      await sendPush(row.expo_token, title, body, extraData);
+    }
+  } catch (err) {
+    console.error("notifyUser error:", err);
+  }
+}
+
 // Your Last.fm API Key should be set in your .env file
-const LASTFM_API_KEY = process.env.LASTFM_API_KEY; 
+const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const LASTFM_API_URL = "http://ws.audioscrobbler.com/2.0/";
 
 /**
@@ -21,8 +43,8 @@ router.get("/api/music/searchLASTFM", requireAuth, async (req, res) => {
 
     if (!LASTFM_API_KEY) {
         console.error("LASTFM_API_KEY is not set in environment variables.");
-        return res.status(500).json({ 
-            error: "Server configuration error: Music API key missing." 
+        return res.status(500).json({
+            error: "Server configuration error: Music API key missing."
         });
     }
 
@@ -35,11 +57,11 @@ router.get("/api/music/searchLASTFM", requireAuth, async (req, res) => {
 
     try {
         const response = await fetch(url);
-        
+
         if (!response.ok) {
             console.error(`Last.fm API failed: ${response.status} ${response.statusText}`);
-            return res.status(502).json({ 
-                error: "External API error. Could not retrieve music data." 
+            return res.status(502).json({
+                error: "External API error. Could not retrieve music data."
             });
         }
 
@@ -48,14 +70,14 @@ router.get("/api/music/searchLASTFM", requireAuth, async (req, res) => {
         // Check for error messages from Last.fm (e.g., invalid API key)
         if (data.error) {
             console.error("Last.fm reported an error:", data.message);
-            return res.status(500).json({ 
-                error: "Music search failed due to an external service error." 
+            return res.status(500).json({
+                error: "Music search failed due to an external service error."
             });
         }
 
         // Process the results to extract relevant information
         const results = data.results?.trackmatches?.track || [];
-        
+
         const simplifiedResults = results.map(track => {
             // Find the largest available image (size "extralarge" or "large")
             const largeImage = track.image.find(img => img.size === 'extralarge' || img.size === 'large');
@@ -69,14 +91,14 @@ router.get("/api/music/searchLASTFM", requireAuth, async (req, res) => {
             };
         });
 
-        return res.json({ 
-            tracks: simplifiedResults 
+        return res.json({
+            tracks: simplifiedResults
         });
 
     } catch (error) {
         console.error("Error fetching data from Last.fm:", error);
-        return res.status(500).json({ 
-            error: "An unexpected error occurred during search." 
+        return res.status(500).json({
+            error: "An unexpected error occurred during search."
         });
     }
 });
@@ -106,28 +128,28 @@ router.get("/api/music/searchMusicBrainz", requireAuth, async (req, res) => {
     try {
         // MusicBrainz requires a proper User-Agent header
         const searchResponse = await fetch(searchUrl, {
-            headers: { 
-                'User-Agent': 'SongShareApp/1.0 ( contact@example.com )' 
+            headers: {
+                'User-Agent': 'SongShareApp/1.0 ( contact@example.com )'
             }
         });
-        
+
         if (!searchResponse.ok) {
             console.error(`MusicBrainz API failed: ${searchResponse.status} ${searchResponse.statusText}`);
-            return res.status(502).json({ 
-                error: "External API error. Could not retrieve music data." 
+            return res.status(502).json({
+                error: "External API error. Could not retrieve music data."
             });
         }
 
         const searchData = await searchResponse.json();
         const recordings = searchData.recordings || [];
-        
+
         const simplifiedResults = recordings.map(recording => {
             // Find the Release Group ID from the first associated release
             const releaseGroupId = recording.releases?.[0]?.['release-group']?.id;
-            
+
             // The Cover Art Archive uses the Release Group ID to link to the album art.
             // This URL will redirect to the actual image file.
-            const coverArtUrl = releaseGroupId 
+            const coverArtUrl = releaseGroupId
                 ? `${COVERART_ARCHIVE_URL}release-group/${releaseGroupId}/front`
                 : COVER_FALLBACK;
 
@@ -141,14 +163,14 @@ router.get("/api/music/searchMusicBrainz", requireAuth, async (req, res) => {
             };
         });
 
-        return res.json({ 
-            tracks: simplifiedResults 
+        return res.json({
+            tracks: simplifiedResults
         });
 
     } catch (error) {
         console.error("Error fetching data from MusicBrainz:", error);
-        return res.status(500).json({ 
-            error: "An unexpected error occurred during search." 
+        return res.status(500).json({
+            error: "An unexpected error occurred during search."
         });
     }
 });
@@ -171,7 +193,7 @@ let tokenExpiry = 0;
 async function getSpotifyToken() {
     // Return cached token if still valid
     if (spotifyToken && Date.now() < tokenExpiry) {
-        return spotifyToken; 
+        return spotifyToken;
     }
 
     const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -201,7 +223,7 @@ async function getSpotifyToken() {
     const data = await response.json();
     spotifyToken = data.access_token;
     // Set expiry time 1 minute before actual expiry for safety
-    tokenExpiry = Date.now() + (data.expires_in - 60) * 1000; 
+    tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
     return spotifyToken;
 }
 
@@ -219,7 +241,7 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
 
     try {
         const token = await getSpotifyToken();
-        
+
         // Construct the Spotify API request URL for tracks
         const searchUrl = `${SPOTIFY_SEARCH_URL}?q=${encodeURIComponent(trackQuery)}&type=track&limit=10`;
 
@@ -228,20 +250,20 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (!searchResponse.ok) {
             console.error(`Spotify API failed: ${searchResponse.status} ${searchResponse.statusText}`);
-            return res.status(502).json({ 
-                error: "External API error. Could not retrieve music data from Spotify." 
+            return res.status(502).json({
+                error: "External API error. Could not retrieve music data from Spotify."
             });
         }
 
         const searchData = await searchResponse.json();
         const tracks = searchData.tracks?.items || [];
-        
+
         const simplifiedResults = tracks.map(track => {
             const album = track.album;
-            
+
             // Spotify provides images in descending size order, so the first one is the largest.
             const imageUrl = album.images?.[0]?.url || COVER_FALLBACK;
 
@@ -260,14 +282,14 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
             };
         });
 
-        return res.json({ 
-            tracks: simplifiedResults 
+        return res.json({
+            tracks: simplifiedResults
         });
 
     } catch (error) {
         console.error("Error fetching data from Spotify:", error);
-        return res.status(500).json({ 
-            error: error.message || "An unexpected error occurred during Spotify search." 
+        return res.status(500).json({
+            error: error.message || "An unexpected error occurred during Spotify search."
         });
     }
 });
@@ -281,7 +303,7 @@ router.get("/api/music/artist-image", requireAuth, async (req, res) => {
 
     try {
         const token = await getSpotifyToken();
-        
+
         // Construct the Spotify API request URL for artist details
         const artistUrl = `https://api.spotify.com/v1/artists/${artistId}`;
 
@@ -290,25 +312,25 @@ router.get("/api/music/artist-image", requireAuth, async (req, res) => {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (!artistResponse.ok) {
             if (artistResponse.status === 404) {
-                return res.status(404).json({ 
-                    error: "Artist not found." 
+                return res.status(404).json({
+                    error: "Artist not found."
                 });
             }
             console.error(`Spotify API failed: ${artistResponse.status} ${artistResponse.statusText}`);
-            return res.status(502).json({ 
-                error: "External API error. Could not retrieve artist data." 
+            return res.status(502).json({
+                error: "External API error. Could not retrieve artist data."
             });
         }
 
         const artistData = await artistResponse.json();
-        
+
         // Get the largest available artist image (first image in the array is largest)
         const artistImageUrl = artistData.images?.[0]?.url || null;
 
-        return res.json({ 
+        return res.json({
             artist: {
                 id: artistData.id,
                 name: artistData.name,
@@ -319,18 +341,18 @@ router.get("/api/music/artist-image", requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error("Error fetching artist image from Spotify:", error);
-        return res.status(500).json({ 
-            error: error.message || "An unexpected error occurred while fetching artist image." 
+        return res.status(500).json({
+            error: error.message || "An unexpected error occurred while fetching artist image."
         });
     }
 });
 
 router.post("/api/music/suggestions", requireAuth, async (req, res) => {
-    const userId = req.user?.sub; 
+    const userId = req.user?.sub;
     console.log("Saving user recomm");
     if (!userId) {
         console.log("/api/music/suggestions err no user id");
-        return res.status(401).json({ error: "Authentication error: User ID not found." });
+        return res.status(401).json({ error: "Authentication error: User ID not found. Try logging in again" });
     }
 
     const {
@@ -349,8 +371,8 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
     } = req.body;
 
     if (!name || !artist || !uri) {
-        return res.status(400).json({ 
-            error: "Missing required song data (name, artist, or uri)." 
+        return res.status(400).json({
+            error: "Missing required song data (name, artist, or uri)."
         });
     }
 
@@ -426,19 +448,52 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
 
     try {
         const result = await q(sql, params);
-        
-        res.status(201).json({ 
+
+        if (!isPublic && Array.isArray(targetUsers) && targetUsers.length > 0) {
+            console.log("Notifying user about the shared music");
+            const { rows: userRows } = await q(
+                "SELECT user_name FROM users WHERE id = $1",
+                [userId]
+            );
+            const recommenderName = userRows[0]?.user_name || "Someone";
+
+            const { rows: suggestedSongRows } = await q(
+                "SELECT id FROM song_suggestions WHERE user_id = $1 AND spotify_uri = $2",
+                [userId, uri]
+            );
+
+            const recommendedSongID = suggestedSongRows[0]?.id || "Yikes";
+
+
+            for (const targetUserId of targetUsers) {
+                await notifyUser(
+                    targetUserId,
+                    "New music suggestion",
+                    `${recommenderName} suggested: ${name} – ${artist}`,
+                    {
+                        suggestionId: recommendedSongID,
+                        spotifyUri: uri,
+                        songName: name,
+                        songArtist: artist,
+                    }
+                );
+            }
+        }
+
+
+
+        res.status(201).json({
             message: "Suggestion added successfully!",
-            suggestion: result.rows[0] 
+            suggestion: result.rows[0]
         });
 
     } catch (error) {
         console.error("Error inserting song suggestion:", error);
         if (error.code === '23514') {
-             return res.status(400).json({ error: "Invalid rating. Must be between 1 and 10." });
+            return res.status(400).json({ error: "Invalid rating. Must be between 1 and 10." });
         }
-        res.status(500).json({ 
-            error: "An unexpected error occurred while saving the suggestion." 
+        res.status(500).json({
+            error: "An unexpected error occurred while saving the suggestion."
         });
     }
 });
@@ -497,55 +552,55 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
         LIMIT $2
         OFFSET $3;
     `;
-    
+
     // 3. Define parameters
     const params = [userId, limit, offset];
 
     try {
         // 4. Execute the query
         const result = await q(sql, params);
-        
+
         // 5. Send success response
-        res.status(200).json({ 
-            suggestions: result.rows 
+        res.status(200).json({
+            suggestions: result.rows
         });
 
     } catch (error) {
         console.error("Error fetching suggestion feed:", error);
-        res.status(500).json({ 
-            error: "An unexpected error occurred while fetching the feed." 
+        res.status(500).json({
+            error: "An unexpected error occurred while fetching the feed."
         });
     }
 });
 
 router.get("/api/lyrics", async (req, res) => {
-  const { artist, track } = req.query;
+    const { artist, track } = req.query;
 
-  console.log("Loading Lyrics: " + artist + "-" + track);
+    console.log("Loading Lyrics: " + artist + "-" + track);
 
-  if (!artist || !track) {
-    return res.status(400).json({
-      error: "artist and track are required",
-    });
-  }
-
-  try {
-    const lyrics = await getFreeLyricsSmart(artist, track);
-
-    if (!lyrics) {
-        console.log("Lyrics Not found");
-      return res.status(404).json({
-        error: "Lyrics not found",
-      });
+    if (!artist || !track) {
+        return res.status(400).json({
+            error: "artist and track are required",
+        });
     }
-    
-    console.log("Lyrics found");
 
-    res.json({ artist, track, lyrics });
-  } catch (err) {
-    console.log("Error fetching lyrics");
-    res.status(500).json({ error: "Error fetching lyrics" });
-  }
+    try {
+        const lyrics = await getFreeLyricsSmart(artist, track);
+
+        if (!lyrics) {
+            console.log("Lyrics Not found");
+            return res.status(404).json({
+                error: "Lyrics not found",
+            });
+        }
+
+        console.log("Lyrics found");
+
+        res.json({ artist, track, lyrics });
+    } catch (err) {
+        console.log("Error fetching lyrics");
+        res.status(500).json({ error: "Error fetching lyrics" });
+    }
 });
 
 // New API for handling Likes, Mehs, and Dislikes
@@ -652,14 +707,14 @@ router.get("/api/music/suggestions/:id/comments", requireAuth, async (req, res) 
     try {
         const result = await q(sql, [suggestionId]);
 
-        res.status(200).json({ 
-            comments: result.rows 
+        res.status(200).json({
+            comments: result.rows
         });
 
     } catch (error) {
         console.error("Error fetching comments:", error);
-        res.status(500).json({ 
-            error: "An unexpected error occurred while fetching comments." 
+        res.status(500).json({
+            error: "An unexpected error occurred while fetching comments."
         });
     }
 });
@@ -685,16 +740,16 @@ router.post("/api/music/suggestions/:id/comments", requireAuth, async (req, res)
 
     try {
         const result = await q(sql, [suggestionId, userId, commentText.trim()]);
-        
-        res.status(201).json({ 
+
+        res.status(201).json({
             message: "Comment added successfully!",
-            comment: result.rows[0] 
+            comment: result.rows[0]
         });
 
     } catch (error) {
         console.error("Error inserting comment:", error);
-        res.status(500).json({ 
-            error: "An unexpected error occurred while saving the comment." 
+        res.status(500).json({
+            error: "An unexpected error occurred while saving the comment."
         });
     }
 });
@@ -771,5 +826,6 @@ router.put("/api/music/suggestions/:id", requireAuth, async (req, res) => {
         res.status(500).json({ error: "Server error updating suggestion" });
     }
 });
+
 
 export default router;

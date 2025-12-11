@@ -17,6 +17,8 @@ import songshareRoutes from "./routes/songshare.js";
 import userRoutes from "./routes/userRoutes.js";
 import wishlistRouter from './routes/wishlistRoutes.js'; 
 import { trackActivity } from "./middleware/activityTracker.js";
+import notificationHelper from "./helpers/notificationHelper.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -35,6 +37,7 @@ app.use(songshareRoutes);
 app.use(userRoutes);
 app.use(wishlistRouter);
 app.use(trackActivity);
+app.use(notificationHelper);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {

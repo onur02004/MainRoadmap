@@ -1,36 +1,40 @@
 import jwt from "jsonwebtoken";
 import 'dotenv/config';
 import { q } from "../db/pool.js";
-import { logUserActivity } from "../db/activity.js"; // <--- Import the helper
+import { logUserActivity } from "../db/activity.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const getJwtSecret = () => JWT_SECRET;
 
 export default function requireAuth(req, res, next) {
   let token = req.cookies?.token;
 
-  // NEW: also accept Authorization: Bearer <token>
-  if (!token) {
-    const auth = req.headers['authorization'] || req.headers['Authorization'];
-    if (auth && auth.startsWith('Bearer ')) {
-      token = auth.slice(7);
-    }
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!token && authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring("Bearer ".length).trim();
   }
 
   if (!token) {
-    // For APIs you might prefer JSON; for now keep redirect for browser:
+    // If it's an API call, return JSON 401 instead of redirect
+    if (req.path.startsWith("/api/")) {
+      return res.status(401).json({ error: "Not authorized" });
+    }
+
+    // Normal web routes → redirect to login
     return res.redirect("/login");
-    // or: return res.status(401).send("Not authorized");
   }
 
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     console.log("User authenticated:", req.user);
     next();
-    return;
   } catch {
-    return res.status(401).send("Session expired. <a href='/login.html'>Login again</a>");
+    // For simplicity: JSON 401 for APIs, plain 401 for others
+    if (req.path.startsWith("/api/")) {
+      return res.status(401).json({ error: "Session expired or invalid token" });
+    }
+    return res.status(401).send("Session expired or invalid token");
   }
 }
 

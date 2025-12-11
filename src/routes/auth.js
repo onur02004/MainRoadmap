@@ -215,6 +215,7 @@ router.get("/meinfo", async (req, res) => {
   }
 });
 
+//mobile
 router.post("/api/mobile-login", async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
@@ -240,6 +241,7 @@ router.post("/api/mobile-login", async (req, res) => {
   }
 
   const payload = {
+    id: user.id,
     sub: user.id,
     uname: user.user_name,
     name: user.real_name || "",
@@ -251,6 +253,61 @@ router.post("/api/mobile-login", async (req, res) => {
   });
 
   return res.json({ token, user: payload });
+});
+
+//mobile
+router.get("/api/me", requireAuth, async (req, res) => {
+  try {
+    const { uname, sub } = req.user; // from JWT
+
+    const { rows } = await q(
+      `SELECT id,
+              user_name,
+              real_name,
+              role,
+              is_verified,
+              join_date,
+              verification_date,
+              email,
+              tel_nr,
+              location,
+              profile_pic_path,
+              updated_at
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [sub]
+    );
+
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const feats = await q(
+      `SELECT f.key
+         FROM user_features uf
+         JOIN features f ON f.id = uf.feature_id
+        WHERE uf.user_id = $1`,
+      [user.id]
+    );
+
+    res.json({
+      username: user.user_name,
+      realName: user.real_name,
+      role: user.role,
+      verified: user.is_verified,
+      joinDate: user.join_date,
+      verifiedAt: user.verification_date,
+      email: user.email,
+      phone: user.tel_nr,
+      location: user.location,
+      profilePic: user.profile_pic_path,
+      updatedAt: user.updated_at,
+      features: feats.rows.map(r => r.key)
+    });
+  } catch (err) {
+    console.error("Error retrieving user info:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 
