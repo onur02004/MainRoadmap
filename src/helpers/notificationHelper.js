@@ -8,6 +8,7 @@ const router = Router();
 
 router.post("/api/register-device", requireAuth, async (req, res) => {
   try {
+    console.log("Registering Device Token For Notifications");
     const { expoToken, platform } = req.body;
 
     if (!expoToken || !platform) {
