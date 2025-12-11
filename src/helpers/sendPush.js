@@ -25,6 +25,10 @@ export async function sendPush(expoToken, title, body, data = {}, imageUrl = nul
 
     // 3. If an image URL is provided, add the specific fields for Android and iOS
     if (imageUrl) {
+        const cleanUrl = imageUrl.endsWith('.jpg') || imageUrl.endsWith('.png') 
+      ? imageUrl 
+      : `${imageUrl}#.jpg`;
+
       // Android: Displays as a large image in the notification shade
       message.image = imageUrl; 
       
