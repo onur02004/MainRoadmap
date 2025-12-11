@@ -475,7 +475,8 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
                         spotifyUri: uri,
                         songName: name,
                         songArtist: artist,
-                    }
+                    },
+                    params.imageUrl
                 );
             }
         }

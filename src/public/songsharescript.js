@@ -12,21 +12,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleNavigation(event) {
-        event.preventDefault();
+    const link = event.currentTarget;
+    const page = link.getAttribute('data-page');
 
-        const link = event.currentTarget;
-        const page = link.getAttribute('data-page');
-
-        // active class on nav links
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-
-        // show correct page
-        showPage(page);
-
-        // optional: update hash
-        // history.pushState(null, '', link.getAttribute('href'));
+    // If this link has NO data-page, let the browser do a normal navigation
+    if (!page) {
+        return; // do not preventDefault
     }
+
+    // Internal tab navigation
+    event.preventDefault();
+
+    // active class on nav links
+    navLinks.forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+
+    // show correct page
+    showPage(page);
+}
+
 
     navLinks.forEach(link => {
         link.addEventListener('click', handleNavigation);
