@@ -3,6 +3,7 @@ import requireAuth from "../middleware/requireAuth.js";
 import { q } from "../db/pool.js";          // make sure this path matches your project
 import { Expo } from "expo-server-sdk";
 import { NotificationType } from "../constants/notificationTypes.js";
+import { sendPush } from "./sendPush.js";
 
 const expo = new Expo();
 const router = Router();
