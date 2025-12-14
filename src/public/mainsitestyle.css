@@ -205,7 +205,15 @@ img {
     line-height: 0.9;
 }
 .maintitleholder p:nth-child(1) { font-size: 3rem; opacity: 0.8; }
-.maintitleholder p:nth-child(2) { font-size: 4rem; color: #52c471; -webkit-text-stroke: .5px rgb(0, 0, 0);}
+.maintitleholder p:nth-child(2) { 
+    font-size: 4rem; 
+    color: #52c471; 
+    /* Slightly increased stroke for better contrast against the glow */
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
+    
+    /* Add the animation */
+    animation: titlePulse 5s ease-in-out infinite;
+}
 .maintitleholder p:nth-child(3) { font-size: 1.2rem; opacity: 0.5; margin-top: 10px; letter-spacing: 1px;}
 
 /* Route Cards */
@@ -313,3 +321,16 @@ html::view-transition-new(root) {
 }
 .userinfo { view-transition-name: profileCard; }
 /* #endregion */
+
+
+
+@keyframes titlePulse {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(82, 196, 113, 0.3), 0 0 10px rgba(82, 196, 113, 0.1);
+        filter: brightness(1);
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(82, 196, 113, 0.8), 0 0 60px rgba(82, 196, 113, 0.4);
+        filter: brightness(1.1);
+    }
+}

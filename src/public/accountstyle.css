@@ -481,3 +481,128 @@ html.leaving { transition: opacity .18s ease; opacity: 0; }
 .pm-pick small { display: block; text-align: center; color: #aaa; margin-top: 6px; font-size: .8rem; }
 .pm-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
 .pm-hint { color: #aaa; font-size: .85rem; }
+
+
+
+
+/* --- MODAL / POPUP STYLES --- */
+
+/* 1. Base container styles (shared by both modals) */
+#profileModal[hidden],
+#settingsModal[hidden] { 
+    display: none; 
+}
+
+#profileModal,
+#settingsModal { 
+    position: fixed; 
+    inset: 0; 
+    z-index: 1000001; 
+    /* This ensures it floats on top of everything */
+}
+
+/* 2. The dark background overlay */
+#profileModal .pm-backdrop,
+#settingsModal .pm-backdrop { 
+    position: absolute; 
+    inset: 0; 
+    backdrop-filter: blur(6px); 
+    background: rgba(0,0,0,.35); 
+}
+
+/* 3. The actual floating box (Dialog) */
+#profileModal .pm-dialog,
+#settingsModal .pm-dialog {
+    position: relative; 
+    margin: 6vh auto 0; 
+    width: min(980px, 92vw); 
+    max-height: 88vh;
+    background: rgba(19,19,19,.9); 
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+/* 4. Header and Close Button shared styles */
+.pm-head { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 12px 14px; 
+    border-bottom: 1px solid rgba(255,255,255,.06); 
+}
+
+.pm-head h2 { 
+    font-size: 1.4rem; 
+    font-weight: 400; 
+    color: #fff; 
+}
+
+.pm-close { 
+    appearance: none; 
+    border: 0; 
+    background: transparent; 
+    color: #fff; 
+    font-size: 1.2rem; 
+    cursor: pointer; 
+    padding: 6px 8px; 
+    border-radius: 8px; 
+}
+
+.pm-close:hover { 
+    background: rgba(255,255,255,.08); 
+}
+
+.pm-content { 
+    padding: 14px; 
+    overflow: auto; 
+}
+
+/* --- Specific overrides for Settings Modal --- */
+/* Makes the settings box slightly narrower than the avatar picker */
+#settingsModal .settings-dialog {
+    max-width: 600px; 
+}
+
+/* --- Avatar Picker Specifics (Keep these) --- */
+.pm-loading { color: #ddd; opacity: .8; padding: 24px; }
+.pm-person { margin-bottom: 18px; }
+.pm-person h3 { font-weight: 400; font-size: 1.2rem; margin-bottom: 10px; color: #fff; }
+.pm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.pm-pick { display: block; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 6px; background: rgba(255,255,255,.04); cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, border-color .12s; }
+.pm-pick:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.18); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.pm-pick img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 10px; display: block; }
+.pm-pick small { display: block; text-align: center; color: #aaa; margin-top: 6px; font-size: .8rem; }
+.pm-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.pm-hint { color: #aaa; font-size: .85rem; }
+
+/* --- Settings Content Styles --- */
+.st-section { margin-bottom: 20px; }
+.st-heading { color: #fff; font-size: 1.4rem; font-weight: 400; margin-bottom: 4px; }
+.st-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 15px; }
+.st-divider { border: 0; height: 1px; background: rgba(255, 255, 255, 0.1); margin: 20px 0; }
+.st-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }
+.st-row.compact { padding: 10px 14px; }
+.st-info { display: flex; flex-direction: column; }
+.st-label { color: #eee; font-size: 1.1rem; }
+.st-sub { color: #777; font-size: 0.8rem; margin-top: 4px; line-height: 1.2; }
+
+/* Toggle Switch */
+.switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3a; transition: .4s; border: 1px solid rgba(255,255,255,0.1); }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 2px; background-color: white; transition: .4s; }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+input:checked + .slider { background-color: #52c471; border-color: #52c471; }
+input:checked + .slider:before { transform: translateX(23px); }
+input:disabled + .slider { background-color: #222; cursor: not-allowed; opacity: 0.5; }
+input:disabled + .slider:before { background-color: #555; }
+
+/* Small Toggle Switch */
+.switch.small { width: 40px; height: 22px; }
+.switch.small .slider:before { height: 16px; width: 16px; bottom: 2px; }
+.switch.small input:checked + .slider:before { transform: translateX(18px); }

@@ -569,3 +569,93 @@ CREATE TABLE IF NOT EXISTS device_tokens (
 
 ALTER TABLE device_tokens 
 ADD CONSTRAINT unique_user_token UNIQUE (user_id, expo_token);
+
+
+CREATE TABLE public.user_notification_settings (
+  user_id uuid PRIMARY KEY
+    REFERENCES public.users(id) ON DELETE CASCADE,
+
+  -- Channel master toggles
+  push_enabled  boolean NOT NULL DEFAULT true,
+  email_enabled boolean NOT NULL DEFAULT false,
+
+  -- Per-notification-type toggles (Push)
+  push_login                     boolean NOT NULL DEFAULT true,
+  push_public_share              boolean NOT NULL DEFAULT true,
+  push_direct_share              boolean NOT NULL DEFAULT true,
+  push_post_comment              boolean NOT NULL DEFAULT true,
+  push_post_reaction             boolean NOT NULL DEFAULT true,
+  push_song_played               boolean NOT NULL DEFAULT true,
+
+  -- Per-notification-type toggles (Email)
+  email_login                    boolean NOT NULL DEFAULT false,
+  email_public_share             boolean NOT NULL DEFAULT false,
+  email_direct_share             boolean NOT NULL DEFAULT false,
+  email_post_comment             boolean NOT NULL DEFAULT false,
+  email_post_reaction            boolean NOT NULL DEFAULT false,
+  email_song_played              boolean NOT NULL DEFAULT false,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX user_notification_settings_user_id_idx
+  ON public.user_notification_settings(user_id);
+
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_user_notification_settings_updated_at
+  ON public.user_notification_settings;
+
+CREATE TRIGGER trg_user_notification_settings_updated_at
+BEFORE UPDATE ON public.user_notification_settings
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+
+INSERT INTO public.user_notification_settings (user_id)
+SELECT u.id
+FROM public.users u
+LEFT JOIN public.user_notification_settings s ON s.user_id = u.id
+WHERE s.user_id IS NULL;
+
+
+CREATE TYPE public.notification_type AS ENUM (
+  'login',
+  'public_share',
+  'direct_share',
+  'post_comment',
+  'post_reaction',
+  'song_played'
+);
+
+
+CREATE TABLE public.notification_events (
+  id bigserial PRIMARY KEY,
+
+  user_id uuid NOT NULL
+    REFERENCES public.users(id) ON DELETE CASCADE,
+
+  type public.notification_type NOT NULL,
+
+  channel text NOT NULL CHECK (channel IN ('push', 'email')),
+
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+
+  sent_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX notification_events_user_id_idx
+  ON public.notification_events(user_id);
+
+CREATE INDEX notification_events_type_idx
+  ON public.notification_events(type);

@@ -5,28 +5,31 @@ import { q } from "../db/pool.js";
 import { getDominantColors } from "../helpers/imganalyser.js";
 import { getFreeLyricsSmart } from "../helpers/lyricsService.js";
 import { sendPush } from "../helpers/sendPush.js";
+import { notifyUserByType } from "../helpers/notificationHelper.js";
+import { NotificationType } from "../constants/notificationTypes.js";
+
 
 const router = Router();
 
 async function notifyUser(userId, title, body, extraData = {}) {
     console.log("Notifying User: " + userId);
-  try {
-    const { rows } = await q(
-      "SELECT expo_token FROM device_tokens WHERE user_id = $1 AND expo_token IS NOT NULL",
-      [userId]
-    );
+    try {
+        const { rows } = await q(
+            "SELECT expo_token FROM device_tokens WHERE user_id = $1 AND expo_token IS NOT NULL",
+            [userId]
+        );
 
-    if (rows.length === 0) {
-      console.log(`notifyUser: no devices found for user ${userId}`);
-      return;
-    }
+        if (rows.length === 0) {
+            console.log(`notifyUser: no devices found for user ${userId}`);
+            return;
+        }
 
-    for (const row of rows) {
-      await sendPush(row.expo_token, title, body, extraData);
+        for (const row of rows) {
+            await sendPush(row.expo_token, title, body, extraData);
+        }
+    } catch (err) {
+        console.error("notifyUser error:", err);
     }
-  } catch (err) {
-    console.error("notifyUser error:", err);
-  }
 }
 
 // Your Last.fm API Key should be set in your .env file
@@ -466,18 +469,18 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
 
 
             for (const targetUserId of targetUsers) {
-                await notifyUser(
-                    targetUserId,
-                    "New music suggestion",
-                    `${recommenderName} suggested: ${name} – ${artist}`,
-                    {
+                await notifyUserByType({
+                    userId: targetUserId,
+                    type: NotificationType.DIRECT_SHARE,
+                    title: "New music suggestion",
+                    body: `${recommenderName} suggested: ${name} – ${artist}`,
+                    data: {
                         suggestionId: recommendedSongID,
                         spotifyUri: uri,
-                        songName: name,
-                        songArtist: artist,
                     },
-                    params.imageUrl
-                );
+                    //imageUrl: imageUrl,
+                    imageUrl: "https://pi.330nur.org/content/deafult.jpg"
+                });
             }
         }
 

@@ -34,7 +34,7 @@
 
         <div class="userinfo">
           <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
-          
+
 
           <div class="profilbilgi">
             <p id="authLabel"></p>
@@ -100,6 +100,10 @@
           <h1>Relations</h1>
         </div>
 
+        <div data-aos="fade-up" class="routeoption" id="settingsButton">
+          <h1>Settings</h1>
+        </div>
+
         <div data-aos="fade-up" class="routeoption" id="logoutholder">
           <h1 id="logoutButton">Log Out</h1>
         </div>
@@ -125,6 +129,101 @@
     </div>
   </div>
 
+  <div id="settingsModal" hidden>
+    <div class="pm-backdrop"></div>
+    <div class="pm-dialog settings-dialog" role="dialog" aria-modal="true">
+      <div class="pm-head">
+        <h2 id="sm-title">Settings</h2>
+        <button class="pm-close" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="pm-content">
+
+        <div class="st-section">
+          <h3 class="st-heading">Notification Channels</h3>
+          <p class="st-desc">Choose how you want to be notified.</p>
+
+          <div class="st-row">
+            <div class="st-info">
+              <span class="st-label">Push Notifications</span>
+              <small class="st-sub">
+                Android Mobile Only. <br>
+                Enable system-level alerts on your device.
+              </small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="togglePush" disabled>
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="st-row">
+            <div class="st-info">
+              <span class="st-label">Email Notifications</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggleEmail" disabled>
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <hr class="st-divider">
+
+        <div class="st-section">
+          <h3 class="st-heading">Notification Categories</h3>
+          <p class="st-desc">Select which activities trigger a notification.</p>
+
+
+          <div class="st-list">
+            <div class="st-row compact">
+              <span class="st-label">Login Event</span>
+              <label class="switch small">
+                <input type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="st-row compact">
+              <span class="st-label">Public Song Shared</span>
+              <label class="switch small">
+                <input type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="st-row compact">
+              <span class="st-label">Private Song Sent To You</span>
+              <label class="switch small">
+                <input type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="st-row compact">
+              <span class="st-label">Someone Commented on Your Song Suggestion</span>
+              <label class="switch small">
+                <input type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="st-row compact">
+              <span class="st-label">Someone Reacted on Your Song Suggestion</span>
+              <label class="switch small">
+                <input type="checkbox" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="st-row compact">
+              <span class="st-label">Your Suggested Song Has Been Played</span>
+              <label class="switch small">
+                <input type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <script>
     AOS.init();
@@ -342,6 +441,37 @@
     }
   </script>
 
+  <script>
+    // --- Settings Modal Logic ---
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsBtn = document.getElementById('settingsButton');
+    const smCloseBtn = settingsModal.querySelector('.pm-close');
+    const smBackdrop = settingsModal.querySelector('.pm-backdrop');
+
+    // Functions to open/close
+    const openSettingsModal = () => {
+      settingsModal.hidden = false;
+      document.documentElement.classList.add('no-scroll');
+    };
+
+    const closeSettingsModal = () => {
+      settingsModal.hidden = true;
+      document.documentElement.classList.remove('no-scroll');
+    };
+
+    // Event Listeners
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', openSettingsModal);
+    }
+
+    smCloseBtn.addEventListener('click', closeSettingsModal);
+    smBackdrop.addEventListener('click', closeSettingsModal);
+
+    // Close on Escape key (shared logic)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !settingsModal.hidden) closeSettingsModal();
+    });
+  </script>
 
 </body>
 

@@ -1428,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (res.ok) {
-                alert("Suggestion deleted.");
+                //alert("Suggestion deleted.");
                 editModal.classList.remove('is-active');
                 location.reload(); // Refresh feed
             } else {

@@ -540,10 +540,10 @@ section { overflow-y: auto; }
 #rating-number { position: absolute; font-weight: bold; z-index: 2; color: #fff; }
 
 /* Action Buttons */
-.commentsIcon { grid-area: commentsIcon; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 2rem; cursor: pointer; object-fit: contain; width: 100%; height: 100%; }
-.addIcon { grid-area: addIcon; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 2rem; cursor: pointer; object-fit: contain; width: 100%; height: 100%; }
-.likeIcon { grid-area: likeIcon; background: #52c471; border-radius: 11px; padding: 2rem; cursor: pointer; object-fit: contain; width: 100%; height: 100%; transition: transform 0.1s; }
-.dislikeIcon { grid-area: dislikeIcon; background: #F87B1B; border-radius: 11px; padding: 2rem; cursor: pointer; object-fit: contain; width: 100%; height: 100%; transition: transform 0.1s; }
+.commentsIcon { grid-area: commentsIcon; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 2em; cursor: pointer; object-fit: contain; width: 100%; height: 100%; }
+.addIcon { grid-area: addIcon; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 2em; cursor: pointer; object-fit: contain; width: 100%; height: 100%; }
+.likeIcon { grid-area: likeIcon; background: #52c471; border-radius: 11px; padding: 2em; cursor: pointer; object-fit: contain; width: 100%; height: 100%; transition: transform 0.1s; }
+.dislikeIcon { grid-area: dislikeIcon; background: #F87B1B; border-radius: 11px; padding: 2em; cursor: pointer; object-fit: contain; width: 100%; height: 100%; transition: transform 0.1s; }
 .meh { 
     grid-area: meh; 
     background: #0199c2; 
@@ -552,7 +552,7 @@ section { overflow-y: auto; }
     font-weight: bold; cursor: pointer; 
     margin: 0; width: 100%; height: 100%; 
 }
-.reatcionsHolder { background: rgba(0,0,0,0.2); border-radius: 11px; grid-area: reatcionsHolder; padding: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+.reatcionsHolder { background: rgba(0,0,0,0.2); border-radius: 11px; grid-area: reatcionsHolder; padding: 1em; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 .reactionsIcon { width: 80%; height: auto; }
 
 /* Metadata boxes */
@@ -648,7 +648,7 @@ section { overflow-y: auto; }
 
     /* Make reaction buttons bigger for touch */
     .likeIcon, .dislikeIcon, .meh, .commentsIcon, .addIcon {
-        padding: 2rem;
+        padding: 2em;
     }
     
     /* Ensure text in bottom metadata boxes is readable */

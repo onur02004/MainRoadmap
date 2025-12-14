@@ -1,6 +1,7 @@
 // src/helpers/sendPush.js
 import { Expo } from "expo-server-sdk";
 const expo = new Expo();
+import { NotificationType } from "../constants/notificationTypes.js";
 
 // 1. Update arguments to accept 'imageUrl' (default is null)
 export async function sendPush(expoToken, title, body, data = {}, imageUrl = null) {
@@ -55,4 +56,34 @@ export async function sendPush(expoToken, title, body, data = {}, imageUrl = nul
   } catch (err) {
     console.error("sendPush error:", err);
   }
+}
+
+function isNotificationAllowed(settings, type, channel) {
+  if (channel === "push") {
+    if (!settings.push_enabled) return false;
+
+    switch (type) {
+      case "login": return settings.push_login;
+      case "public_share": return settings.push_public_share;
+      case "direct_share": return settings.push_direct_share;
+      case "post_comment": return settings.push_post_comment;
+      case "post_reaction": return settings.push_post_reaction;
+      case "song_played": return settings.push_song_played;
+    }
+  }
+
+  if (channel === "email") {
+    if (!settings.email_enabled) return false;
+
+    switch (type) {
+      case "login": return settings.email_login;
+      case "public_share": return settings.email_public_share;
+      case "direct_share": return settings.email_direct_share;
+      case "post_comment": return settings.email_post_comment;
+      case "post_reaction": return settings.email_post_reaction;
+      case "song_played": return settings.email_song_played;
+    }
+  }
+
+  return false;
 }
