@@ -478,8 +478,8 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
                         suggestionId: recommendedSongID,
                         spotifyUri: uri,
                     },
-                    //imageUrl: imageUrl,
-                    imageUrl: "https://pi.330nur.org/content/deafult.jpg"
+                    // FIX: Reverted to 'deafult.jpg' as requested
+                    imageUrl: imageUrl || "https://pi.330nur.org/content/deafult.jpg"
                 });
             }
         }
