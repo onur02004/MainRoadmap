@@ -385,7 +385,6 @@ section .wave span:nth-child(3) {
     position: absolute;
     top: 15px;
     z-index: 1000000;
-    background-color: red;
     margin: 1rem;
         background-color: #1313133a;
     border-radius: 10px;

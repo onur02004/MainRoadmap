@@ -12,24 +12,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleNavigation(event) {
-    const link = event.currentTarget;
-    const page = link.getAttribute('data-page');
+        const link = event.currentTarget;
+        const page = link.getAttribute('data-page');
 
-    // If this link has NO data-page, let the browser do a normal navigation
-    if (!page) {
-        return; // do not preventDefault
+        // If this link has NO data-page, let the browser do a normal navigation
+        if (!page) {
+            return; // do not preventDefault
+        }
+
+        // Internal tab navigation
+        event.preventDefault();
+
+        // active class on nav links
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        // show correct page
+        showPage(page);
     }
-
-    // Internal tab navigation
-    event.preventDefault();
-
-    // active class on nav links
-    navLinks.forEach(l => l.classList.remove('active'));
-    link.classList.add('active');
-
-    // show correct page
-    showPage(page);
-}
 
 
     navLinks.forEach(link => {
@@ -674,9 +674,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderSuggestions(suggestions) {
+    function renderSuggestions(suggestions, containerElement = feedContainer) {
         const placeholder = 'https://placehold.co/150x150/000000/FFFFFF?text=No+Cover';
 
+        if (containerElement !== feedContainer) {
+            containerElement.innerHTML = '';
+        }
 
         suggestions.forEach(s => {
             const card = document.createElement('div');
@@ -823,9 +826,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Publisher Comment:</p>
                     <p>${safeComment || 'No comment.'}</p>
                 </div>
-                <div class="publicStatusHolder">
+                <div class="publicStatusHolder" data-private="${!s.visibility_public}" data-id="${s.id}">
                     <p>Visibility:</p>
-                    <p>${s.visibility_public ? 'Public' : 'Private'}</p>
+                    <p>
+                        ${s.visibility_public ? 'Public' : 'Private'} 
+                        ${!s.visibility_public ? '<i class="fas fa-users" style="font-size:0.8em; margin-left:5px;"></i>' : ''}
+                    </p>
                 </div>
                 <div class="LyricsBtnHolder">
                     <p>Lyrics:</p>
@@ -943,7 +949,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            feedContainer.appendChild(card);
+            //feedContainer.appendChild(card);
+            containerElement.appendChild(card);
+
+            // [NEW] Handle click on Private Visibility status
+            const statusHolder = card.querySelector('.publicStatusHolder');
+            if (statusHolder && !s.visibility_public) {
+                statusHolder.style.cursor = 'pointer';
+                statusHolder.title = "See who this was shared with";
+                statusHolder.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSharedUsers(s.id);
+                });
+            }
 
             updateReactionUI(s.id, s.current_user_reaction || null);
         });
@@ -1491,5 +1509,172 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 4. Fetch fresh data
         fetchSuggestions(feedPage);
+    }
+
+
+    // ----- PROFILE PAGE LOGIC (READ ONLY) -----
+
+    const profileUsername = document.getElementById('profilePageUsername');
+    const profileRealName = document.getElementById('profilePageRealName');
+    const profileAvatar = document.getElementById('profilePageAvatar');
+    const profileSongCount = document.getElementById('profileSongCount');
+    const profileLikeCount = document.getElementById('profileLikeCount');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const profileFeedContainer = document.getElementById('profileFeed');
+
+    // 1. Load Profile Data (Aligned with account.html endpoints)
+    async function loadUserProfile() {
+        try {
+            // ERROR FIX: Use '/meinfo' instead of '/api/user/me'
+            const res = await fetch('/meinfo', { credentials: 'include' });
+            
+            if (!res.ok) {
+                if (res.status === 401) {
+                     window.location.href = '/login.html'; // Redirect if not logged in
+                     return;
+                }
+                throw new Error("Failed to load profile");
+            }
+            
+            const profile = await res.json();
+            
+            // ERROR FIX: Map correct fields from /meinfo response
+            // (account.html uses: username, realName, profilePic)
+            profileUsername.textContent = profile.username || "User";
+            profileRealName.textContent = profile.realName || "Music Enthusiast";
+            
+            // ERROR FIX: Handle Image Path and Typo
+            // Your system seems to have a typo 'deafult.jpg' based on account.html
+            if (profile.profilePic) {
+                profileAvatar.src = `media/${profile.profilePic}`;
+            } else {
+                profileAvatar.src = 'content/deafult.jpg'; // Matches the file in account.html
+            }
+            
+            // NOTE: /meinfo does not return stats (song count/likes). 
+            // We set them to '-' or 0 for now to prevent errors.
+            profileSongCount.textContent = profile.stats?.songs_shared || "-";
+            profileLikeCount.textContent = profile.stats?.total_likes_received || "-";
+
+            // Load User's History immediately after profile data
+            loadUserHistory();
+
+        } catch (err) {
+            console.error(err);
+            if(profileUsername) profileUsername.textContent = "Error loading profile";
+        }
+    }
+
+    // 2. Load User's Song History (Kept the same)
+    async function loadUserHistory() {
+        if(!profileFeedContainer) return;
+        
+        profileFeedContainer.innerHTML = '<div class="spinner"></div>';
+        try {
+            const res = await fetch('/api/user/my-suggestions', { credentials: 'include' });
+            if (!res.ok) throw new Error("Failed to load history");
+            
+            const data = await res.json();
+            if (data.suggestions.length === 0) {
+                profileFeedContainer.innerHTML = '<p style="text-align:center; margin-top:20px; color:#aaa;">You haven\'t suggested any songs yet.</p>';
+            } else {
+                renderSuggestions(data.suggestions, profileFeedContainer);
+            }
+        } catch (err) {
+            console.error(err);
+            profileFeedContainer.innerHTML = '<p style="text-align:center;">Error loading history.</p>';
+        }
+    }
+
+    // 3. Navigation Listener
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            if (link.getAttribute('data-page') === 'profile') {
+                loadUserProfile();
+            }
+        });
+    });
+
+    // 4. Logout Logic (Aligned with account.html endpoint)
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            if(!confirm("Are you sure you want to log out?")) return;
+            
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = '...';
+
+            try {
+                // ERROR FIX: Use '/logout' instead of '/api/auth/logout'
+                const response = await fetch('/logout', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({})
+                });
+
+                if (response.ok || response.status === 401) {
+                    window.location.href = '/login.html'; 
+                } else {
+                    alert("Logout failed");
+                    logoutBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error("Logout failed", err);
+                logoutBtn.disabled = false;
+            }
+        });
+    }
+
+
+    // [NEW] Shared Users Modal Logic
+    const sharedUsersModal = document.getElementById('sharedUsersModal');
+    const sharedUsersList = document.getElementById('sharedUsersList');
+    const sharedUsersCloseBtn = document.getElementById('sharedUsersCloseBtn');
+
+    if (sharedUsersCloseBtn) {
+        sharedUsersCloseBtn.addEventListener('click', () => {
+            sharedUsersModal.classList.remove('is-active');
+        });
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === sharedUsersModal) {
+            sharedUsersModal.classList.remove('is-active');
+        }
+    });
+
+    async function showSharedUsers(suggestionId) {
+        sharedUsersModal.classList.add('is-active');
+        sharedUsersList.innerHTML = '<li>Loading users...</li>';
+
+        try {
+            const res = await fetch(`/api/music/suggestions/${suggestionId}/targets`, {
+                credentials: 'include'
+            });
+            const data = await res.json();
+
+            if (data.users.length === 0) {
+                sharedUsersList.innerHTML = '<li>No specific users found (or user list is empty).</li>';
+                return;
+            }
+
+            sharedUsersList.innerHTML = '';
+            data.users.forEach(user => {
+                const li = document.createElement('li');
+                li.className = 'search-result-item';
+                li.innerHTML = `
+                    <img src="media/${user.profile_pic_path || './content/default.jpg'}" class="search-result-cover" style="width: 40px; height: 40px;">
+                    <div class="search-result-info">
+                        <div class="search-result-title">${user.user_name}</div>
+                        <div class="search-result-artist" style="font-size: 0.8rem;">${user.real_name || ''}</div>
+                    </div>
+                `;
+                sharedUsersList.appendChild(li);
+            });
+
+        } catch (err) {
+            console.error("Error fetching shared users", err);
+            sharedUsersList.innerHTML = '<li>Error loading info.</li>';
+        }
     }
 });

@@ -7,6 +7,8 @@ import multer from "multer";
 import requireAuth from "../middleware/requireAuth.js";
 import { q } from "../db/pool.js";
 
+import sharp from "sharp";
+
 const router = express.Router();
 
 const UPLOAD_BASE = path.join(process.cwd(), "src", "data", "uploads");
@@ -88,9 +90,12 @@ router.post("/api/storage/upload", requireAuth, upload.array("files", 20), async
   res.json({ uploaded: inserted });
 });
 
-// Download/preview a file (owner-only for now)
+
+// Download/preview a file (owner-only)
 router.get("/api/storage/file/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
+  const isPreview = req.query.preview === '1';
+  const width = req.query.w ? parseInt(req.query.w) : null; // Get width param
 
   const { rows } = await q(
     `SELECT id, owner_user_id, is_folder, name, storage_path, mime_type
@@ -108,9 +113,33 @@ router.get("/api/storage/file/:id", requireAuth, async (req, res) => {
     return res.status(404).json({ error: "file missing on disk" });
   }
 
-  // Safer default: attachment
+  // OPTIMIZATION: If 'w' param is present and it's an image, resize it
+  if (width && !isNaN(width) && item.mime_type && item.mime_type.startsWith("image/")) {
+      res.setHeader("Content-Type", item.mime_type);
+      res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(item.name)}"`);
+
+      // Create a resizing pipeline
+      const resizeTransform = sharp()
+          .resize({ width: width, withoutEnlargement: true })
+          .rotate(); // Auto-rotate based on EXIF data
+
+      // Stream: Disk -> Sharp -> Response
+      fs.createReadStream(path.resolve(item.storage_path))
+          .pipe(resizeTransform)
+          .pipe(res)
+          .on('error', (err) => {
+              console.error("Streaming error:", err);
+              // Only end if headers haven't been sent
+              if (!res.headersSent) res.status(500).send("Image processing error");
+          });
+          
+      return; 
+  }
+
+  // Standard serve (Full resolution)
   res.setHeader("Content-Type", item.mime_type || "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(item.name)}"`);
+  const disposition = isPreview ? 'inline' : 'attachment';
+  res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(item.name)}"`);
   res.sendFile(path.resolve(item.storage_path));
 });
 

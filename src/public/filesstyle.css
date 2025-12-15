@@ -55,6 +55,7 @@
 .modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55);
   display: flex; align-items: center; justify-content: center;
+  z-index: 10000;
 }
 .modalBox {
   background: #111; color: #fff; width: 700px; max-width: 95vw;
@@ -292,4 +293,153 @@
     border-radius: 12px;
     margin: 2px;
     font-size: 0.9em;
+}
+
+.homeicon{
+    position: absolute;
+    top: 15px;
+    z-index: 1000000;
+    margin: 1rem;
+        background-color: #1313133a;
+    border-radius: 10px;
+    padding: .7rem;
+    margin-bottom: 10px;
+    
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.homeicon:hover{
+  transform: scale(1.05);
+}
+
+
+.homeicon img{
+    width: 2rem;
+}
+
+
+/* ... existing CSS ... */
+
+/* PREVIEW MODAL STYLES */
+.preview-box {
+    width: 800px;
+    max-width: 95vw;
+    background: #1a1a1a;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 20px;
+}
+
+.close-preview-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10;
+}
+.close-preview-btn:hover { color: #fff; }
+
+.preview-header { margin-bottom: 20px; width: 100%; text-align: center; }
+.preview-header h3 { font-weight: 400; color: #fff; word-break: break-all; }
+
+.preview-content {
+    width: 100%;
+    min-height: 200px;
+    max-height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Media Types */
+.preview-media { max-width: 100%; max-height: 65vh; border-radius: 4px; }
+.preview-audio { width: 100%; padding: 20px; }
+.preview-pdf { width: 100%; height: 65vh; border: none; background: white; }
+.preview-fallback { display: flex; flex-direction: column; align-items: center; color: #888; }
+.preview-fallback i { font-size: 4rem; margin-bottom: 10px; color: #52c471; }
+
+.preview-footer { width: 100%; display: flex; justify-content: center; }
+.btn-primary {
+    background: #52c471;
+    color: #fff;
+    padding: 10px 30px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+.btn-primary:hover { transform: scale(1.05); background: #45b061; }
+
+
+.previewModal{
+    z-index: 1000;
+}
+
+/* Add to the bottom of filesstyle.css */
+
+/* Navigation Arrows for Preview */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-btn:hover {
+    background: rgba(82, 196, 113, 0.8);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.prev-btn {
+    left: 20px;
+}
+
+.next-btn {
+    right: 20px;
+}
+
+/* Mobile adjustment */
+@media (max-width: 900px) {
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    .prev-btn { left: 10px; }
+    .next-btn { right: 10px; }
+}
+
+
+.storage-icon-img {
+    width: 28px;
+    height: 28px;
+    object-fit: cover; /* Ensures image fills the square without stretching */
+    border-radius: 4px;
+    display: block;
+    opacity: 1;
 }

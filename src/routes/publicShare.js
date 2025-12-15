@@ -4,8 +4,6 @@ import fs from "node:fs";
 import { q } from "../db/pool.js";
 
 const router = express.Router();
-
-// Define path to templates
 const TEMPLATE_DIR = path.join(process.cwd(), 'src', 'templates');
 
 // --- Helper: Verify Subtree Access ---
@@ -38,38 +36,20 @@ router.get("/api/public-share/:token/list", async (req, res) => {
   }
 
   const rootId = link.item_id;
-
-  // determine what to list
   const toListId = folderId || rootId;
 
-  // Security checks
-  if (!link.allow_subtree && toListId !== rootId) {
-    return res.status(403).json({ error: "subtree not allowed" });
-  }
-  const ok = await isDescendantOrSelf(toListId, rootId);
-  if (!ok) return res.status(403).json({ error: "outside shared folder" });
+  if (!link.allow_subtree && toListId !== rootId) return res.status(403).json({ error: "subtree not allowed" });
+  if (!(await isDescendantOrSelf(toListId, rootId))) return res.status(403).json({ error: "outside shared folder" });
 
-  // Get Folder Info
-  const { rows: folderRows } = await q(
-    `SELECT id, is_folder, name FROM storage_items WHERE id=$1`,
-    [toListId]
-  );
+  const { rows: folderRows } = await q(`SELECT id, is_folder, name FROM storage_items WHERE id=$1`, [toListId]);
   if (!folderRows.length) return res.status(404).json({ error: "folder not found" });
 
-  // Get Children
   const { rows: items } = await q(
-    `SELECT id, parent_id, is_folder, name, mime_type, size_bytes
-       FROM storage_items
-      WHERE parent_id=$1
-      ORDER BY is_folder DESC, name ASC`,
+    `SELECT id, parent_id, is_folder, name, mime_type, size_bytes FROM storage_items WHERE parent_id=$1 ORDER BY is_folder DESC, name ASC`,
     [toListId]
   );
 
-  res.json({
-    rootId,
-    folder: folderRows[0],
-    items,
-  });
+  res.json({ rootId, folder: folderRows[0], items });
 });
 
 // --- API: Download/Preview Shared File ---
@@ -85,19 +65,11 @@ router.get("/api/public-share/:token/file/:fileId", async (req, res) => {
   if (!linkRows.length) return res.status(404).json({ error: "invalid link" });
 
   const link = linkRows[0];
-  if (link.expires_at && new Date(link.expires_at).getTime() < Date.now()) {
-    return res.status(410).json({ error: "link expired" });
-  }
+  if (link.expires_at && new Date(link.expires_at).getTime() < Date.now()) return res.status(410).json({ error: "link expired" });
 
-  const rootId = link.item_id;
+  if (!(await isDescendantOrSelf(fileId, link.item_id))) return res.status(403).json({ error: "outside shared scope" });
 
-  const ok = await isDescendantOrSelf(fileId, rootId);
-  if (!ok) return res.status(403).json({ error: "outside shared scope" });
-
-  const { rows } = await q(
-    `SELECT id, is_folder, name, storage_path, mime_type FROM storage_items WHERE id=$1`,
-    [fileId]
-  );
+  const { rows } = await q(`SELECT id, is_folder, name, storage_path, mime_type FROM storage_items WHERE id=$1`, [fileId]);
   if (!rows.length) return res.status(404).json({ error: "not found" });
   const item = rows[0];
 
@@ -115,49 +87,46 @@ router.get("/s/:token", async (req, res) => {
   const token = req.params.token;
 
   try {
-    const { rows: linkRows } = await q(
-      `SELECT item_id, expires_at FROM storage_share_links WHERE token=$1`,
-      [token]
-    );
+    const { rows: linkRows } = await q(`SELECT item_id, expires_at FROM storage_share_links WHERE token=$1`, [token]);
     if (!linkRows.length) return res.status(404).send("Invalid link");
-    
-    if (linkRows[0].expires_at && new Date(linkRows[0].expires_at).getTime() < Date.now()) {
-        return res.status(410).send("Link expired");
-    }
+    if (linkRows[0].expires_at && new Date(linkRows[0].expires_at).getTime() < Date.now()) return res.status(410).send("Link expired");
 
     const itemId = linkRows[0].item_id;
 
+    // JOIN with users table to get user_name
     const { rows: itemRows } = await q(
-      `SELECT id, is_folder, name, size_bytes, mime_type FROM storage_items WHERE id=$1`,
+      `SELECT i.id, i.is_folder, i.name, i.size_bytes, i.mime_type, u.user_name 
+         FROM storage_items i
+         JOIN users u ON i.owner_user_id = u.id
+        WHERE i.id=$1`,
       [itemId]
     );
     if (!itemRows.length) return res.status(404).send("Shared item not found");
 
     const item = itemRows[0];
+    const ownerName = item.user_name || "Unknown";
 
-    // Load template logic
     if (item.is_folder) {
         const templatePath = path.join(TEMPLATE_DIR, 'sharedFolder.html');
         let html = fs.readFileSync(templatePath, 'utf8');
         
-        // Inject variables
         html = html.replace(/{{TOKEN}}/g, token)
-                   .replace(/{{FOLDER_NAME}}/g, item.name);
+                   .replace(/{{FOLDER_NAME}}/g, item.name)
+                   .replace(/{{OWNER_NAME}}/g, ownerName); // Inject Owner Name
                    
         res.send(html);
     } else {
         const templatePath = path.join(TEMPLATE_DIR, 'sharedFile.html');
         let html = fs.readFileSync(templatePath, 'utf8');
         
-        // Calculate variables
         const fileSize = fmtSize(item.size_bytes);
         const downloadUrl = `/api/public-share/${token}/file/${item.id}`;
         const { previewHtml, cardWidth } = getPreviewData(token, item);
 
-        // Inject variables
         html = html.replace(/{{FILENAME}}/g, item.name)
                    .replace(/{{FILESIZE}}/g, fileSize)
                    .replace(/{{DOWNLOAD_URL}}/g, downloadUrl)
+                   .replace(/{{OWNER_NAME}}/g, ownerName) // Inject Owner Name
                    .replace('{{PREVIEW_HTML}}', previewHtml)
                    .replace('{{CARD_WIDTH}}', cardWidth);
                    
@@ -170,30 +139,25 @@ router.get("/s/:token", async (req, res) => {
   }
 });
 
-// --- Helpers ---
-
 function getPreviewData(token, item) {
     const mime = item.mime_type || "";
     const fileUrl = `/api/public-share/${token}/file/${item.id}?preview=1`;
-    
-    let previewHtml = '';
-    let cardWidth = '400px';
+    let previewHtml = '', cardWidth = '400px';
 
     if (mime.startsWith('image/')) {
         previewHtml = `<img src="${fileUrl}" class="preview-media" alt="${item.name}">`;
         cardWidth = '600px';
     } else if (mime.startsWith('video/')) {
-        previewHtml = `<video controls class="preview-media"><source src="${fileUrl}" type="${mime}">Your browser does not support video.</video>`;
+        previewHtml = `<video controls class="preview-media"><source src="${fileUrl}" type="${mime}"></video>`;
         cardWidth = '700px';
     } else if (mime.startsWith('audio/')) {
-        previewHtml = `<audio controls class="preview-audio"><source src="${fileUrl}" type="${mime}">Your browser does not support audio.</audio>`;
+        previewHtml = `<audio controls class="preview-audio"><source src="${fileUrl}" type="${mime}"></audio>`;
     } else if (mime === 'application/pdf') {
         previewHtml = `<iframe src="${fileUrl}" class="preview-pdf"></iframe>`;
         cardWidth = '800px';
     } else {
         previewHtml = `<div class="file-icon"><i class="fas fa-file-alt"></i></div>`;
     }
-    
     return { previewHtml, cardWidth };
 }
 

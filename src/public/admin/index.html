@@ -243,6 +243,33 @@
             border-radius: 4px;
             margin-bottom: 1rem;
         }
+
+        /* Add this inside your <style> tag */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.5rem;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ecf0f1;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .feature-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .feature-checkbox input {
+            width: auto !important;
+            /* Override global input width */
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -616,56 +643,90 @@
             }
         }
 
+        // Replace the existing editUser function
         async function editUser(userId) {
             try {
-                const response = await fetch(`/admin/users/${userId}`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
+                // Fetch User details AND All Features in parallel
+                const [userResponse, featuresResponse] = await Promise.all([
+                    fetch(`/admin/users/${userId}`, { credentials: 'include' }),
+                    fetch('/admin/features', { credentials: 'include' })
+                ]);
 
-                if (!response.ok) throw new Error(data.error);
+                const userData = await userResponse.json();
+                const featuresData = await featuresResponse.json();
 
+                if (!userResponse.ok) throw new Error(userData.error);
+                if (!featuresResponse.ok) throw new Error(featuresData.error);
+
+                const user = userData.user;
+                const userFeatures = userData.features || []; // Features the user currently has
+                const allFeatures = featuresData.features || []; // All available features in DB
+
+                // Generate HTML
                 document.getElementById('editUserFormContent').innerHTML = `
-                    <input type="hidden" name="userId" value="${userId}">
-                    <div class="form-group">
-                        <label>Username:</label>
-                        <input type="text" name="user_name" value="${data.user.user_name}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Real Name:</label>
-                        <input type="text" name="real_name" value="${data.user.real_name || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>Email:</label>
-                        <input type="email" name="email" value="${data.user.email || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>Phone:</label>
-                        <input type="text" name="tel_nr" value="${data.user.tel_nr || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>Role:</label>
-                        <select name="role">
-                            <option value="user" ${data.user.role === 'user' ? 'selected' : ''}>User</option>
-                            <option value="moderator" ${data.user.role === 'moderator' ? 'selected' : ''}>Moderator</option>
-                            <option value="admin" ${data.user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Verified:</label>
-                        <select name="is_verified">
-                            <option value="true" ${data.user.is_verified ? 'selected' : ''}>Yes</option>
-                            <option value="false" ${!data.user.is_verified ? 'selected' : ''}>No</option>
-                        </select>
-                    </div>
-                `;
+            <input type="hidden" name="userId" value="${userId}">
+            
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" name="user_name" value="${user.user_name}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Real Name:</label>
+                <input type="text" name="real_name" value="${user.real_name || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" name="email" value="${user.email || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Phone:</label>
+                <input type="text" name="tel_nr" value="${user.tel_nr || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Role:</label>
+                <select name="role">
+                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                    <option value="moderator" ${user.role === 'moderator' ? 'selected' : ''}>Moderator</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Verified:</label>
+                <select name="is_verified">
+                    <option value="true" ${user.is_verified ? 'selected' : ''}>Yes</option>
+                    <option value="false" ${!user.is_verified ? 'selected' : ''}>No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Assign Features:</label>
+                <div class="feature-grid">
+                    ${allFeatures.map(feature => {
+                    // Check if user already has this feature (comparing IDs)
+                    const isChecked = userFeatures.some(uf => uf.id === feature.id);
+                    return `
+                            <label class="feature-checkbox">
+                                <input type="checkbox" name="features" value="${feature.id}" ${isChecked ? 'checked' : ''}>
+                                ${feature.key}
+                            </label>
+                        `;
+                }).join('')}
+                    ${allFeatures.length === 0 ? '<div style="color:#666; padding:5px;">No features defined in system.</div>' : ''}
+                </div>
+            </div>
+        `;
 
                 document.getElementById('editUserModal').style.display = 'block';
             } catch (error) {
+                console.error(error);
                 alert('Error loading user for editing: ' + error.message);
             }
         }
-
         async function deleteUser(userId) {
             if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
                 return;
@@ -765,13 +826,21 @@
         }
 
         // Form handlers
+        // Replace the existing editUserForm listener
         document.getElementById('editUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(e.target);
             const userId = formData.get('userId');
+
+            // Create updates object
             const updates = Object.fromEntries(formData.entries());
-            delete updates.userId;
+
+            // Explicitly handle the 'features' checkboxes array
+            // Convert string IDs to integers (since DB uses integer IDs for features)
+            updates.features = formData.getAll('features').map(id => parseInt(id));
+
+            delete updates.userId; // Clean up ID from body
 
             // Convert boolean strings to actual booleans
             if (updates.is_verified) {
@@ -796,7 +865,6 @@
                 alert('Error updating user: ' + error.message);
             }
         });
-
         // Initialize admin panel
         checkAdminStatus();
 
@@ -900,100 +968,100 @@
 
         // Create User Form Handler
         // Enhanced Create User Form Handler with better error handling
-document.getElementById('createUserForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    
-    try {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Creating...';
-        
-        const formData = new FormData(e.target);
-        const userData = Object.fromEntries(formData.entries());
-        
-        // Validate passwords match
-        if (userData.password !== userData.confirmPassword) {
-            alert('Passwords do not match');
-            return;
-        }
-        
-        // Remove confirmPassword from data
-        delete userData.confirmPassword;
-        
-        const response = await fetch('/admin/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData),
-            credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to create user');
-        }
-        
-        alert('User created successfully!');
-        closeModal('createUserModal');
-        loadUsers(currentUserPage, currentUserSearch);
-        
-    } catch (error) {
-        console.error('Create user error:', error);
-        alert('Error creating user: ' + error.message);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = originalText;
-    }
-});
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-// Enhanced Change Password Form Handler
-document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    
-    try {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Changing...';
-        
-        const formData = new FormData(e.target);
-        const userId = formData.get('userId');
-        const newPassword = formData.get('newPassword');
-        const confirmNewPassword = formData.get('confirmNewPassword');
-        
-        // Validate passwords match
-        if (newPassword !== confirmNewPassword) {
-            alert('Passwords do not match');
-            return;
-        }
-        
-        const response = await fetch(`/admin/users/${userId}/password`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newPassword }),
-            credentials: 'include'
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+
+            try {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Creating...';
+
+                const formData = new FormData(e.target);
+                const userData = Object.fromEntries(formData.entries());
+
+                // Validate passwords match
+                if (userData.password !== userData.confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+
+                // Remove confirmPassword from data
+                delete userData.confirmPassword;
+
+                const response = await fetch('/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create user');
+                }
+
+                alert('User created successfully!');
+                closeModal('createUserModal');
+                loadUsers(currentUserPage, currentUserSearch);
+
+            } catch (error) {
+                console.error('Create user error:', error);
+                alert('Error creating user: ' + error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to change password');
-        }
-        
-        alert('Password changed successfully!');
-        closeModal('changePasswordModal');
-        
-    } catch (error) {
-        console.error('Change password error:', error);
-        alert('Error changing password: ' + error.message);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = originalText;
-    }
-});  
+
+        // Enhanced Change Password Form Handler
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+
+            try {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Changing...';
+
+                const formData = new FormData(e.target);
+                const userId = formData.get('userId');
+                const newPassword = formData.get('newPassword');
+                const confirmNewPassword = formData.get('confirmNewPassword');
+
+                // Validate passwords match
+                if (newPassword !== confirmNewPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+
+                const response = await fetch(`/admin/users/${userId}/password`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newPassword }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to change password');
+                }
+
+                alert('Password changed successfully!');
+                closeModal('changePasswordModal');
+
+            } catch (error) {
+                console.error('Change password error:', error);
+                alert('Error changing password: ' + error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        });  
     </script>
 </body>
 

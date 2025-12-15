@@ -104,6 +104,10 @@
           <h1>Settings</h1>
         </div>
 
+        <div data-aos="fade-up" class="routeoption" id="adminPanelBtn" style="display: none;">
+          <h1>Admin Panel</h1>
+        </div>
+
         <div data-aos="fade-up" class="routeoption" id="logoutholder">
           <h1 id="logoutButton">Log Out</h1>
         </div>
@@ -333,6 +337,19 @@
         if (pic) {
           if (me.profilePic) pic.src = `/media/${me.profilePic}`;
           else pic.src = 'content/deafult.jpg';
+        }
+
+        if (profile.role && profile.role.toLowerCase().includes('admin')) {
+          const adminBtn = document.getElementById('adminPanelBtn');
+          if (adminBtn) {
+            // Make the button visible
+            adminBtn.style.display = 'block'; 
+            
+            // Add navigation functionality
+            adminBtn.addEventListener('click', () => {
+              window.location.href = '/admin'; // Redirect to your admin route
+            });
+          }
         }
       } catch (err) {
         console.error("Failed to load profile:", err);

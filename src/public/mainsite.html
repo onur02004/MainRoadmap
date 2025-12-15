@@ -72,14 +72,15 @@
         <div data-aos="fade-up" class="routeoption" id="songshare">
           <h1>Song Share</h1>
         </div>
-        <div data-aos="fade-up" class="routeoption" notavailable> <h1>Games</h1>
+        <div data-aos="fade-up" class="routeoption" notavailable> 
+          <h1>Games</h1>
         </div>
         
         <div data-aos="fade-up" class="routeoption" notavailable>
           <h1>Automisation</h1>
         </div>
-        <div data-aos="fade-up" class="routeoption">
-          <h1>Files</h1>
+        <div data-aos="fade-up" class="routeoption" id="fileStorage">
+          <h1>File Storage</h1>
         </div>
         <div data-aos="fade-up" class="routeoption" notavailable>
           <h1>Chat</h1>
@@ -127,6 +128,9 @@
   });
   document.getElementById('songshare')?.addEventListener('click', (e)=> {
     window.location.href = '/song-share';
+  });
+  document.getElementById('fileStorage')?.addEventListener('click', (e)=> {
+    window.location.href = '/file-storage';
   });
 </script>
 

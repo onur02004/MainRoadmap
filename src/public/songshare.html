@@ -35,6 +35,18 @@
                 </div>
             </div>
 
+            <div id="sharedUsersModal" class="modal">
+                <div class="modal-content">
+                    <span id="sharedUsersCloseBtn" class="close-button">&times;</span>
+                    <h2 style="font-size: 2rem;">Shared With</h2>
+                    <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px;">
+                        This song was sent privately to:
+                    </p>
+                    <ul id="sharedUsersList" class="search-results">
+                    </ul>
+                </div>
+            </div>
+
             <div id="lyricsModal" class="modal">
                 <div class="modal-content">
                     <span id="lyricsCloseButton" class="close-button">&times;</span>
@@ -287,8 +299,34 @@
             </div>
 
             <div class="page page-profile">
-                <h1>User Profile</h1>
-                <p>Manage your account settings and personal information.</p>
+                <div class="profile-header-container">
+                    <div class="profile-avatar-wrapper">
+                        <img id="profilePageAvatar" src="./content/default.jpg" alt="Profile Picture">
+                    </div>
+
+                    <h1 id="profilePageUsername" style="margin-bottom: 0;">Loading...</h1>
+                    <p id="profilePageRealName" style="color: #9ca3af; margin-top: 5px; font-size: 1.2rem;">...</p>
+
+                    <div class="profile-stats">
+                        <div class="stat-box">
+                            <span id="profileSongCount" class="stat-number">0</span>
+                            <span class="stat-label">Songs</span>
+                        </div>
+                        <div class="stat-box">
+                            <span id="profileLikeCount" class="stat-number">0</span>
+                            <span class="stat-label">Likes Rcvd</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h2 style="font-size: 2rem; margin-bottom: 20px;">My Shared Songs</h2>
+
+                <div id="profileFeed" class="suggestion-feed-container">
+                    <p style="text-align:center; color:#666;">Loading history...</p>
+                </div>
             </div>
         </div>
     </section>

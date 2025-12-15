@@ -831,5 +831,53 @@ router.put("/api/music/suggestions/:id", requireAuth, async (req, res) => {
     }
 });
 
+router.get("/api/user/my-suggestions", requireAuth, async (req, res) => {
+    const userId = req.user.sub;
+
+    const sql = `
+        SELECT
+            s.*,
+            u.user_name AS suggester_username,
+            u.profile_pic_path AS suggester_avatar,
+            r.song_reaction_type AS current_user_reaction
+        FROM song_suggestions s
+        JOIN users u ON s.user_id = u.id
+        LEFT JOIN song_suggestion_reactions r ON r.suggestion_id = s.id AND r.user_id = $1
+        WHERE s.user_id = $1
+        ORDER BY s.date_added DESC
+    `;
+
+    try {
+        const result = await q(sql, [userId]);
+        res.json({ suggestions: result.rows });
+    } catch (err) {
+        console.error("My history error:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// [NEW] Get Target Users for a Suggestion (Who it was shared with)
+router.get("/api/music/suggestions/:id/targets", requireAuth, async (req, res) => {
+    const suggestionId = req.params.id;
+
+    const sql = `
+        SELECT u.user_name, u.real_name, u.profile_pic_path
+        FROM users u
+        WHERE u.id = ANY (
+            SELECT UNNEST(target_users) 
+            FROM song_suggestions 
+            WHERE id = $1
+        )
+    `;
+
+    try {
+        const result = await q(sql, [suggestionId]);
+        res.json({ users: result.rows });
+    } catch (err) {
+        console.error("Error fetching target users:", err);
+        res.status(500).json({ error: "Failed to fetch shared users" });
+    }
+});
+
 
 export default router;

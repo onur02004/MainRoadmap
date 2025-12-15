@@ -1,14 +1,18 @@
 // Basic state
-let currentFolderId = null;        // what you're currently viewing
+let currentFolderId = null;        
 let currentFolderName = "Root";
-let pathStack = [];                // breadcrumbs for main view [{id,name}...]
+let pathStack = [];                
 
-let destFolderId = null;           // destination for upload; null = Root
+let destFolderId = null;           
 let destFolderName = "Root";
 
 // Modal picker state
 let pickerFolderId = null;
-let pickerStack = [];              // breadcrumbs inside modal
+let pickerStack = [];              
+
+// Preview State
+let previewableItems = []; // List of files in current folder
+let currentPreviewIndex = -1;
 
 // --- DOM Elements ---
 const storageList = document.getElementById("storageList");
@@ -36,7 +40,17 @@ const shareModal = document.getElementById("shareModal");
 const closeShareModal = document.getElementById("closeShareModal");
 const shareLinkInput = document.getElementById("shareLinkInput");
 const copyLinkBtn = document.getElementById("copyLinkBtn");
-const shareTabs = document.querySelectorAll(".tab-btn"); // To hide/show tabs
+const shareTabs = document.querySelectorAll(".tab-btn");
+
+// Preview Modal Elements
+const previewModal = document.getElementById("previewModal");
+const closePreviewModal = document.getElementById("closePreviewModal");
+const previewTitle = document.getElementById("previewTitle");
+const previewContent = document.getElementById("previewContent");
+const previewDownloadBtn = document.getElementById("previewDownloadBtn");
+const prevFileBtn = document.getElementById("prevFileBtn");
+const nextFileBtn = document.getElementById("nextFileBtn");
+
 
 // --- Helpers ---
 function setDestination(folderId, folderName) {
@@ -72,7 +86,6 @@ function fmtSize(bytes) {
 }
 
 // --- API Wrappers ---
-
 async function apiShare(itemId) {
     const r = await fetch("/api/storage/share/" + itemId, {
         method: "POST",
@@ -80,7 +93,7 @@ async function apiShare(itemId) {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || "share failed");
-    return j; // {url, token}
+    return j; 
 }
 
 async function apiDelete(itemId) {
@@ -142,7 +155,7 @@ ctxMenu.innerHTML = `
 `;
 document.body.appendChild(ctxMenu);
 
-let ctxTarget = null; // {id, name, is_folder}
+let ctxTarget = null; 
 
 function hideCtx() {
     ctxMenu.classList.add("hidden");
@@ -160,26 +173,16 @@ ctxMenu.addEventListener("click", async (e) => {
 
     const target = ctxTarget;
     const action = btn.dataset.action;
-    
     hideCtx(); 
 
     try {
-        if (action === "share-public") {
-            openPublicShareModal(target);
-        }
-
-        if (action === "share-user") {
-            // Functionality to be implemented later
-            alert("Share with User functionality coming soon!");
-        }
-
+        if (action === "share-public") openPublicShareModal(target);
+        if (action === "share-user") alert("Share with User functionality coming soon!");
         if (action === "delete") {
             const ok = confirm(`Delete "${target.name}"? This cannot be undone.`);
             if (!ok) return;
-
             await apiDelete(target.id);
             toast("ok", "Deleted.");
-            // Refresh current folder
             await openFolder(currentFolderId, currentFolderName, pathStack);
         }
     } catch (err) {
@@ -187,18 +190,14 @@ ctxMenu.addEventListener("click", async (e) => {
     }
 });
 
-// --- Modal Logic ---
-
+// --- Modals ---
 function openPublicShareModal(item) {
     if (!shareModal) return;
     shareModal.classList.remove("hidden");
-    
-    // Hide other tabs, show only public
     document.getElementById("tab-public")?.classList.remove("hidden");
     document.getElementById("tab-internal")?.classList.add("hidden");
     document.getElementById("tab-user-select")?.classList.add("hidden");
     
-    // Visually update tabs if present
     shareTabs.forEach(t => {
         if(t.dataset.tab === 'public') t.classList.add('active');
         else t.classList.remove('active');
@@ -206,7 +205,6 @@ function openPublicShareModal(item) {
 
     shareLinkInput.value = "Generating link...";
 
-    // Generate Link Immediately
     apiShare(item.id).then(({ url }) => {
         const fullUrl = new URL(url, window.location.origin).toString();
         shareLinkInput.value = fullUrl;
@@ -215,14 +213,12 @@ function openPublicShareModal(item) {
         toast("err", err.message);
     });
 
-    // Inject "Stop Sharing" button logic if not already present
-    // (We check if we already added it to avoid duplicates)
     let stopBtn = document.getElementById("stopSharingBtn");
     if(!stopBtn) {
         const container = document.getElementById("tab-public");
         stopBtn = document.createElement("button");
         stopBtn.id = "stopSharingBtn";
-        stopBtn.className = "danger"; // Apply danger styling
+        stopBtn.className = "danger";
         stopBtn.style.marginTop = "10px";
         stopBtn.style.width = "100%";
         stopBtn.style.padding = "10px";
@@ -232,10 +228,7 @@ function openPublicShareModal(item) {
         stopBtn.style.cursor = "pointer";
         stopBtn.textContent = "Stop Sharing";
         container.appendChild(stopBtn);
-
         stopBtn.onclick = () => {
-            // NOTE: Currently just clears UI. 
-            // Needs backend API update to actually revoke token in DB.
             shareLinkInput.value = "";
             toast("ok", "Link removed (API update required for full revoke)");
             closeShareModal.click();
@@ -243,9 +236,7 @@ function openPublicShareModal(item) {
     }
 }
 
-// Modal Event Listeners
 if(closeShareModal) closeShareModal.addEventListener("click", () => shareModal.classList.add("hidden"));
-
 if(copyLinkBtn) {
     copyLinkBtn.addEventListener("click", async () => {
         if (!shareLinkInput.value || shareLinkInput.value.startsWith("Error")) return;
@@ -254,14 +245,91 @@ if(copyLinkBtn) {
     });
 }
 
+// --- Preview Modal Logic ---
+function openPreview(item) {
+    if (!previewModal) return;
+
+    // Synchronize index
+    if (previewableItems.length > 0) {
+        currentPreviewIndex = previewableItems.findIndex(x => x.id === item.id);
+    } else {
+        previewableItems = [item];
+        currentPreviewIndex = 0;
+    }
+    
+    renderPreviewContent(item);
+    previewModal.classList.remove("hidden");
+}
+
+function renderPreviewContent(item) {
+    previewTitle.textContent = item.name;
+    const fileUrl = "/api/storage/file/" + item.id;
+    const previewUrl = fileUrl + "?preview=1"; 
+    const mime = item.mime_type || "";
+
+    // Set download link
+    previewDownloadBtn.href = fileUrl;
+
+    let html = "";
+    if (mime.startsWith('image/')) {
+        html = `<img src="${previewUrl}" class="preview-media" alt="Preview">`;
+    } else if (mime.startsWith('video/')) {
+        html = `<video controls src="${previewUrl}" class="preview-media" autoplay muted></video>`;
+    } else if (mime.startsWith('audio/')) {
+        html = `<audio controls src="${previewUrl}" class="preview-audio"></audio>`;
+    } else if (mime === 'application/pdf') {
+        html = `<iframe src="${previewUrl}" class="preview-pdf"></iframe>`;
+    } else {
+        html = `<div class="preview-fallback"><i class="fas fa-file-alt"></i><p>Preview not available for this file type.</p></div>`;
+    }
+
+    previewContent.innerHTML = html;
+}
+
+function navigatePreview(direction) {
+    if (!previewableItems || previewableItems.length === 0) return;
+
+    let newIndex = currentPreviewIndex + direction;
+
+    if (newIndex < 0) {
+        newIndex = previewableItems.length - 1;
+    } else if (newIndex >= previewableItems.length) {
+        newIndex = 0;
+    }
+
+    currentPreviewIndex = newIndex;
+    renderPreviewContent(previewableItems[currentPreviewIndex]);
+}
+
+function closePreview() {
+    previewModal.classList.add("hidden");
+    previewContent.innerHTML = ""; // Stop media playback
+}
+
+// Preview Event Listeners
+if(closePreviewModal) closePreviewModal.addEventListener("click", closePreview);
+if(prevFileBtn) prevFileBtn.addEventListener("click", () => navigatePreview(-1));
+if(nextFileBtn) nextFileBtn.addEventListener("click", () => navigatePreview(1));
+
+if(previewModal) {
+    previewModal.addEventListener("click", (e) => {
+        if(e.target === previewModal) closePreview();
+    });
+}
+document.addEventListener("keydown", (e) => {
+    if(!previewModal.classList.contains("hidden")) {
+        if(e.key === "Escape") closePreview();
+        if(e.key === "ArrowLeft") navigatePreview(-1);
+        if(e.key === "ArrowRight") navigatePreview(1);
+    }
+});
+
 
 // --- Main View Rendering ---
 function renderBreadcrumbs(stack) {
     const targets = [breadcrumbsEl, storageBreadcrumbs].filter(el => el);
-
     targets.forEach(el => {
         el.innerHTML = "";
-        
         const rootBtn = document.createElement("button");
         rootBtn.type = "button";
         rootBtn.textContent = "Root";
@@ -288,10 +356,8 @@ function renderBreadcrumbs(stack) {
 
 function renderList(items) {
     if (!storageList) return;
-
     storageList.innerHTML = "";
 
-    // Up navigation
     if (currentFolderId) {
         const upRow = document.createElement("div");
         upRow.className = "storage-row";
@@ -323,12 +389,21 @@ function renderList(items) {
         const row = document.createElement("div");
         row.className = "storage-row";
 
-        const icon = it.is_folder ? "📁" : "📄";
+        let iconHtml;
+        if (it.is_folder) {
+            iconHtml = '<div class="storage-icon">📁</div>';
+        } else if (it.mime_type && it.mime_type.startsWith('image/')) {
+             // Request optimized thumbnail (width=64)
+             iconHtml = `<img src="/api/storage/file/${it.id}?preview=1&w=64" class="storage-icon-img" alt="icon" loading="lazy" />`;
+        } else {
+             iconHtml = '<div class="storage-icon">📄</div>';
+        }
+
         const meta = it.is_folder ? "Folder" : fmtSize(it.size_bytes);
 
         row.innerHTML = `
       <div class="storage-left">
-        <div class="storage-icon">${icon}</div>
+        ${iconHtml}
         <div class="storage-name" title="${it.name}">${it.name}</div>
       </div>
       <div class="storage-meta">${meta}</div>
@@ -339,15 +414,13 @@ function renderList(items) {
                 const newStack = [...pathStack, { id: it.id, name: it.name }];
                 openFolder(it.id, it.name, newStack);
             } else {
-                window.location.href = "/api/storage/file/" + it.id;
+                openPreview(it);
             }
         };
 
         row.addEventListener("contextmenu", (ev) => {
             ev.preventDefault();
             ctxTarget = { id: it.id, name: it.name, is_folder: it.is_folder };
-
-            // Position menu
             ctxMenu.style.left = ev.pageX + "px";
             ctxMenu.style.top = ev.pageY + "px";
             ctxMenu.classList.remove("hidden");
@@ -361,21 +434,21 @@ async function openFolder(folderId, folderName, stack) {
     currentFolderId = folderId || null;
     currentFolderName = folderName || "Root";
     pathStack = stack || [];
-
     renderBreadcrumbs(pathStack);
-
     if (sameId(destFolderId, currentFolderId) || (destFolderId === null && currentFolderId === null)) {
         setDestination(currentFolderId, currentFolderName);
     }
-
     try {
         const items = await apiList(currentFolderId);
+        
+        // populate previewable items list (exclude folders)
+        previewableItems = items.filter(i => !i.is_folder);
+        
         renderList(items);
     } catch (e) {
         toast("err", e.message);
     }
 }
-
 
 // --- Folder Picker & Upload Events ---
 function openFolderModal() {
@@ -506,5 +579,28 @@ async function doUpload(fileList) {
     }
 }
 
+async function loadProfile() {
+  try {
+    const res = await fetch("/meinfo", { method: "GET", credentials: "include" });
+    const profile = await res.json();
+
+    const pic = document.querySelector('.profilepic');
+    if (pic) {
+        if (profile.profilePic){
+            pic.src = `/media/${profile.profilePic}`;
+        }
+        else{
+            pic.src = 'content/deafult.jpg';
+        } 
+    } else {
+        window.location.pathname = "/login/";
+    }
+    
+    document.getElementById("usernameLabel").textContent = profile.username;
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+  }
+}
+loadProfile();
 // --- Initialize ---
 openFolder(null, "Root", []);
