@@ -18,7 +18,8 @@ import userRoutes from "./routes/userRoutes.js";
 import wishlistRouter from './routes/wishlistRoutes.js'; 
 import { trackActivity } from "./middleware/activityTracker.js";
 import notificationHelper from "./helpers/notificationHelper.js";
-
+import storageRoutes from "./routes/storage.js";
+import publicShareRoutes from "./routes/publicShare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -38,6 +39,8 @@ app.use(userRoutes);
 app.use(wishlistRouter);
 app.use(trackActivity);
 app.use(notificationHelper);
+app.use(storageRoutes);
+app.use(publicShareRoutes);
 
 //PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {

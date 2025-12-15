@@ -22,6 +22,7 @@
     "git": "^0.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "node-vibrant": "^4.0.3",
     "nodemon": "^3.1.10",

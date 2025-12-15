@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Storage</title>
+    <link rel="stylesheet" href="filesstyle.css">
+    <link rel="stylesheet" href="accountstyle.css" />
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="mainbggrid">
+        <section class="waveanim">
+            <div class="wave">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </section>
+
+        <div class="mainfgholder">
+
+            <div class="mainfgupperholder">
+
+
+
+                <div class="userinfo">
+                    <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
+
+
+                    <div class="profilbilgi">
+                        <p id="authLabel"></p>
+                        <div class="logged-in-infos">
+                            <p id="usernameLabel">Username</p>
+                        </div>
+
+
+
+                        <div class="wrapper"></div>
+                    </div>
+
+                    <div class="zartzurtbilgi">
+                        <div class="zartzurtbilgibox">
+                            <h3>Used Space</h3>
+                            <p id="usedContent">Loading..</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="maintitleholder">
+                    <p id="realnameLabel"
+                        style="font-size: 4.5em; font-weight: 400; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                        File Storage</p>
+                    <p style="font-size: 1em; font-weight: 400">
+                        Built By: Onur Dönmez
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="mainfglowerholder">
+                <section class="upload-section">
+                    <div id="dropZone" class="drop-zone">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h2>Drop Here</h2>
+                        <p>or click to browse</p>
+                        <input type="file" id="fileInput" multiple hidden>
+                    </div>
+
+                    <div class="toolbar">
+                        <div id="breadcrumbs"></div>
+
+                        <div class="dest">
+                            <span>Destination:</span>
+                            <strong id="destLabel">Root</strong>
+                            <button id="chooseDestBtn" type="button">Choose destination…</button>
+                        </div>
+
+                        <button id="uploadBtn" type="button">Upload</button>
+                    </div>
+
+                    <!-- Folder picker modal -->
+                    <div id="folderModal" class="modal hidden">
+                        <div class="modalBox">
+                            <div class="modalHeader">
+                                <h3>Select destination folder</h3>
+                                <button id="closeFolderModal" type="button">X</button>
+                            </div>
+
+                            <div id="folderPickerBreadcrumbs" class="crumbs"></div>
+                            <div id="folderPickerList" class="pickerList"></div>
+
+                            <div class="modalFooter">
+                                <button id="selectThisFolderBtn" type="button">Select this folder</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Replace the existing share modal with this -->
+                    <div id="shareModal" class="modal hidden">
+                        <div class="modalBox share-box">
+                            <div class="modalHeader">
+                                <h3>Share Item</h3>
+                                <button id="closeShareModal" type="button">X</button>
+                            </div>
+
+                            <div class="share-tabs">
+                                <button class="tab-btn active" data-tab="public">Public Link</button>
+                            </div>
+
+                            <!-- Public Tab -->
+                            <div id="tab-public" class="tab-content">
+                                <p>Anyone with this link can view this item.</p>
+                                <div class="link-display">
+                                    <input type="text" id="shareLinkInput" readonly
+                                        placeholder="Link will appear here..." />
+                                    <button id="copyLinkBtn">Copy</button>
+                                </div>
+                                <button id="generateLinkBtn" class="primary-action">Generate Public Link</button>
+                            </div>
+
+                            <!-- Internal User Tab (single user) -->
+                            <div id="tab-internal" class="tab-content hidden">
+                                <p>Share with a registered user on this site.</p>
+                                <input type="text" id="shareUsernameInput" placeholder="Enter username"
+                                    class="full-input" />
+                                <button id="searchUserBtn" class="secondary-action">Search</button>
+                                <div id="userSearchResultsSingle" style="margin-top: 10px;"></div>
+                                <button id="shareWithUserBtn" class="primary-action">Share</button>
+                            </div>
+
+                            <!-- User Selection Tab (multiple users) -->
+                            <div id="tab-user-select" class="tab-content hidden">
+                                <p>Select multiple users to share with:</p>
+                                <input type="text" id="userSearchMultiInput" placeholder="Search users..."
+                                    class="full-input" />
+                                <button id="searchMultiUsersBtn">Search</button>
+
+                                <div id="userSearchResultsMulti"
+                                    style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                                    <!-- User results will appear here -->
+                                </div>
+
+                                <div id="selectedUsersList" style="margin-top: 10px;">
+                                    <p><strong>Selected users:</strong></p>
+                                    <div id="selectedUsersContainer"></div>
+                                </div>
+
+                                <button id="shareWithSelectedUsersBtn" class="primary-action">Share with Selected
+                                    Users</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <p id="featuresyazisi" data-aos="fade-up">My Storage:</p>
+
+                <div class="storage-toolbar" data-aos="fade-up">
+                    <div id="storageBreadcrumbs" class="breadcrumbs"></div>
+                    <div class="storage-actions">
+                        <button id="newFolderBtn" class="btn" type="button">New Folder</button>
+                    </div>
+                </div>
+
+                <div id="storageList" class="storage-list" data-aos="fade-up"></div>
+
+                <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script src="files.js"></script>
+</body>
+
+</html>
