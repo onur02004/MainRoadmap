@@ -601,6 +601,52 @@ async function loadProfile() {
     console.error("Failed to load profile:", err);
   }
 }
+
+
+// --- Paste-to-upload (clipboard images) ---
+document.addEventListener("paste", async (e) => {
+  // Don't hijack paste inside inputs/textareas/contenteditable
+  const t = e.target;
+  const isTypingTarget =
+    t &&
+    (t.tagName === "INPUT" ||
+      t.tagName === "TEXTAREA" ||
+      t.isContentEditable);
+
+  if (isTypingTarget) return;
+
+  const items = e.clipboardData?.items;
+  if (!items || items.length === 0) return;
+
+  // Collect image files from clipboard
+  const imageFiles = [];
+  for (const it of items) {
+    if (it.kind === "file" && it.type && it.type.startsWith("image/")) {
+      const blob = it.getAsFile();
+      if (!blob) continue;
+
+      // Give it a nicer filename (clipboard images often have none)
+      const ext = (blob.type.split("/")[1] || "png").toLowerCase();
+      const name = `pasted_${new Date().toISOString().replace(/[:.]/g, "-")}.${ext}`;
+
+      // Ensure it's a File (some browsers return File already, this is safe)
+      const file = blob instanceof File ? blob : new File([blob], name, { type: blob.type });
+      imageFiles.push(file);
+    }
+  }
+
+  if (imageFiles.length === 0) return;
+
+  e.preventDefault(); // avoid pasting as text anywhere
+  try {
+    toast("ok", `Uploading ${imageFiles.length} pasted image(s)...`);
+    await doUpload(imageFiles); // uses currentFolderId inside doUpload()
+  } catch (err) {
+    toast("err", err?.message || "Paste upload failed");
+  }
+});
+
+
+
 loadProfile();
-// --- Initialize ---
 openFolder(null, "Root", []);
