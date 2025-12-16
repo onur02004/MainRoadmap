@@ -880,4 +880,82 @@ router.get("/api/music/suggestions/:id/targets", requireAuth, async (req, res) =
 });
 
 
+// Search shared songs (public OR targeted OR owner)
+router.get("/api/music/search-shared", requireAuth, async (req, res) => {
+  const userId = req.user?.sub;
+  const qText = (req.query.q || "").trim();
+
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication error: User ID not found." });
+  }
+
+  if (qText.length < 2) {
+    return res.status(400).json({ error: "Query must be at least 2 characters." });
+  }
+
+  const sql = `
+    SELECT
+      s.id,
+      s.song_name,
+      s.song_artist,
+      s.song_cover_url,
+      s.spotify_uri,
+      s.importance,
+      s.rating_by_user,
+      s.comment_by_user,
+      s.recommended_time_by_user,
+      s.date_added,
+      s.visibility_public,
+      s.song_artist_genre,
+      s.song_artist_cover_url,
+      s.overall_dominant_color,
+      s.dominant_colors_points,
+      s.user_id,
+      u.user_name AS suggester_username,
+      u.profile_pic_path AS suggester_avatar
+    FROM song_suggestions s
+    JOIN users u ON s.user_id = u.id
+    WHERE
+      (s.visibility_public = true OR $1 = ANY(s.target_users) OR s.user_id = $1)
+      AND (
+        s.song_name ILIKE '%' || $2 || '%'
+        OR s.song_artist ILIKE '%' || $2 || '%'
+        OR u.user_name ILIKE '%' || $2 || '%'
+      )
+    ORDER BY s.date_added DESC
+    LIMIT 30;
+  `;
+
+  try {
+    const result = await q(sql, [userId, qText]);
+    res.json({ suggestions: result.rows });
+  } catch (err) {
+    console.error("Error searching shared songs:", err);
+    res.status(500).json({ error: "Failed to search songs." });
+  }
+});
+
+
+// DELETE /api/comments/:id
+router.delete("/api/comments/:id", requireAuth, async (req, res) => {
+  const commentId = req.params.id;
+  const userId = req.user.sub;
+
+  // 1) Find comment + owner
+  const { rows } = await q("SELECT user_id FROM song_suggestion_comments WHERE id = $1", [commentId]);
+  if (!rows.length) return res.status(404).json({ error: "Not found" });
+
+  const c = rows[0];
+
+  // 2) Check permission
+  const isAdmin = req.user.role?.toLowerCase?.().includes("admin"); // adapt to your auth
+  if (!isAdmin && c.user_id !== userId) return res.status(403).json({ error: "Forbidden" });
+
+  // 3) Delete
+  await q("DELETE FROM song_suggestion_comments WHERE id = $1", [commentId]);
+  res.json({ ok: true, songId: c.song_id });
+});
+
+
+
 export default router;

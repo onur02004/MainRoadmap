@@ -39,7 +39,7 @@
                 <div class="modal-content">
                     <span id="sharedUsersCloseBtn" class="close-button">&times;</span>
                     <h2 style="font-size: 2rem;">Shared With</h2>
-                    <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px;">
+                    <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px; padding-top: 20px;">
                         This song was sent privately to:
                     </p>
                     <ul id="sharedUsersList" class="search-results">
@@ -132,7 +132,7 @@
             <div id="userSearchModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button">&times;</span>
-                    <h2 style="font-size: 2rem;">Select Target Users</h2>
+                    <h2 style="font-size: 2rem; padding-bottom: 20px;">Select Target Users</h2>
                     <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px;">
                         Choose who to send this private suggestion to.
                     </p>
@@ -329,6 +329,66 @@
                 </div>
             </div>
         </div>
+
+        <div id="globalSearchModal" class="modal">
+            <div class="modal-content">
+                <span id="globalSearchCloseBtn" class="close-button">&times;</span>
+                <h2 style="font-size: 2rem; padding-bottom: 20px;">Search</h2>
+                <p style="color: #ccc; margin-top: -15px; margin-bottom: 15px; padding-bottom: 20px;">
+                    Search users or shared songs.
+                </p>
+
+                <div class="gs-tabs">
+                    <button type="button" class="gs-tab active" data-mode="users">Users</button>
+                    <button type="button" class="gs-tab" data-mode="songs">Songs</button>
+                </div>
+
+                <label class="field-label" style="margin-top: 12px;">
+                    <span id="globalSearchLabel">Search for a user</span>
+                    <div class="search-row">
+                        <input type="text" id="globalSearchInput" placeholder="Type at least 2 characters..."
+                            autocomplete="off" style="font-size: 1.2rem;">
+                        <button type="button" id="globalSearchBtn" class="icon-button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </label>
+
+                <div id="globalSearchStatus" style="color: white; padding-top: 10px;" class="search-status"></div>
+                <ul id="globalSearchResults" class="search-results"></ul>
+            </div>
+        </div>
+
+        <div id="sharedSongModal" class="modal">
+            <div class="modal__backdrop" data-close></div>
+
+            <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="sharedSongName">
+                <div class="modal__header">
+                    <h2 id="sharedSongName">Shared Song</h2>
+                    <button class="modal__close" type="button" data-close aria-label="Close">✕</button>
+                </div>
+
+                <div class="modal__body">
+                    <div class="sharedSongTop">
+                        <img id="sharedSongCover" class="sharedSongCover" src="/content/default.jpg" alt="Cover">
+                        <div class="sharedSongInfo">
+                            <div id="sharedSongTitle" class="sharedSongTitle">Song Name</div>
+                            <div id="sharedSongArtist" class="sharedSongArtist">Artist</div>
+                            <div id="sharedSongMeta" class="sharedSongMeta">Shared by …</div>
+                        </div>
+                    </div>
+
+                    <p id="sharedSongText" class="sharedSongText"></p>
+
+                    <div class="modal__actions">
+                        <button id="sharedSongPlayBtn" type="button">Play</button>
+                        <button id="sharedSongCommentsBtn" type="button">Comments</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     </section>
 
 
@@ -337,28 +397,35 @@
             <!-- external redirect to main page -->
             <a href="/mainsite.html">
                 <i class="fas fa-door-open nav-icon"></i>
-                <span>Main Page</span>
+                <!--<span>Main Page</span> -->
             </a>
         </div>
-
         <div class="nav-option">
             <a href="#home" class="active" data-page="home">
                 <i class="fas fa-home nav-icon"></i>
-                <span>Home</span>
+                <!--<span>Home</span>-->
+            </a>
+        </div>
+        <div class="nav-option">
+            <a href="#" id="openGlobalSearchBtn">
+                <i class="fas fa-magnifying-glass nav-icon"></i>
+                <!--<span>Search</span> -->
             </a>
         </div>
         <div class="nav-option">
             <a href="#suggest" data-page="suggest">
                 <i class="fas fa-lightbulb nav-icon"></i>
-                <span>Suggest</span>
+                <!--<span>Suggest</span>-->
             </a>
         </div>
         <div class="nav-option">
             <a href="#profile" data-page="profile">
                 <i class="fas fa-user nav-icon"></i>
-                <span>Profile</span>
+                <!--<span>Profile</span>-->
             </a>
         </div>
+
+
     </nav>
 
     <script src="songsharescript.js"></script>

@@ -116,8 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const reactionsList = document.getElementById('reactionsList');
     const reactionsListCloseBtn = document.getElementById('reactionsListCloseBtn');
 
-    let currentLoggedInUserId = null; // <--- NEW VARIABLE
     let currentSuggestionId = null;
+    window.currentLoggedInUserId = null;
+    window.isAdmin = false;
+
 
     const spotifyPreviewContainer = document.getElementById('spotifyPreviewContainer');
     let currentResults = [];
@@ -127,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasMoreSuggestions = true;
     let artistImageUrl = null;
     let artistGenres = [];
+
 
     function openUserSearchModal() {
         userSearchModal.classList.add('is-active');
@@ -197,8 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
             userSearchStatus.textContent = 'Error searching for users.';
         }
     }
-
-    // 6. Function to render the user search results
     function renderUserResults(users) {
         userSearchResults.innerHTML = '';
         users.forEach(user => {
@@ -221,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             li.addEventListener('click', () => {
+                alert("Not Yet implemented, sabir pls tekim burda");
                 toggleUserSelection(user, li);
             });
 
@@ -1052,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function openCommentsModal() {
+    window.openCommentsModal = function openCommentsModal() {
         if (!commentsModal) return;
         commentsModal.classList.add('is-active');
     }
@@ -1075,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    function showPlaybackModal(suggestion) {
+    window.showPlaybackModal = function showPlaybackModal(suggestion) {
         // 1. **CRITICAL FIX**: Use the correct property: 'spotify_uri'
         const songUri = suggestion.spotify_uri;
 
@@ -1179,7 +1181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Function to fetch and render comments
-    async function fetchAndRenderComments(suggestionId) {
+    window.fetchAndRenderComments = async function fetchAndRenderComments(suggestionId) {
         commentsList.innerHTML = '<li>Loading comments...</li>';
 
         try {
@@ -1198,21 +1200,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             commentsList.innerHTML = '';
-            comments.forEach(c => {
+
+            comments.reverse().forEach(c => {
                 const li = document.createElement('li');
-                li.className = 'search-result-item'; // Reuse existing list item style
+
+                li.className = 'search-result-item comment-item';
                 li.style.flexDirection = 'column';
                 li.style.alignItems = 'flex-start';
+
+                // REQUIRED data for context menu
+                li.dataset.commentId = c.id;
+                // li.dataset.songId = c.song_id;        // optional; do not rely on it
+                li.dataset.suggestionId = suggestionId;   // REQUIRED
+                li.dataset.authorId = c.commenter_id;
+                li.dataset.authorName = c.commenter_username;
+
+
                 li.innerHTML = `
-                    <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
-                        <img src="media/${c.commenter_avatar || './content/default.jpg'}" alt="Avatar" class="search-result-cover" style="width: 25px; height: 25px;">
-                        <span class="search-result-title" style="font-size: 1rem; color: #22d3ee; margin-right: auto;">${c.commenter_username}</span>
-                        <span style="font-size: 0.8rem; color: #64748b;">${new Date(c.date_added).toLocaleDateString()}</span>
-                    </div>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; line-height: 1.4;">${c.comment_text}</p>
-                `;
+    <div style="display:flex; gap:0.5rem; width:100%; align-items:center;">
+      <img
+        src="media/${c.commenter_avatar || './content/default.jpg'}"
+        alt="Avatar"
+        class="search-result-cover"
+        style="width:25px; height:25px;"
+      >
+      <span
+        class="search-result-title"
+        style="font-size:1rem; color:#22d3ee; margin-right:auto;"
+      >
+        ${escapeHtml(c.commenter_username)}
+      </span>
+      <span style="font-size:0.8rem; color:#64748b;">
+        ${new Date(c.date_added).toLocaleDateString()}
+      </span>
+    </div>
+
+    <p
+      class="comment-text"
+      style="margin:0.5rem 0 0 0; font-size:0.95rem; line-height:1.4;"
+    >
+      ${escapeHtml(c.comment_text)}
+    </p>
+  `;
+
                 commentsList.appendChild(li);
             });
+
 
         } catch (err) {
             console.error('Error fetching comments:', err);
@@ -1310,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.authenticated) {
                 // FIXED: Store user ID in the dedicated variable
                 currentLoggedInUserId = data.user.id;
+                isAdmin = (data.user.role == 'admin');
                 console.log("Logged in as: " + data.user.uname + " (ID: " + data.user.id + ")");
                 console.log("checking again id: " + currentLoggedInUserId);
             } else {
@@ -1527,22 +1561,22 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // ERROR FIX: Use '/meinfo' instead of '/api/user/me'
             const res = await fetch('/meinfo', { credentials: 'include' });
-            
+
             if (!res.ok) {
                 if (res.status === 401) {
-                     window.location.href = '/login.html'; // Redirect if not logged in
-                     return;
+                    window.location.href = '/login.html'; // Redirect if not logged in
+                    return;
                 }
                 throw new Error("Failed to load profile");
             }
-            
+
             const profile = await res.json();
-            
+
             // ERROR FIX: Map correct fields from /meinfo response
             // (account.html uses: username, realName, profilePic)
             profileUsername.textContent = profile.username || "User";
             profileRealName.textContent = profile.realName || "Music Enthusiast";
-            
+
             // ERROR FIX: Handle Image Path and Typo
             // Your system seems to have a typo 'deafult.jpg' based on account.html
             if (profile.profilePic) {
@@ -1550,7 +1584,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 profileAvatar.src = 'content/deafult.jpg'; // Matches the file in account.html
             }
-            
+
             // NOTE: /meinfo does not return stats (song count/likes). 
             // We set them to '-' or 0 for now to prevent errors.
             profileSongCount.textContent = profile.stats?.songs_shared || "-";
@@ -1561,19 +1595,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (err) {
             console.error(err);
-            if(profileUsername) profileUsername.textContent = "Error loading profile";
+            if (profileUsername) profileUsername.textContent = "Error loading profile";
         }
     }
 
     // 2. Load User's Song History (Kept the same)
     async function loadUserHistory() {
-        if(!profileFeedContainer) return;
-        
+        if (!profileFeedContainer) return;
+
         profileFeedContainer.innerHTML = '<div class="spinner"></div>';
         try {
             const res = await fetch('/api/user/my-suggestions', { credentials: 'include' });
             if (!res.ok) throw new Error("Failed to load history");
-            
+
             const data = await res.json();
             if (data.suggestions.length === 0) {
                 profileFeedContainer.innerHTML = '<p style="text-align:center; margin-top:20px; color:#aaa;">You haven\'t suggested any songs yet.</p>';
@@ -1598,22 +1632,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Logout Logic (Aligned with account.html endpoint)
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
-            if(!confirm("Are you sure you want to log out?")) return;
-            
+            if (!confirm("Are you sure you want to log out?")) return;
+
             logoutBtn.disabled = true;
             logoutBtn.textContent = '...';
 
             try {
                 // ERROR FIX: Use '/logout' instead of '/api/auth/logout'
-                const response = await fetch('/logout', { 
-                    method: 'POST', 
+                const response = await fetch('/logout', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({})
                 });
 
                 if (response.ok || response.status === 401) {
-                    window.location.href = '/login.html'; 
+                    window.location.href = '/login.html';
                 } else {
                     alert("Logout failed");
                     logoutBtn.disabled = false;
@@ -1678,3 +1712,416 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+
+// ===== Global Search Modal (Users / Songs) =====
+const globalSearchModal = document.getElementById('globalSearchModal');
+const openGlobalSearchBtn = document.getElementById('openGlobalSearchBtn');
+const globalSearchCloseBtn = document.getElementById('globalSearchCloseBtn');
+
+const globalSearchInput = document.getElementById('globalSearchInput');
+const globalSearchBtn = document.getElementById('globalSearchBtn');
+const globalSearchStatus = document.getElementById('globalSearchStatus');
+const globalSearchResults = document.getElementById('globalSearchResults');
+const globalSearchLabel = document.getElementById('globalSearchLabel');
+
+const gsTabs = globalSearchModal ? globalSearchModal.querySelectorAll('.gs-tab') : [];
+let globalSearchMode = 'users';
+
+function openGlobalSearchModal() {
+    globalSearchModal.classList.add('is-active');
+    globalSearchInput.value = '';
+    globalSearchResults.innerHTML = '';
+    globalSearchStatus.textContent = 'Type at least 2 characters.';
+    globalSearchInput.focus();
+}
+
+function closeGlobalSearchModal() {
+    globalSearchModal.classList.remove('is-active');
+}
+
+if (openGlobalSearchBtn) {
+    openGlobalSearchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openGlobalSearchModal();
+    });
+}
+
+if (globalSearchCloseBtn) {
+    globalSearchCloseBtn.addEventListener('click', closeGlobalSearchModal);
+}
+
+window.addEventListener('click', (event) => {
+    if (event.target === globalSearchModal) closeGlobalSearchModal();
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && globalSearchModal.classList.contains('is-active')) {
+        closeGlobalSearchModal();
+    }
+});
+
+// Tabs
+gsTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+        gsTabs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        globalSearchMode = btn.dataset.mode;
+
+        globalSearchResults.innerHTML = '';
+        globalSearchStatus.textContent = 'Type at least 2 characters.';
+
+        if (globalSearchMode === 'users') {
+            globalSearchLabel.textContent = 'Search for a user';
+            globalSearchInput.placeholder = 'Type a username...';
+        } else {
+            globalSearchLabel.textContent = 'Search shared songs';
+            globalSearchInput.placeholder = 'Type a song name or artist...';
+        }
+
+        globalSearchInput.focus();
+    });
+});
+
+async function runGlobalSearch() {
+    const q = globalSearchInput.value.trim();
+    if (q.length < 2) {
+        globalSearchStatus.textContent = 'Type at least 2 characters.';
+        globalSearchResults.innerHTML = '';
+        return;
+    }
+
+    globalSearchStatus.textContent = 'Searching...';
+    globalSearchResults.innerHTML = '';
+
+    try {
+        if (globalSearchMode === 'users') {
+            const res = await fetch(`/api/searchUsers?q=${encodeURIComponent(q)}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('User search failed');
+            const users = await res.json();
+
+            if (!users.length) {
+                globalSearchStatus.textContent = 'No users found.';
+                return;
+            }
+
+            globalSearchStatus.textContent = `Found ${users.length} user(s).`;
+            renderGlobalUserResults(users);
+        } else {
+            const res = await fetch(`/api/music/search-shared?q=${encodeURIComponent(q)}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('Song search failed');
+            const data = await res.json();
+            const songs = data.suggestions || [];
+
+            if (!songs.length) {
+                globalSearchStatus.textContent = 'No songs found.';
+                return;
+            }
+
+            globalSearchStatus.textContent = `Found ${songs.length} song(s).`;
+            renderGlobalSongResults(songs);
+        }
+    } catch (err) {
+        console.error(err);
+        globalSearchStatus.textContent = 'Search error. Please try again.';
+    }
+}
+
+function renderGlobalUserResults(users) {
+    globalSearchResults.innerHTML = '';
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.className = 'search-result-item';
+
+        li.innerHTML = `
+      <img src="media/${user.profile_pic_path || './content/default.jpg'}" alt="Avatar" class="search-result-cover">
+      <div class="search-result-info">
+        <div class="search-result-title">${user.user_name}</div>
+        <div class="search-result-artist">${user.real_name || ''}</div>
+      </div>
+    `;
+
+    li.addEventListener('click', () => {
+        alert("Not Yet implementd, Bi yavas tek basima yetisemiyom");
+            closeGlobalSearchModal();
+        });
+
+        globalSearchResults.appendChild(li);
+    });
+}
+
+function renderGlobalSongResults(suggestions) {
+    globalSearchResults.innerHTML = '';
+    const placeholder = 'https://placehold.co/150x150/000000/FFFFFF?text=No+Cover';
+
+    suggestions.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'search-result-item';
+
+        li.innerHTML = `
+      <img src="${s.song_cover_url || placeholder}" alt="Cover" class="search-result-cover">
+      <div class="search-result-info">
+        <div class="search-result-title">${s.song_name}</div>
+        <div class="search-result-artist">${s.song_artist}</div>
+        <div>Suggested By: ${s.suggester_username}</div>
+      </div>
+    `;
+        li.addEventListener('click', () => {
+            closeGlobalSearchModal();
+            showSharedSongModal(s);
+        });
+
+        globalSearchResults.appendChild(li);
+    });
+}
+
+if (globalSearchBtn) globalSearchBtn.addEventListener('click', runGlobalSearch);
+if (globalSearchInput) {
+    globalSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            runGlobalSearch();
+        }
+    });
+}
+
+
+const commentCtxMenu = document.createElement("div");
+commentCtxMenu.id = "commentCtxMenu";
+commentCtxMenu.className = "ctx hidden";
+commentCtxMenu.innerHTML = `
+  <button data-action="share">Share To "Social Point"</button>
+  <hr/>
+  <button data-action="delete" class="danger">Delete</button>
+`;
+document.body.appendChild(commentCtxMenu);
+
+let commentCtxTarget = null;
+
+function hideCommentCtx() {
+    commentCtxMenu.classList.add("hidden");
+    commentCtxTarget = null;
+}
+
+document.addEventListener("click", hideCommentCtx);
+document.addEventListener("scroll", hideCommentCtx, true);
+window.addEventListener("resize", hideCommentCtx);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideCommentCtx(); });
+
+
+document.addEventListener("contextmenu", (e) => {
+    const item = e.target.closest(".comment-item");
+    if (!item) return;
+
+    e.preventDefault();
+
+    commentCtxTarget = {
+        commentId: item.dataset.commentId,
+        suggestionId: item.dataset.suggestionId || String(window.currentSuggestionId || ""),
+        authorId: item.dataset.authorId,
+        authorName: item.dataset.authorName,
+        text: item.querySelector(".comment-text")?.textContent?.trim() || ""
+    };
+
+
+    showCommentCtxAt(e.clientX, e.clientY, commentCtxTarget, item);
+});
+
+
+let pressTimer = null;
+
+document.addEventListener("touchstart", (e) => {
+    const item = e.target.closest(".comment-item");
+    if (!item) return;
+
+    pressTimer = setTimeout(() => {
+        const touch = e.touches[0];
+        commentCtxTarget = {
+            commentId: item.dataset.commentId,
+            suggestionId: item.dataset.suggestionId || String(window.currentSuggestionId || ""),
+            authorId: item.dataset.authorId,
+            authorName: item.dataset.authorName,
+            text: item.querySelector(".comment-text")?.textContent?.trim() || ""
+        };
+        showCommentCtxAt(touch.clientX, touch.clientY, commentCtxTarget, item);
+    }, 550);
+}, { passive: true });
+
+document.addEventListener("touchend", () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+});
+document.addEventListener("touchmove", () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+});
+
+
+function showCommentCtxAt(x, y, target, itemEl) {
+    const canDelete = (target.authorId === currentLoggedInUserId) || isAdmin;
+
+    const delBtn = commentCtxMenu.querySelector('button[data-action="delete"]');
+    if (delBtn) delBtn.style.display = canDelete ? "block" : "none";
+
+    commentCtxMenu.classList.remove("hidden");
+
+    // measure after visible
+    const rect = commentCtxMenu.getBoundingClientRect();
+    const pad = 8;
+
+    let left = x;
+    let top = y;
+
+    if (left + rect.width > window.innerWidth - pad) left = window.innerWidth - rect.width - pad;
+    if (top + rect.height > window.innerHeight - pad) top = window.innerHeight - rect.height - pad;
+
+    commentCtxMenu.style.left = `${Math.max(pad, left)}px`;
+    commentCtxMenu.style.top = `${Math.max(pad, top)}px`;
+}
+
+
+commentCtxMenu.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn || !commentCtxTarget) return;
+
+    const t = commentCtxTarget;
+    const action = btn.dataset.action;
+
+    hideCommentCtx();
+
+    try {
+        if (action === "share") {
+            const url = makeCommentShareUrl(t.songId, t.commentId);
+            await navigator.clipboard.writeText(url);
+            return;
+        }
+
+        if (action === "delete") {
+            const ok = confirm(`Delete this comment? This cannot be undone.`);
+            if (!ok) return;
+
+            await apiDeleteComment(t.commentId);     // implement below
+
+            await fetchAndRenderComments(t.suggestionId);
+            return;
+        }
+    } catch (err) {
+        alert("err-> " + err?.message || " Action failed.");
+    }
+});
+
+async function apiDeleteComment(commentId) {
+    const res = await fetch(`/api/comments/${encodeURIComponent(commentId)}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+
+
+
+// ---- Shared Song Modal ----
+const sharedSongModal = document.getElementById('sharedSongModal');
+const sharedSongCover = document.getElementById('sharedSongCover');
+const sharedSongTitle = document.getElementById('sharedSongTitle');
+const sharedSongArtist = document.getElementById('sharedSongArtist');
+const sharedSongMeta = document.getElementById('sharedSongMeta');
+const sharedSongText = document.getElementById('sharedSongText');
+const sharedSongPlayBtn = document.getElementById('sharedSongPlayBtn');
+const sharedSongCommentsBtn = document.getElementById('sharedSongCommentsBtn');
+
+let lastSharedSuggestion = null;
+
+function openSharedSongModal() {
+    if (!sharedSongModal) return;
+    sharedSongModal.classList.add('is-active');
+}
+
+function closeSharedSongModal() {
+    if (!sharedSongModal) return;
+    sharedSongModal.classList.remove('is-active');
+    lastSharedSuggestion = null;
+}
+
+// Close handlers (click backdrop + close button)
+if (sharedSongModal) {
+    sharedSongModal.querySelectorAll('[data-close]').forEach(el => {
+        el.addEventListener('click', closeSharedSongModal);
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === sharedSongModal) closeSharedSongModal();
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sharedSongModal.classList.contains('is-active')) {
+            closeSharedSongModal();
+        }
+    });
+}
+
+function getSuggestionId(s) {
+    return s?.id ?? s?.suggestion_id ?? s?.songId ?? s?.song_id ?? null;
+}
+
+function showSharedSongModal(s) {
+    lastSharedSuggestion = s;
+
+    const placeholder = '/content/default.jpg';
+    const cover = s?.song_cover_url || s?.cover_url || s?.image_url || placeholder;
+
+    sharedSongCover.src = cover;
+    sharedSongTitle.textContent = s?.song_name || 'Unknown song';
+    sharedSongArtist.textContent = s?.song_artist || '';
+
+    const by = s?.shared_by_username || s?.username || s?.user_name || 'Unknown';
+    const when = s?.date_added ? new Date(s.date_added).toLocaleString() : '';
+    sharedSongMeta.textContent = `Shared by ${by}${when ? ' • ' + when : ''}`;
+
+    // text/caption (depends on your backend field name)
+    sharedSongText.textContent = s?.suggestion_text || s?.text || s?.caption || '';
+
+    openSharedSongModal();
+}
+
+if (sharedSongPlayBtn) {
+    sharedSongPlayBtn.addEventListener('click', () => {
+        if (!lastSharedSuggestion) return;
+        // Reuse your existing playback modal :contentReference[oaicite:2]{index=2}
+        showPlaybackModal(lastSharedSuggestion);
+        closeSharedSongModal();
+    });
+}
+
+if (sharedSongCommentsBtn) {
+    sharedSongCommentsBtn.addEventListener('click', async () => {
+        if (!lastSharedSuggestion) return;
+
+        const sid = getSuggestionId(lastSharedSuggestion);
+        if (!sid) {
+            console.warn('No suggestion id on search result:', lastSharedSuggestion);
+            return;
+        }
+
+        closeSharedSongModal();
+
+        // Use your existing comments workflow (you already use currentSuggestionId globally) :contentReference[oaicite:3]{index=3}
+        currentSuggestionId = sid;
+
+        // If your function is named differently, call the one you actually use to render comments.
+        await fetchAndRenderComments(sid);
+        openCommentsModal();
+    });
+}

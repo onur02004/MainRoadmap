@@ -88,7 +88,7 @@
       </div>
 
       <div class="mainfglowerholder">
-        <div data-aos="fade-up" class="routeoption">
+        <div data-aos="fade-up" class="routeoption" id="changeAvatarBtn">
           <h1>Update My Profile Pic</h1>
         </div>
 
@@ -373,9 +373,11 @@
     profileModal.querySelector('.pm-backdrop').addEventListener('click', closeProfileModal);
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !profileModal.hidden) closeProfileModal(); });
 
-    // Attach to the "Update My Profile" card (first .routeoption)
-    const updateCard = document.querySelectorAll('.routeoption')[0];
-    updateCard.addEventListener('click', async () => {
+    
+    document.getElementById('changeAvatarBtn').addEventListener('click', changeAvatar);
+    document.querySelector('.profilepic').addEventListener('click', changeAvatar);
+
+    async function changeAvatar() {
       openProfileModal();
       pmContent.innerHTML = '<div class="pm-loading">Loading…</div>';
       try {
@@ -391,7 +393,7 @@
         console.error(err);
         pmContent.innerHTML = '<p class="pm-hint">Could not load avatars.</p>';
       }
-    });
+    }
 
     function renderAvatars(people) {
       pmContent.innerHTML = '';
