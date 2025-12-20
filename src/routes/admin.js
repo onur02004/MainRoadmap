@@ -91,8 +91,9 @@ router.get("/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
       SELECT * FROM users WHERE id = $1
     `;
     
+    // Updated to return feature IDs as well so frontend can map them easily
     const featuresSql = `
-      SELECT f.key, f.label 
+      SELECT f.id, f.key, f.label 
       FROM user_features uf 
       JOIN features f ON f.id = uf.feature_id 
       WHERE uf.user_id = $1
@@ -126,13 +127,30 @@ router.get("/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Update user
+// Update user (FIXED TO INCLUDE FEATURES)
 router.patch("/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
     const updates = req.body;
 
-    // Build dynamic update query
+    // 1. Handle Feature Updates (if 'features' array exists in body)
+    if (updates.features !== undefined && Array.isArray(updates.features)) {
+        // First, remove all existing features for this user
+        await q('DELETE FROM user_features WHERE user_id = $1', [userId]);
+
+        // Then, add the selected ones
+        if (updates.features.length > 0) {
+            for (const featureId of updates.features) {
+                // Ensure ID is an integer
+                const fId = parseInt(featureId);
+                if (!isNaN(fId)) {
+                    await q('INSERT INTO user_features (user_id, feature_id) VALUES ($1, $2)', [userId, fId]);
+                }
+            }
+        }
+    }
+
+    // 2. Handle User Table Updates
     const allowedFields = ['user_name', 'real_name', 'email', 'tel_nr', 'role', 'is_verified', 'location'];
     const setClauses = [];
     const params = [];
@@ -146,26 +164,32 @@ router.patch("/admin/users/:id", requireAuth, requireAdmin, async (req, res) => 
       }
     });
 
-    if (setClauses.length === 0) {
-      return res.status(400).json({ error: "No valid fields to update" });
+    let userResult;
+
+    // Only run UPDATE query if there are user fields to update
+    if (setClauses.length > 0) {
+      params.push(userId);
+      const sql = `
+        UPDATE users 
+        SET ${setClauses.join(', ')}, updated_at = NOW()
+        WHERE id = $${paramCount}
+        RETURNING *
+      `;
+      userResult = await q(sql, params);
+      
+      if (!userResult.rows.length) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    } else {
+      // If only features were updated, just fetch the user to return consistent response
+      userResult = await q('SELECT * FROM users WHERE id = $1', [userId]);
+      if (!userResult.rows.length) {
+          return res.status(404).json({ error: "User not found" });
+      }
     }
 
-    params.push(userId);
+    res.json({ user: userResult.rows[0], message: "User updated successfully" });
 
-    const sql = `
-      UPDATE users 
-      SET ${setClauses.join(', ')}, updated_at = NOW()
-      WHERE id = $${paramCount}
-      RETURNING *
-    `;
-
-    const result = await q(sql, params);
-    
-    if (!result.rows.length) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    res.json({ user: result.rows[0] });
   } catch (err) {
     console.error("Error updating user:", err);
     
@@ -242,7 +266,7 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Manage user features
+// Manage user features (Single add/remove - kept for compatibility if needed elsewhere)
 router.post("/admin/users/:id/features", requireAuth, requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -290,6 +314,20 @@ router.get("/admin/features", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Create new feature
+router.post("/admin/features", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { featureKey, featureLabel } = req.body;
+    const sql = `
+        INSERT INTO features VALUES (nextval('features_id_seq'::regclass) + 1, $1, $2)
+      `;
+    const result = await q(sql, [featureKey, featureLabel]);
+    res.json({ features: result.rows });
+  } catch (err) {
+    console.error("Error creating features:", err);
+    res.status(500).json({ error: "Internal Server Error creating feature" });
+  }
+});
 
 // Add user
 router.post("/admin/users", requireAuth, requireAdmin, async (req, res) => {

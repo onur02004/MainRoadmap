@@ -305,7 +305,6 @@
         </div>
 
         <!-- Users Section -->
-        <!-- Users Section -->
         <div id="users-section" class="section" style="display: none;">
             <div class="card">
                 <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
@@ -325,7 +324,11 @@
         <!-- Features Section -->
         <div id="features-section" class="section" style="display: none;">
             <div class="card">
-                <h2>Available Features</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin: 0;">Available Features</h2>
+                    <button onclick="showCreateFeatureForm()" class="btn btn-primary">+ Add Feature</button>
+                </div>
+
                 <div id="features-list">
                     <div class="loading">Loading features...</div>
                 </div>
@@ -429,6 +432,29 @@
         </div>
     </div>
 
+    <!-- Add Feature Panel-->
+    <div id="createFeatureModal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Feature</h2>
+            <form id="createFeatureForm">
+                <div class="form-group">
+                    <label>Feature Key *</label>
+                    <input type="text" name="featureKey" required placeholder="e.g., kt" pattern="[a-zA-Z0-9_]+"
+                        title="Only letters, numbers, and underscores allowed">
+                    <small style="color: #666;">Unique identifier used in code</small>
+                </div>
+                <div class="form-group">
+                    <label>Label *</label>
+                    <input type="text" name="featureLabel" required placeholder="e.g., Kalori Takibi">
+                    <small style="color: #666;">Human-readable name</small>
+                </div>
+                <div style="text-align: right; margin-top: 1rem;">
+                    <button type="button" onclick="closeModal('createFeatureModal')" class="btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Feature</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <script>
@@ -1062,6 +1088,62 @@
                 submitButton.textContent = originalText;
             }
         });  
+
+        // --- Add this to your JS section ---
+
+// 1. Helper to open the modal
+function showCreateFeatureForm() {
+    document.getElementById('createFeatureForm').reset();
+    document.getElementById('createFeatureModal').style.display = 'block';
+}
+
+// 2. Form Submit Handler connecting to your new API endpoint
+document.getElementById('createFeatureForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+
+    try {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Adding...';
+
+        const formData = new FormData(e.target);
+        
+        // Prepare the JSON body exactly as your backend expects: { featureKey, featureLabel }
+        const featureData = {
+            featureKey: formData.get('featureKey'),
+            featureLabel: formData.get('featureLabel')
+        };
+
+        const response = await fetch('/admin/features', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(featureData),
+            credentials: 'include'
+        });
+
+        // The endpoint returns { features: [...] } or error
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to create feature');
+        }
+
+        alert('Feature created successfully!');
+        closeModal('createFeatureModal');
+        
+        // Refresh the list to show the new item
+        loadFeatures();
+
+    } catch (error) {
+        console.error('Create feature error:', error);
+        alert('Error creating feature: ' + error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+    }
+});
     </script>
 </body>
 
