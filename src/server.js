@@ -43,6 +43,7 @@ app.use(storageRoutes);
 app.use(publicShareRoutes);
 
 //PROTECTED
+//PROTECTED
 app.get("/media/*", requireAuth, (req, res) => {
   const relativePath = req.params[0]; // "zen.jpg" or "some/folder/file.png"
 
@@ -63,6 +64,18 @@ app.get("/media/*", requireAuth, (req, res) => {
   // send file
   res.sendFile(absolutePath, (err) => {
     if (err) {
+      // 1. If the client stopped the download (paused video/closed tab), ignore it.
+      if (err.code === 'ECONNABORTED') {
+        return; 
+      }
+
+      // 2. If headers were already sent (partial download), we can't send a JSON error.
+      if (res.headersSent) {
+        console.error("Headers already sent. Cannot send 500 error for:", err.message);
+        return;
+      }
+
+      // 3. Only send a 500 response if the connection is still open
       console.error("Error sending media file:", err);
       return res.status(500).json({ error: "internal error" });
     }

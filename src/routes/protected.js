@@ -104,6 +104,63 @@ router.get('/wl', requireAuth, requireFeature('wl'), (req, res) => {
   });
 });
 
+router.get('/simo', requireAuth, requireFeature('simo'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'simo.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending simo.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
+router.get('/ense25', requireAuth, requireFeature('ense25'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'dgkoense2025.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending dgkoense2025.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
+router.get('/dgkoense2025morepicpage', requireAuth, requireFeature('ense25'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'dgkoense2025morepicpage.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending dgkoense2025morepicpage.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
 
 router.get("/remote-control", requireAuth, (req, res) => {
   const projectRoot = path.join(__dirname, '../..');

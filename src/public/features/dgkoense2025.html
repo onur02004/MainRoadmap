@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dgko ense</title>
+    <link rel="stylesheet" href="../features/dgkoense2025style.css">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Passion+One:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firebase Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+</head>
+
+<body>
+
+    <h1 class="title">Dgko Mal Ense</h1>
+
+    <button id="audio-toggle">▶️</button>
+
+    <audio id="bg-audio" src="../media/features/ensedgko/Main/dgko.mp3" autoplay>
+        <p>Your browser doesn’t support audio.</p>
+    </audio>
+
+    
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/2.jpg" alt="Forest" width="600" height="400">
+            <div class="desc">Haziran 2023 - Gozal</div>
+        </div>
+    </div>
+
+        <div class="responsive" data-aos="fade-left">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/3.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Eylul 2023 - Goztepe</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/1.JPG" alt="Cinque Terre" width="600" height="400">
+            <div class="desc">Haziran 2023 - 1881</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-left">
+        <div class="gallery">
+            <video width="600" controls>
+                <source src="../media/features/ensedgko/Main/39.mp4" type="video/mp4">
+                amk browseri video desteklemiyo yeni telefon al
+            </video>
+            <div class="desc">Mart 2025 - Motke</div>
+        </div>
+    </div>
+
+
+
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/4.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">29 Mart 2025 - Weingarten</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-left">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/5.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Haziran 2022 - Alsancak</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/6.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Eylul 2024 - 1881</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-left">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/7.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Eylul 2023 - Vapur</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/8.jpeg" alt="Mountains" width="600" height="400">
+            <div class="desc">Aralik 2023 - Frankfurt</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-left">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/9.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Mart 2025 - Weingarten</div>
+        </div>
+    </div>
+
+    <div class="responsive" data-aos="fade-right">
+        <div class="gallery">
+            <img src="../media/features/ensedgko/Main/10.jpg" alt="Mountains" width="600" height="400">
+            <div class="desc">Haziran 2022 - Sahilevleri</div>
+        </div>
+    </div>
+
+    <div class="moreBtn" >
+        <a href="/dgkoense2025morepicpage">Daha fazla foto</a>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            recordVisit();
+        });
+
+        AOS.init();
+
+        // 1) Firebase initialization
+        const firebaseConfig = {
+            databaseURL: "https://dgkoense-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function recordVisit() {
+            const nowTs = Date.now();
+            const nowHuman = new Date(nowTs).toLocaleString(); // e.g. "6/28/2025, 3:45:12 PM"
+
+            const visitData = {
+                timestamp: nowTs,
+                datetime: nowHuman,
+                userAgent: navigator.userAgent,
+                viewport: {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                }
+            };
+
+            // Overwrite /lastseenindex/ with the latest visit object
+            db.ref('/lastseenindex/').set(visitData)
+                .then(() => console.log('Recorded visit:', visitData))
+                .catch(err => console.error('Failed to record visit:', err));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('bg-audio');
+            const btn = document.getElementById('audio-toggle');
+
+            btn.addEventListener('click', () => {
+                if (audio.paused) {
+                    audio.play();
+                    btn.textContent = '⏸️';
+                } else {
+                    audio.pause();
+                    btn.textContent = '▶️';
+                }
+            });
+
+            // Optional: initialize button state
+            audio.paused
+                ? btn.textContent = '▶️'
+                : btn.textContent = '⏸️';
+        });
+    </script>
+
+</body>
+
+</html>
