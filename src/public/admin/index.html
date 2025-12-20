@@ -4,315 +4,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>slm Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap">
+    
     <style>
+        /* --- Base & Reset --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: "Jersey 10", sans-serif;
         }
 
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #f5f5f5;
+            background-color: #131313;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 50px;
         }
 
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* --- Wave Background Animation --- */
+        .waveanim {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -100;
+            pointer-events: none;
         }
 
-        .header h1 {
-            font-size: 1.5rem;
+        .wave {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #52c471;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
         }
 
-        .nav {
-            background: #34495e;
-            padding: 0.5rem;
+        .wave span {
+            position: absolute;
+            width: 325vh;
+            height: 325vh;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -75%);
+            background: #000;
         }
 
-        .nav button {
-            background: none;
-            border: 1px solid #ecf0f1;
-            color: #ecf0f1;
-            padding: 0.5rem 1rem;
-            margin-right: 0.5rem;
-            cursor: pointer;
-            border-radius: 4px;
+        .wave span:nth-child(1) { border-radius: 45%; background: rgba(20, 20, 20, 1); animation: animate 15s linear infinite; }
+        .wave span:nth-child(2) { border-radius: 40%; background: rgba(20, 20, 20, 0.5); animation: animate 20s linear infinite; }
+        .wave span:nth-child(3) { border-radius: 42.5%; background: rgba(20, 20, 20, 0.5); animation: animate 25s linear infinite; }
+
+        @keyframes animate {
+            0% { transform: translate(-50%, -75%) rotate(0deg); }
+            100% { transform: translate(-50%, -75%) rotate(360deg); }
         }
 
-        .nav button:hover {
-            background: #4a6b8a;
-        }
-
-        .nav button.active {
-            background: #3498db;
-        }
-
+        /* --- Layout & Header --- */
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 1rem;
+            padding: 20px;
         }
 
-        .card {
-            background: white;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #52c471;
+            text-shadow: 0 0 10px rgba(82, 196, 113, 0.3);
+        }
+
+        .admin-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #adminName {
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+
+        /* --- Navigation Tabs --- */
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
             border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
 
+        .nav button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .nav button.active {
+            background: rgba(82, 196, 113, 0.2);
+            border-color: #52c471;
+            color: #52c471;
+            box-shadow: 0 0 15px rgba(82, 196, 113, 0.1);
+        }
+
+        /* --- Glass Cards --- */
+        .card {
+            background: rgba(19, 19, 19, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2, .card h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+            color: #fff;
+            font-size: 1.8rem;
+        }
+
+        /* --- Stats Grid --- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .stat-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
         }
+        .stat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.05); }
 
         .stat-number {
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: bold;
-            color: #2c3e50;
+            color: #52c471;
         }
 
         .stat-label {
-            color: #7f8c8d;
+            color: #aaa;
             margin-top: 0.5rem;
+            font-size: 1.2rem;
         }
 
+        /* --- Tables --- */
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate; 
+            border-spacing: 0;
             margin-top: 1rem;
         }
 
-        th,
-        td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
-
         th {
-            background: #34495e;
-            color: white;
+            text-align: left;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #52c471;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #ddd;
+            font-size: 1.1rem;
         }
 
-        tr:hover {
-            background: #f8f9fa;
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 1rem 0;
-            gap: 0.5rem;
-        }
-
-        .pagination button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #bdc3c7;
-            background: white;
+        /* --- Buttons --- */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            border-radius: 4px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            margin-right: 5px;
+            color: white;
+            font-family: "Jersey 10", sans-serif;
         }
 
-        .pagination button:hover:not(:disabled) {
-            background: #ecf0f1;
-        }
+        .btn:hover { filter: brightness(1.2); transform: scale(1.05); }
+        .btn:active { transform: scale(0.95); }
 
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn-primary { background: #52c471; color: #131313; font-weight: bold; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-success { background: #2ecc71; color: #131313; }
+        .btn-default { background: rgba(255,255,255,0.1); color: #fff; }
 
-        .search-box {
-            margin-bottom: 1rem;
+        /* --- Forms & Inputs --- */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            margin-top: 5px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #52c471;
+            box-shadow: 0 0 5px rgba(82, 196, 113, 0.3);
         }
 
         .search-box input {
-            padding: 0.5rem;
-            width: 300px;
-            max-width: 100%;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 0.25rem;
-        }
-
-        .btn-primary {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .btn-success {
-            background: #27ae60;
-            color: white;
-        }
-
+        /* --- Modals --- */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
         }
 
         .modal-content {
-            background: white;
-            margin: 2rem auto;
+            background: #1a1a1a;
+            margin: 5% auto;
             padding: 2rem;
-            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
             max-width: 600px;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
         }
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
+        .modal h2 { color: #52c471; margin-bottom: 1.5rem; }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { color: #aaa; font-size: 1.1rem; }
 
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-        }
-
-        .feature-tag {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            margin: 0.25rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .error {
-            background: #e74c3c;
-            color: white;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-
-        .success {
-            background: #27ae60;
-            color: white;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-
-        /* Add this inside your <style> tag */
+        /* Features Grid */
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 0.5rem;
-            padding: 10px;
-            background: #f8f9fa;
-            border: 1px solid #ecf0f1;
-            border-radius: 4px;
-            max-height: 200px;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
         .feature-checkbox {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
+            gap: 10px;
             cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .feature-checkbox:hover { background: rgba(255,255,255,0.05); }
+        .feature-checkbox input { width: auto; margin: 0; }
+
+        .feature-tag {
+            display: inline-block;
+            background: rgba(82, 196, 113, 0.2);
+            color: #52c471;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin: 2px;
+            border: 1px solid rgba(82, 196, 113, 0.3);
         }
 
-        .feature-checkbox input {
-            width: auto !important;
-            /* Override global input width */
-            margin: 0;
+        /* Pagination */
+        .pagination button {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
         }
+        .pagination button:hover:not(:disabled) {
+            background: #52c471;
+            color: #000;
+            border-color: #52c471;
+        }
+        .pagination button:disabled { opacity: 0.3; }
+
+        .loading, .error { padding: 2rem; text-align: center; color: #aaa; }
+        .error { color: #e74c3c; }
+
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>Admin Panel</h1>
-        <div>
-            <span id="adminName"></span>
-            <button onclick="logout()" class="btn btn-danger" style="margin-left: 1rem;">Logout</button>
+    <div class="waveanim">
+        <div class="wave">
+            <span></span><span></span><span></span>
         </div>
     </div>
 
-    <div class="nav">
-        <button onclick="showSection('dashboard')" class="active">Dashboard</button>
-        <button onclick="showSection('users')">User Management</button>
-        <button onclick="showSection('features')">Feature Management</button>
-    </div>
-
     <div class="container">
-        <!-- Dashboard Section -->
+        <div class="header">
+            <h1>slm Admin</h1>
+            <div class="admin-controls">
+                <span id="adminName">Loading...</span>
+                <button onclick="logout()" class="btn btn-danger">Log Out</button>
+            </div>
+        </div>
+
+        <div class="nav">
+            <button onclick="showSection('dashboard')" class="active">Dashboard</button>
+            <button onclick="showSection('users')">User Management</button>
+            <button onclick="showSection('features')">Feature Management</button>
+            <button onclick="window.location.href='/account'" class="btn-default" style="margin-left: auto;">Exit to Account</button>
+        </div>
+
         <div id="dashboard-section" class="section">
-            <h2>System Overview</h2>
-            <div class="stats-grid" id="stats-grid">
-                <div class="loading">Loading statistics...</div>
+            <div class="card">
+                <h2>System Overview</h2>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="loading">Loading statistics...</div>
+                </div>
             </div>
 
             <div class="card">
-                <h3>Recent Users</h3>
+                <h3>Recently Joined Users</h3>
                 <div id="recent-users">
                     <div class="loading">Loading recent users...</div>
                 </div>
             </div>
         </div>
 
-        <!-- Users Section -->
         <div id="users-section" class="section" style="display: none;">
             <div class="card">
-                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
-                    <h2 style="margin: 0;">User Management</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin: 0;">User List</h2>
                     <button onclick="showCreateUserForm()" class="btn btn-primary">+ Add User</button>
                 </div>
                 <div class="search-box">
-                    <input type="text" id="userSearch" placeholder="Search users..." oninput="searchUsers()">
+                    <input type="text" id="userSearch" placeholder="Search by name, email or username..." oninput="searchUsers()">
                 </div>
                 <div id="users-table">
                     <div class="loading">Loading users...</div>
@@ -321,7 +386,6 @@
             </div>
         </div>
 
-        <!-- Features Section -->
         <div id="features-section" class="section" style="display: none;">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -336,47 +400,42 @@
         </div>
     </div>
 
-    <!-- User Detail Modal -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <h2>User Details</h2>
             <div id="userModalContent">
-                <div class="loading">Loading user details...</div>
+                <div class="loading">Loading...</div>
             </div>
-            <div style="text-align: right; margin-top: 1rem;">
-                <button onclick="closeModal('userModal')" class="btn">Close</button>
+            <div style="text-align: right; margin-top: 1rem; border-top: 1px solid #333; padding-top: 1rem;">
+                <button onclick="closeModal('userModal')" class="btn btn-default">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Edit User Modal -->
     <div id="editUserModal" class="modal">
         <div class="modal-content">
             <h2>Edit User</h2>
             <form id="editUserForm">
                 <div id="editUserFormContent"></div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('editUserModal')" class="btn">Cancel</button>
+                    <button type="button" onclick="closeModal('editUserModal')" class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
-
-    <!-- Create User Modal -->
     <div id="createUserModal" class="modal">
         <div class="modal-content">
             <h2>Create New User</h2>
             <form id="createUserForm">
                 <div class="form-group">
                     <label>Username *</label>
-                    <input type="text" name="user_name" required pattern="[A-Za-z0-9_]{3,32}"
-                        title="3-32 characters, letters, numbers, and underscores only">
+                    <input type="text" name="user_name" required pattern="[A-Za-z0-9_]{3,32}" title="3-32 characters, letters, numbers, and underscores only">
                 </div>
                 <div class="form-group">
                     <label>Password *</label>
-                    <input type="password" name="password" required minlength="6" title="Minimum 6 characters">
+                    <input type="password" name="password" required minlength="6">
                 </div>
                 <div class="form-group">
                     <label>Confirm Password *</label>
@@ -391,10 +450,6 @@
                     <input type="email" name="email">
                 </div>
                 <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" name="tel_nr">
-                </div>
-                <div class="form-group">
                     <label>Role</label>
                     <select name="role">
                         <option value="user">User</option>
@@ -403,14 +458,13 @@
                     </select>
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('createUserModal')" class="btn">Cancel</button>
+                    <button type="button" onclick="closeModal('createUserModal')" class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create User</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Change Password Modal -->
     <div id="changePasswordModal" class="modal">
         <div class="modal-content">
             <h2>Change Password</h2>
@@ -418,44 +472,41 @@
                 <input type="hidden" name="userId" id="changePasswordUserId">
                 <div class="form-group">
                     <label>New Password *</label>
-                    <input type="password" name="newPassword" required minlength="6" title="Minimum 6 characters">
+                    <input type="password" name="newPassword" required minlength="6">
                 </div>
                 <div class="form-group">
                     <label>Confirm New Password *</label>
                     <input type="password" name="confirmNewPassword" required minlength="6">
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('changePasswordModal')" class="btn">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Change Password</button>
+                    <button type="button" onclick="closeModal('changePasswordModal')" class="btn btn-default">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Add Feature Panel-->
     <div id="createFeatureModal" class="modal">
         <div class="modal-content">
             <h2>Add New Feature</h2>
             <form id="createFeatureForm">
                 <div class="form-group">
                     <label>Feature Key *</label>
-                    <input type="text" name="featureKey" required placeholder="e.g., kt" pattern="[a-zA-Z0-9_]+"
-                        title="Only letters, numbers, and underscores allowed">
-                    <small style="color: #666;">Unique identifier used in code</small>
+                    <input type="text" name="featureKey" required placeholder="e.g., dark_mode" pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores">
+                    <small style="color: #666;">Unique code identifier</small>
                 </div>
                 <div class="form-group">
                     <label>Label *</label>
-                    <input type="text" name="featureLabel" required placeholder="e.g., Kalori Takibi">
+                    <input type="text" name="featureLabel" required placeholder="e.g., Dark Mode Theme">
                     <small style="color: #666;">Human-readable name</small>
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('createFeatureModal')" class="btn">Cancel</button>
+                    <button type="button" onclick="closeModal('createFeatureModal')" class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Add Feature</button>
                 </div>
             </form>
         </div>
     </div>
-
 
     <script>
         let currentSection = 'dashboard';
@@ -473,7 +524,7 @@
                     return;
                 }
 
-                document.getElementById('adminName').textContent = `Welcome, ${data.user.name || data.user.uname}`;
+                document.getElementById('adminName').textContent = `Admin: ${data.user.name || data.user.uname}`;
                 loadDashboard();
             } catch (error) {
                 console.error('Error checking admin status:', error);
@@ -487,7 +538,17 @@
             document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
 
             document.getElementById(`${section}-section`).style.display = 'block';
-            event.target.classList.add('active');
+            
+            // Highlight active button
+            const buttons = document.querySelectorAll('.nav button');
+            for(let btn of buttons) {
+                if(btn.textContent.toLowerCase().includes(section)) {
+                    btn.classList.add('active');
+                    break;
+                }
+                if(section === 'dashboard' && btn.textContent === 'Dashboard') btn.classList.add('active');
+            }
+            
             currentSection = section;
 
             if (section === 'dashboard') loadDashboard();
@@ -498,9 +559,7 @@
         // Dashboard functions
         async function loadDashboard() {
             try {
-                const response = await fetch('/admin/stats', {
-                    credentials: 'include'
-                });
+                const response = await fetch('/admin/stats', { credentials: 'include' });
                 const data = await response.json();
 
                 if (!response.ok) throw new Error(data.error);
@@ -512,11 +571,11 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-number">${data.stats.verified_users}</div>
-                        <div class="stat-label">Verified Users</div>
+                        <div class="stat-label">Verified</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number">${data.stats.admin_users}</div>
-                        <div class="stat-label">Admin Users</div>
+                        <div class="stat-label">Admins</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number">${data.stats.total_weight_entries}</div>
@@ -525,6 +584,34 @@
                     <div class="stat-card">
                         <div class="stat-number">${data.stats.total_devices}</div>
                         <div class="stat-label">Devices</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.moderator_count}</div>
+                        <div class="stat-label">Moderator Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.song_suggestion_count}</div>
+                        <div class="stat-label">Suggested Song Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.stored_files_count}</div>
+                        <div class="stat-label">Stored File Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.stored_folders_count}</div>
+                        <div class="stat-label">Stored Folder Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.song_suggestion_comments_count}</div>
+                        <div class="stat-label">Song Suggestions Comment Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.song_suggestion_reactions_count}</div>
+                        <div class="stat-label">Song Suggestions Reactions Count</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.stats.weight_entries_count}</div>
+                        <div class="stat-label">Weight Entries Count</div>
                     </div>
                 `;
 
@@ -541,7 +628,7 @@
                             ${data.recentUsers.map(user => `
                                 <tr>
                                     <td>${user.user_name}</td>
-                                    <td>${user.role}</td>
+                                    <td><span class="feature-tag" style="background:transparent; border:none; color: #fff;">${user.role}</span></td>
                                     <td>${new Date(user.join_date).toLocaleDateString()}</td>
                                 </tr>
                             `).join('')}
@@ -554,7 +641,6 @@
         }
 
         // User management functions
-        // Update the loadUsers function - fix the template string
         async function loadUsers(page = 1, search = '') {
             currentUserPage = page;
             currentUserSearch = search;
@@ -563,14 +649,11 @@
                 const params = new URLSearchParams({ page, limit: 20 });
                 if (search) params.append('search', search);
 
-                const response = await fetch(`/admin/users?${params}`, {
-                    credentials: 'include'
-                });
+                const response = await fetch(`/admin/users?${params}`, { credentials: 'include' });
                 const data = await response.json();
 
                 if (!response.ok) throw new Error(data.error);
 
-                // Render users table - FIXED VERSION
                 document.getElementById('users-table').innerHTML = `
             <table>
                 <thead>
@@ -586,29 +669,29 @@
                 <tbody>
                     ${data.users.map(user => `
                         <tr>
-                            <td>${user.user_name}</td>
-                            <td>${user.email || 'N/A'}</td>
+                            <td><strong>${user.user_name}</strong></td>
+                            <td>${user.email || '<span style="color:#666">N/A</span>'}</td>
                             <td>${user.role}</td>
-                            <td>${user.is_verified ? 'Yes' : 'No'}</td>
+                            <td>${user.is_verified ? '<span style="color:#52c471">Yes</span>' : '<span style="color:#e74c3c">No</span>'}</td>
                             <td>${new Date(user.join_date).toLocaleDateString()}</td>
                             <td>
-    <button onclick="viewUser('${user.id}')" class="btn btn-primary">View</button>
-    <button onclick="editUser('${user.id}')" class="btn btn-success">Edit</button>
-    <button onclick="showChangePasswordForm('${user.id}')" class="btn" style="background: #f39c12; color: white;">Password</button>
-    <button onclick="deleteUser('${user.id}')" class="btn btn-danger">Delete</button>
-</td>
+                                <button onclick="viewUser('${user.id}')" class="btn btn-primary">View</button>
+                                <button onclick="editUser('${user.id}')" class="btn btn-success">Edit</button>
+                                <button onclick="showChangePasswordForm('${user.id}')" class="btn" style="background: #f39c12; color: #131313;">Pass</button>
+                                <button onclick="deleteUser('${user.id}')" class="btn btn-danger">Del</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         `;
 
-                // Render pagination
                 renderPagination(data.totalPages, page, 'users-pagination', loadUsers);
             } catch (error) {
                 document.getElementById('users-table').innerHTML = `<div class="error">Error loading users: ${error.message}</div>`;
             }
         }
+
         function searchUsers() {
             const search = document.getElementById('userSearch').value;
             loadUsers(1, search);
@@ -616,329 +699,19 @@
 
         async function viewUser(userId) {
             try {
-                const response = await fetch(`/admin/users/${userId}`, {
-                    credentials: 'include'
-                });
+                const response = await fetch(`/admin/users/${userId}`, { credentials: 'include' });
                 const data = await response.json();
-
                 if (!response.ok) throw new Error(data.error);
 
                 document.getElementById('userModalContent').innerHTML = `
-                    <h3>${data.user.user_name}</h3>
-                    <div class="form-group">
-                        <label>Real Name:</label>
-                        <div>${data.user.real_name || 'N/A'}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Email:</label>
-                        <div>${data.user.email || 'N/A'}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Phone:</label>
-                        <div>${data.user.tel_nr || 'N/A'}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Role:</label>
-                        <div>${data.user.role}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Verified:</label>
-                        <div>${data.user.is_verified ? 'Yes' : 'No'}</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Features:</label>
-                        <div>
-                            ${data.features.map(f => `<span class="feature-tag">${f.key}</span>`).join('')}
-                            ${data.features.length === 0 ? 'No features' : ''}
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Recent Weight Entries:</label>
-                        <div>
-                            ${data.weightEntries.slice(0, 5).map(entry => `
-                                <div>${entry.entry_date}: ${entry.weight_kg}kg</div>
-                            `).join('')}
-                            ${data.weightEntries.length === 0 ? 'No weight entries' : ''}
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('userModal').style.display = 'block';
-            } catch (error) {
-                document.getElementById('userModalContent').innerHTML = `<div class="error">Error loading user details: ${error.message}</div>`;
-            }
-        }
-
-        // Replace the existing editUser function
-        async function editUser(userId) {
-            try {
-                // Fetch User details AND All Features in parallel
-                const [userResponse, featuresResponse] = await Promise.all([
-                    fetch(`/admin/users/${userId}`, { credentials: 'include' }),
-                    fetch('/admin/features', { credentials: 'include' })
-                ]);
-
-                const userData = await userResponse.json();
-                const featuresData = await featuresResponse.json();
-
-                if (!userResponse.ok) throw new Error(userData.error);
-                if (!featuresResponse.ok) throw new Error(featuresData.error);
-
-                const user = userData.user;
-                const userFeatures = userData.features || []; // Features the user currently has
-                const allFeatures = featuresData.features || []; // All available features in DB
-
-                // Generate HTML
-                document.getElementById('editUserFormContent').innerHTML = `
-            <input type="hidden" name="userId" value="${userId}">
-            
-            <div class="form-group">
-                <label>Username:</label>
-                <input type="text" name="user_name" value="${user.user_name}" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Real Name:</label>
-                <input type="text" name="real_name" value="${user.real_name || ''}">
-            </div>
-            
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" name="email" value="${user.email || ''}">
-            </div>
-            
-            <div class="form-group">
-                <label>Phone:</label>
-                <input type="text" name="tel_nr" value="${user.tel_nr || ''}">
-            </div>
-            
-            <div class="form-group">
-                <label>Role:</label>
-                <select name="role">
-                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
-                    <option value="moderator" ${user.role === 'moderator' ? 'selected' : ''}>Moderator</option>
-                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Verified:</label>
-                <select name="is_verified">
-                    <option value="true" ${user.is_verified ? 'selected' : ''}>Yes</option>
-                    <option value="false" ${!user.is_verified ? 'selected' : ''}>No</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Assign Features:</label>
-                <div class="feature-grid">
-                    ${allFeatures.map(feature => {
-                    // Check if user already has this feature (comparing IDs)
-                    const isChecked = userFeatures.some(uf => uf.id === feature.id);
-                    return `
-                            <label class="feature-checkbox">
-                                <input type="checkbox" name="features" value="${feature.id}" ${isChecked ? 'checked' : ''}>
-                                ${feature.key}
-                            </label>
-                        `;
-                }).join('')}
-                    ${allFeatures.length === 0 ? '<div style="color:#666; padding:5px;">No features defined in system.</div>' : ''}
+            <div style="display:flex; gap: 20px; align-items:center; margin-bottom:20px;">
+                <img src="/media/${data.user.profile_pic_path || 'content/deafult.jpg'}" style="width: 80px; height: 80px; border-radius:50%; border:2px solid #52c471;">
+                <div>
+                    <h3 style="margin:0; color:#52c471; font-size:2rem;">${data.user.user_name}</h3>
+                    <div style="color:#aaa;">${data.user.id}</div>
                 </div>
             </div>
-        `;
 
-                document.getElementById('editUserModal').style.display = 'block';
-            } catch (error) {
-                console.error(error);
-                alert('Error loading user for editing: ' + error.message);
-            }
-        }
-        async function deleteUser(userId) {
-            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/admin/users/${userId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (!response.ok) throw new Error(data.error);
-
-                alert('User deleted successfully');
-                loadUsers(currentUserPage, currentUserSearch);
-            } catch (error) {
-                alert('Error deleting user: ' + error.message);
-            }
-        }
-
-        // Feature management functions
-        async function loadFeatures() {
-            try {
-                const response = await fetch('/admin/features', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (!response.ok) throw new Error(data.error);
-
-                document.getElementById('features-list').innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Key</th>
-                                <th>Label</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.features.map(feature => `
-                                <tr>
-                                    <td><strong>${feature.key}</strong></td>
-                                    <td>${feature.label}</td>
-                                    <td>${feature.description || 'No description'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-            } catch (error) {
-                document.getElementById('features-list').innerHTML = `<div class="error">Error loading features: ${error.message}</div>`;
-            }
-        }
-
-        // Utility functions
-        function renderPagination(totalPages, currentPage, elementId, callback) {
-            const pagination = document.getElementById(elementId);
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
-            }
-
-            let html = '';
-
-            // Previous button
-            html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="${callback.name}(${currentPage - 1}, '${currentUserSearch}')">Previous</button>`;
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    html += `<button ${i === currentPage ? 'disabled' : ''} onclick="${callback.name}(${i}, '${currentUserSearch}')">${i}</button>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    html += `<span>...</span>`;
-                }
-            }
-
-            // Next button
-            html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="${callback.name}(${currentPage + 1}, '${currentUserSearch}')">Next</button>`;
-
-            pagination.innerHTML = html;
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        async function logout() {
-            try {
-                await fetch('/logout', { method: 'POST', credentials: 'include' });
-                window.location.href = '/login';
-            } catch (error) {
-                console.error('Error logging out:', error);
-                window.location.href = '/login';
-            }
-        }
-
-        // Form handlers
-        // Replace the existing editUserForm listener
-        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = new FormData(e.target);
-            const userId = formData.get('userId');
-
-            // Create updates object
-            const updates = Object.fromEntries(formData.entries());
-
-            // Explicitly handle the 'features' checkboxes array
-            // Convert string IDs to integers (since DB uses integer IDs for features)
-            updates.features = formData.getAll('features').map(id => parseInt(id));
-
-            delete updates.userId; // Clean up ID from body
-
-            // Convert boolean strings to actual booleans
-            if (updates.is_verified) {
-                updates.is_verified = updates.is_verified === 'true';
-            }
-
-            try {
-                const response = await fetch(`/admin/users/${userId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updates),
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (!response.ok) throw new Error(data.error);
-
-                alert('User updated successfully');
-                closeModal('editUserModal');
-                loadUsers(currentUserPage, currentUserSearch);
-            } catch (error) {
-                alert('Error updating user: ' + error.message);
-            }
-        });
-        // Initialize admin panel
-        checkAdminStatus();
-
-        // Close modals when clicking outside
-        window.onclick = function (event) {
-            document.querySelectorAll('.modal').forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        };
-
-
-        // Show create user form
-        function showCreateUserForm() {
-            document.getElementById('createUserForm').reset();
-            document.getElementById('createUserModal').style.display = 'block';
-        }
-
-        // Show change password form
-        function showChangePasswordForm(userId) {
-            document.getElementById('changePasswordForm').reset();
-            document.getElementById('changePasswordUserId').value = userId;
-            document.getElementById('changePasswordModal').style.display = 'block';
-        }
-
-        // Update the viewUser function to include password change button
-        async function viewUser(userId) {
-            try {
-                const response = await fetch(`/admin/users/${userId}`, {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (!response.ok) throw new Error(data.error);
-
-
-                document.getElementById('userModalContent').innerHTML = `
-            <h3>${data.user.user_name}</h3>
-            <img src="/media/${data.user.profile_pic_path}" style="width: 100px; height: 100px">
-            <div style="margin-bottom: 1rem;">
-                <button onclick="showChangePasswordForm('${data.user.id}')" class="btn btn-primary">Change Password</button>
-                <button onclick="editUser('${data.user.id}')" class="btn btn-success">Edit Profile</button>
-            </div>
-            <div class="form-group">
-                <label>User ID:</label>
-                <div><code>${data.user.id}</code></div>
-            </div>
             <div class="form-group">
                 <label>Real Name:</label>
                 <div>${data.user.real_name || 'N/A'}</div>
@@ -953,198 +726,313 @@
             </div>
             <div class="form-group">
                 <label>Role:</label>
-                <div>${data.user.role}</div>
+                <div>${data.user.role.toUpperCase()}</div>
             </div>
             <div class="form-group">
                 <label>Verified:</label>
                 <div>${data.user.is_verified ? 'Yes' : 'No'}</div>
             </div>
             <div class="form-group">
-                <label>Join Date:</label>
-                <div>${new Date(data.user.join_date).toLocaleString()}</div>
-            </div>
-            <div class="form-group">
-                <label>Last Updated:</label>
-                <div>${new Date(data.user.updated_at).toLocaleString()}</div>
-            </div>
-            <div class="form-group">
-                <label>Features:</label>
-                <div>
+                <label>Active Features:</label>
+                <div style="margin-top:5px;">
                     ${data.features.map(f => `<span class="feature-tag">${f.key}</span>`).join('')}
-                    ${data.features.length === 0 ? 'No features' : ''}
+                    ${data.features.length === 0 ? '<span style="color:#666;">No active features</span>' : ''}
                 </div>
             </div>
             <div class="form-group">
-                <label>Recent Weight Entries:</label>
-                <div>
+                <label>Last 5 Weight Entries:</label>
+                <div style="font-family:monospace; margin-top:5px;">
                     ${data.weightEntries.slice(0, 5).map(entry => `
-                        <div>${entry.entry_date}: ${entry.weight_kg}kg</div>
+                        <div>${new Date(entry.entry_date).toLocaleDateString()}: <strong>${entry.weight_kg}kg</strong></div>
                     `).join('')}
-                    ${data.weightEntries.length === 0 ? 'No weight entries' : ''}
+                    ${data.weightEntries.length === 0 ? 'No entries recorded' : ''}
+                </div>
+            </div>
+        `;
+                document.getElementById('userModal').style.display = 'block';
+            } catch (error) {
+                alert("Error loading user: " + error.message);
+            }
+        }
+
+        async function editUser(userId) {
+            try {
+                const [userResponse, featuresResponse] = await Promise.all([
+                    fetch(`/admin/users/${userId}`, { credentials: 'include' }),
+                    fetch('/admin/features', { credentials: 'include' })
+                ]);
+
+                const userData = await userResponse.json();
+                const featuresData = await featuresResponse.json();
+
+                if (!userResponse.ok) throw new Error(userData.error);
+                if (!featuresResponse.ok) throw new Error(featuresData.error);
+
+                const user = userData.user;
+                const userFeatures = userData.features || []; 
+                const allFeatures = featuresData.features || []; 
+
+                document.getElementById('editUserFormContent').innerHTML = `
+            <input type="hidden" name="userId" value="${userId}">
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="user_name" value="${user.user_name}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Real Name</label>
+                <input type="text" name="real_name" value="${user.real_name || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" value="${user.email || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Role</label>
+                <select name="role">
+                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                    <option value="moderator" ${user.role === 'moderator' ? 'selected' : ''}>Moderator</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Verified</label>
+                <select name="is_verified">
+                    <option value="true" ${user.is_verified ? 'selected' : ''}>Yes</option>
+                    <option value="false" ${!user.is_verified ? 'selected' : ''}>No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Assign Features</label>
+                <div class="feature-grid">
+                    ${allFeatures.map(feature => {
+                    const isChecked = userFeatures.some(uf => uf.id === feature.id);
+                    return `
+                            <label class="feature-checkbox">
+                                <input type="checkbox" name="features" value="${feature.id}" ${isChecked ? 'checked' : ''}>
+                                <span style="color:#fff;">${feature.label}</span>
+                                <span style="color:#666; font-size:0.8rem;">(${feature.key})</span>
+                            </label>
+                        `;
+                }).join('')}
+                    ${allFeatures.length === 0 ? '<div style="color:#666;">No features defined in system.</div>' : ''}
                 </div>
             </div>
         `;
 
-                document.getElementById('userModal').style.display = 'block';
+                document.getElementById('editUserModal').style.display = 'block';
             } catch (error) {
-                document.getElementById('userModalContent').innerHTML = `<div class="error">Error loading user details: ${error.message}</div>`;
+                alert('Error loading user for editing: ' + error.message);
             }
         }
 
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+            try {
+                const response = await fetch(`/admin/users/${userId}`, { method: 'DELETE', credentials: 'include' });
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error);
+                }
+                alert('User deleted successfully');
+                loadUsers(currentUserPage, currentUserSearch);
+            } catch (error) {
+                alert('Error deleting user: ' + error.message);
+            }
+        }
 
-        // Create User Form Handler
-        // Enhanced Create User Form Handler with better error handling
-        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+        // Feature management
+        async function loadFeatures() {
+            try {
+                const response = await fetch('/admin/features', { credentials: 'include' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                document.getElementById('features-list').innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Label</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.features.map(feature => `
+                                <tr>
+                                    <td><span class="feature-tag">${feature.key}</span></td>
+                                    <td>${feature.label}</td>
+                                    <td style="color:#666;">${feature.id}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                document.getElementById('features-list').innerHTML = `<div class="error">Error loading features: ${error.message}</div>`;
+            }
+        }
+
+        // Forms Handlers
+        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
+            const formData = new FormData(e.target);
+            const userId = formData.get('userId');
+            const updates = Object.fromEntries(formData.entries());
+            updates.features = formData.getAll('features').map(id => parseInt(id));
+            delete updates.userId;
+            if (updates.is_verified) updates.is_verified = updates.is_verified === 'true';
 
             try {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Creating...';
-
-                const formData = new FormData(e.target);
-                const userData = Object.fromEntries(formData.entries());
-
-                // Validate passwords match
-                if (userData.password !== userData.confirmPassword) {
-                    alert('Passwords do not match');
-                    return;
+                const response = await fetch(`/admin/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates),
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error);
                 }
+                alert('User updated successfully');
+                closeModal('editUserModal');
+                loadUsers(currentUserPage, currentUserSearch);
+            } catch (error) {
+                alert('Error updating user: ' + error.message);
+            }
+        });
 
-                // Remove confirmPassword from data
-                delete userData.confirmPassword;
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const userData = Object.fromEntries(formData.entries());
+            if (userData.password !== userData.confirmPassword) { alert('Passwords do not match'); return; }
+            delete userData.confirmPassword;
 
+            try {
                 const response = await fetch('/admin/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData),
                     credentials: 'include'
                 });
-
-                const data = await response.json();
-
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to create user');
+                    const data = await response.json();
+                    throw new Error(data.error);
                 }
-
                 alert('User created successfully!');
                 closeModal('createUserModal');
                 loadUsers(currentUserPage, currentUserSearch);
-
             } catch (error) {
-                console.error('Create user error:', error);
                 alert('Error creating user: ' + error.message);
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
             }
         });
 
-        // Enhanced Change Password Form Handler
         document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
+            const formData = new FormData(e.target);
+            const userId = formData.get('userId');
+            const newPassword = formData.get('newPassword');
+            const confirmNewPassword = formData.get('confirmNewPassword');
+            if (newPassword !== confirmNewPassword) { alert('Passwords do not match'); return; }
 
             try {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Changing...';
-
-                const formData = new FormData(e.target);
-                const userId = formData.get('userId');
-                const newPassword = formData.get('newPassword');
-                const confirmNewPassword = formData.get('confirmNewPassword');
-
-                // Validate passwords match
-                if (newPassword !== confirmNewPassword) {
-                    alert('Passwords do not match');
-                    return;
-                }
-
                 const response = await fetch(`/admin/users/${userId}/password`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ newPassword }),
                     credentials: 'include'
                 });
-
-                const data = await response.json();
-
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to change password');
+                    const data = await response.json();
+                    throw new Error(data.error);
                 }
-
                 alert('Password changed successfully!');
                 closeModal('changePasswordModal');
-
             } catch (error) {
-                console.error('Change password error:', error);
                 alert('Error changing password: ' + error.message);
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
             }
-        });  
-
-        // --- Add this to your JS section ---
-
-// 1. Helper to open the modal
-function showCreateFeatureForm() {
-    document.getElementById('createFeatureForm').reset();
-    document.getElementById('createFeatureModal').style.display = 'block';
-}
-
-// 2. Form Submit Handler connecting to your new API endpoint
-document.getElementById('createFeatureForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-
-    try {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Adding...';
-
-        const formData = new FormData(e.target);
-        
-        // Prepare the JSON body exactly as your backend expects: { featureKey, featureLabel }
-        const featureData = {
-            featureKey: formData.get('featureKey'),
-            featureLabel: formData.get('featureLabel')
-        };
-
-        const response = await fetch('/admin/features', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(featureData),
-            credentials: 'include'
         });
 
-        // The endpoint returns { features: [...] } or error
-        const data = await response.json();
+        document.getElementById('createFeatureForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const featureData = {
+                featureKey: formData.get('featureKey'),
+                featureLabel: formData.get('featureLabel')
+            };
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to create feature');
+            try {
+                const response = await fetch('/admin/features', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(featureData),
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error);
+                }
+                alert('Feature created successfully!');
+                closeModal('createFeatureModal');
+                loadFeatures();
+            } catch (error) {
+                alert('Error creating feature: ' + error.message);
+            }
+        });
+
+        // Utils
+        function renderPagination(totalPages, currentPage, elementId, callback) {
+            const pagination = document.getElementById(elementId);
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            // Simple prev/next logic
+            const prev = document.createElement('button');
+            prev.textContent = 'Prev';
+            prev.disabled = currentPage === 1;
+            prev.onclick = () => callback(currentPage - 1, currentUserSearch);
+            pagination.appendChild(prev);
+
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` Page ${currentPage} of ${totalPages} `;
+            pageInfo.style.margin = '0 10px';
+            pagination.appendChild(pageInfo);
+
+            const next = document.createElement('button');
+            next.textContent = 'Next';
+            next.disabled = currentPage === totalPages;
+            next.onclick = () => callback(currentPage + 1, currentUserSearch);
+            pagination.appendChild(next);
         }
 
-        alert('Feature created successfully!');
-        closeModal('createFeatureModal');
-        
-        // Refresh the list to show the new item
-        loadFeatures();
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        function showCreateUserForm() { document.getElementById('createUserForm').reset(); document.getElementById('createUserModal').style.display = 'block'; }
+        function showCreateFeatureForm() { document.getElementById('createFeatureForm').reset(); document.getElementById('createFeatureModal').style.display = 'block'; }
+        function showChangePasswordForm(userId) {
+            document.getElementById('changePasswordForm').reset();
+            document.getElementById('changePasswordUserId').value = userId;
+            document.getElementById('changePasswordModal').style.display = 'block';
+        }
 
-    } catch (error) {
-        console.error('Create feature error:', error);
-        alert('Error creating feature: ' + error.message);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = originalText;
-    }
-});
+        async function logout() {
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login';
+        }
+
+        window.onclick = function (event) {
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (event.target === modal) modal.style.display = 'none';
+            });
+        };
+
+        // Initialize
+        checkAdminStatus();
     </script>
 </body>
-
 </html>

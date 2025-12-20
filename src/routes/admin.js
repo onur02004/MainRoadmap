@@ -234,6 +234,18 @@ router.delete("/admin/users/:id", requireAuth, requireAdmin, async (req, res) =>
 // Get system statistics
 router.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
   try {
+    //total users
+    //verfied users
+    //admins
+    //mods
+    //total weight entries
+    //total devices
+    //shared song count
+    //total files stored
+    //total folders created
+    //song_suggestion_comments
+    //song_suggestion_reactions
+    //weight_entries ekle
     const statsSql = `
       SELECT 
         (SELECT COUNT(*) FROM users) as total_users,
@@ -241,14 +253,22 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
         (SELECT COUNT(*) FROM users WHERE role = 'admin') as admin_users,
         (SELECT COUNT(*) FROM weight_entries) as total_weight_entries,
         (SELECT COUNT(*) FROM devices) as total_devices,
-        (SELECT COUNT(*) FROM password_resets WHERE used = false AND expires_at > NOW()) as active_reset_tokens
+        (SELECT COUNT(*) FROM password_resets WHERE used = false AND expires_at > NOW()) as active_reset_tokens,
+        (SELECT COUNT(*) FROM users WHERE role = 'moderator') as moderator_count,
+        (SELECT COUNT(*) FROM song_suggestions) as song_suggestion_count,
+        (SELECT COUNT(*) FROM storage_items WHERE parent_id IS NOT NULL AND storage_path IS NOT NULL AND is_folder = false) as stored_files_count,
+        (SELECT COUNT(*) FROM storage_items WHERE parent_id IS NOT NULL AND storage_path IS NOT NULL AND is_folder = true) as stored_folders_count,
+        (SELECT COUNT(*) FROM song_suggestion_comments) as song_suggestion_comments_count,
+        (SELECT COUNT(*) FROM song_suggestion_reactions) as song_suggestion_reactions_count,
+        (SELECT COUNT(*) FROM weight_entries) as weight_entries_count
+
     `;
 
     const recentUsersSql = `
       SELECT user_name, join_date, role 
       FROM users 
       ORDER BY join_date DESC 
-      LIMIT 5
+      LIMIT 15
     `;
 
     const [statsResult, recentUsersResult] = await Promise.all([
