@@ -20,6 +20,7 @@ import { trackActivity } from "./middleware/activityTracker.js";
 import notificationHelper from "./helpers/notificationHelper.js";
 import storageRoutes from "./routes/storage.js";
 import publicShareRoutes from "./routes/publicShare.js";
+import notificationsRoute from "./routes/notifications.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -41,6 +42,7 @@ app.use(trackActivity);
 app.use(notificationHelper);
 app.use(storageRoutes);
 app.use(publicShareRoutes);
+app.use(notificationsRoute);
 
 //PROTECTED
 //PROTECTED

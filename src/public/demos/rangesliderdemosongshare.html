@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song-Share Dynamic Rating</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap">
+    <style>
+        :root {
+            --primary-glow: #3b82f6; /* Start Blue */
+            --bg-dark: #111827;
+            --card-bg: #131313;
+        }
+
+        body {
+            background: var(--bg-dark);
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .rating-card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #rating-value {
+            font-family: "Jersey 10", sans-serif;
+            font-size: 4rem;
+            color: var(--primary-glow);
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px var(--primary-glow);
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .bars-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 6px;
+            height: 100px;
+            margin-bottom: 30px;
+        }
+
+        .bar {
+            width: 10px;
+            background: #2d3748;
+            border-radius: 5px;
+            transition: all 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .slider-wrapper { width: 100%; }
+
+        #rating-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #1f2937;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        #rating-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 4px solid var(--primary-glow);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--primary-glow);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: "Jersey 10", sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="rating-card">
+        <h3 style="color: white; font-weight: 300;">Rate your experience</h3>
+        <div id="rating-value">5.0</div>
+        <div class="bars-container" id="bars-wrapper"></div>
+        <div class="slider-wrapper">
+            <input type="range" min="0" max="10" step="1" value="5" id="rating-slider">
+        </div>
+        <div class="labels">
+            <span>Poor</span>
+            <span>Excellent</span>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('rating-slider');
+        const valDisplay = document.getElementById('rating-value');
+        const barsWrapper = document.getElementById('bars-wrapper');
+        const totalBars = 20;
+
+        for (let i = 0; i < totalBars; i++) {
+            const bar = document.createElement('div');
+            bar.classList.add('bar');
+            bar.style.height = `${30 + (i * 3.5)}%`;
+            barsWrapper.appendChild(bar);
+        }
+
+        const bars = document.querySelectorAll('.bar');
+
+        function updateRating() {
+            const val = parseFloat(slider.value);
+            valDisplay.textContent = val.toFixed(1);
+
+            // Determine color based on value
+            let currentColor = '#3b82f6'; // Default Blue (0-3)
+            if (val > 3 && val <= 6) {
+                currentColor = '#4eba6b'; // Green (4-6)
+            } else if (val > 6 && val <= 8.5) {
+                currentColor = '#f59e0b'; // Orange (7-8.5)
+            } else if (val > 8.5) {
+                currentColor = '#ef4444'; // Red (9-10)
+            }
+
+            document.documentElement.style.setProperty('--primary-glow', currentColor);
+
+            const percentActive = val / 10;
+            const activeIndex = Math.floor(percentActive * totalBars);
+
+            bars.forEach((bar, index) => {
+                if (index <= activeIndex && val > 0) {
+                    bar.style.background = 'var(--primary-glow)';
+                    bar.style.boxShadow = `0 0 15px ${currentColor}66`; // Added transparency to glow
+                    bar.style.transform = 'scaleY(1.2)';
+                } else {
+                    bar.style.background = '#2d3748';
+                    bar.style.boxShadow = 'none';
+                    bar.style.transform = 'scaleY(1)';
+                }
+            });
+        }
+
+        slider.addEventListener('input', updateRating);
+        updateRating();
+    </script>
+</body>
+</html>

@@ -281,7 +281,8 @@ router.get("/api/music/search", requireAuth, async (req, res) => {
                 artist: artist,
                 imageUrl: imageUrl,
                 uri: track.uri,
-                artistIds: artistIds
+                artistIds: artistIds,
+                duration_ms: track.duration_ms
             };
         });
 

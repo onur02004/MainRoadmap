@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+    :root {
+        --m-blue: #3b82f6;
+        --m-purple: #a855f7;
+        --m-bg: rgba(15, 23, 42, 0.8);
+        --m-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .sharing-container {
+        background: var(--m-bg);
+        backdrop-filter: blur(16px);
+        padding: 24px;
+        border-radius: 24px;
+        width: 380px;
+        border: 1px solid var(--m-border);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Modern Segmented Switch */
+    .selector-track {
+        display: flex;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px;
+        border-radius: 14px;
+        margin-bottom: 24px;
+        position: relative;
+    }
+
+    .selector-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        z-index: 1;
+        transition: color 0.3s ease;
+    }
+
+    .selector-btn.active {
+        color: white;
+    }
+
+    /* The sliding pill background */
+    .selector-pill {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: calc(50% - 4px);
+        height: calc(100% - 8px);
+        background: var(--m-blue);
+        border-radius: 11px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Sharing Status Display */
+    .display-area {
+        height: 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .status-msg {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #f1f5f9;
+        animation: fadeIn 0.4s ease forwards;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--m-blue);
+        box-shadow: 0 0 10px var(--m-blue);
+    }
+
+    /* Search Input Styling */
+    .search-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--m-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: white;
+        outline: none;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        margin-top: 8px;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        border-color: var(--m-purple);
+        background: rgba(168, 85, 247, 0.1);
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none; }
+</style>
+
+<div class="sharing-container">
+    <div class="selector-track">
+        <div class="selector-pill" id="pill"></div>
+        <button class="selector-btn active" onclick="updateMode('public', 0)">Public</button>
+        <button class="selector-btn" onclick="updateMode('specific', 100)">Specific</button>
+    </div>
+
+    <div class="display-area">
+        <div id="publicUI" class="status-msg">
+            <div class="dot"></div>
+            <span>Sharing publicly</span>
+        </div>
+
+        <div id="specificUI" class="hidden">
+            <input type="text" class="search-input" placeholder="Search users...">
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateMode(mode, offset) {
+        const pill = document.getElementById('pill');
+        const pubUI = document.getElementById('publicUI');
+        const specUI = document.getElementById('specificUI');
+        const btns = document.querySelectorAll('.selector-btn');
+
+        // Move pill and change color
+        pill.style.transform = `translateX(${offset}%)`;
+        pill.style.background = mode === 'public' ? 'var(--m-blue)' : 'var(--m-purple)';
+        pill.style.boxShadow = mode === 'public' ? 
+            '0 4px 12px rgba(59, 130, 246, 0.3)' : 
+            '0 4px 12px rgba(168, 85, 247, 0.3)';
+
+        // Toggle Buttons
+        btns[0].classList.toggle('active', mode === 'public');
+        btns[1].classList.toggle('active', mode === 'specific');
+
+        // Toggle UI Content
+        if (mode === 'public') {
+            pubUI.classList.remove('hidden');
+            specUI.classList.add('hidden');
+        } else {
+            pubUI.classList.add('hidden');
+            specUI.classList.remove('hidden');
+        }
+    }
+</script>
+</body>
+</html>

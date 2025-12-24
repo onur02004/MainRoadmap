@@ -67,6 +67,47 @@
             // refresh AOS so new nodes animate
             if (window.AOS && typeof AOS.refresh === 'function') AOS.refresh();
 
+
+            const updateWebNotifications = async () => {
+                try {
+                    const res = await fetch('/api/notifications/latest');
+                    const data = await res.json();
+                    const holder = document.querySelector('.notificationMainHolder');
+
+                    if (data.notifications && data.notifications.length > 0) {
+                        const last = data.notifications[0];
+
+                        // Populate the holder with the latest message and a bell icon
+                        holder.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; width: 100%;">
+                    <span style="font-size: 1.5rem;">🔔</span>
+                    <div style="overflow: hidden;">
+                        <p style="margin: 0; font-weight: bold; color: #52c471;">${last.title}</p>
+                        <p style="margin: 0; font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
+                            ${last.body}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+                        // Visual indicator for unread
+                        if (!last.is_read) {
+                            holder.style.borderLeft = "4px solid #52c471";
+                            holder.style.backgroundColor = "rgba(82, 196, 113, 0.1)";
+                        }
+                    } else {
+                        holder.innerHTML = `<p style="padding: 15px; opacity: 0.5;">No new notifications</p>`;
+                    }
+                } catch (err) {
+                    console.error("Web notif error:", err);
+                }
+            };
+
+            // Initial check and set interval for every 60 seconds
+            updateWebNotifications();
+            setInterval(updateWebNotifications, 60000);
+
+
             console.log('User features (from /api/session):', uniq);
 
             const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
@@ -85,10 +126,12 @@
                     dialog.hidden = true;
                     document.getElementById('profileWarning').style.display = 'none';
                 });
-            }else{
+            } else {
                 console.log("has profile pic");
                 document.getElementById('profileWarning').style.display = 'none';
             }
+
+
 
         } else {
             loggedInInfos[0].style.display = 'none';

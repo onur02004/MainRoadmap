@@ -334,3 +334,26 @@ html::view-transition-new(root) {
         filter: brightness(1.1);
     }
 }
+
+.notificationMainHolder{
+    height: 50px;
+    background-color: rgba(119, 77, 0, 0.24);
+    border-radius: 11px;
+}
+
+
+.notificationMainHolder {
+    height: 60px; /* Slightly taller for two lines of text */
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.notificationMainHolder:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}

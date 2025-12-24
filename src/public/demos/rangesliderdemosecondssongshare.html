@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Highlight Picker</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap">
+    <style>
+        :root {
+            --primary-glow: #3b82f6;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --bar-idle: #334155;
+        }
+
+        body {
+            background: var(--bg-dark);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+        }
+
+        .time-picker-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            padding: 32px;
+            border-radius: 28px;
+            width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .label-group h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+        }
+
+        #highlightDisplay {
+            font-family: "Jersey 10", sans-serif;
+            font-size: 4.5rem;
+            line-height: 1;
+            color: var(--primary-glow);
+            text-shadow: 0 0 20px var(--primary-glow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* The Visualizer Bars Container */
+        .visualizer-container {
+            position: relative;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 3px;
+            margin-bottom: 20px;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--bar-idle);
+            border-radius: 4px;
+            transition: height 0.3s ease, background 0.2s ease, transform 0.2s ease;
+            min-height: 4px;
+        }
+
+        /* The Hidden Slider that controls everything */
+        .slider-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .slider-overlay::-webkit-slider-thumb {
+            appearance: none;
+            width: 2px;
+            height: 80px;
+            background: white;
+            box-shadow: 0 0 15px white;
+        }
+
+        .footer-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: "Jersey 10", sans-serif;
+            color: #64748b;
+            font-size: 1.2rem;
+        }
+
+        .hint {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="time-picker-card">
+        <div class="header">
+            <div class="label-group">
+                <h3>Highlight Moment</h3>
+                <div id="highlightDisplay">0:00</div>
+            </div>
+        </div>
+
+        <div class="visualizer-container" id="visualizer">
+            <input type="range" id="highlightSlider" min="0" max="180" step="1" value="0" class="slider-overlay">
+        </div>
+
+        <div class="footer-labels">
+            <span>0:00</span>
+            <span id="totalDurationLabel">3:00</span>
+        </div>
+        <p class="hint">DRAG TO SCRUB SECONDS</p>
+    </div>
+
+    <script>
+        const slider = document.getElementById('highlightSlider');
+        const display = document.getElementById('highlightDisplay');
+        const visualizer = document.getElementById('visualizer');
+        const totalLabel = document.getElementById('totalDurationLabel');
+        const totalBars = 45; 
+
+        // 1. Create the bars
+        for (let i = 0; i < totalBars; i++) {
+            const bar = document.createElement('div');
+            bar.classList.add('bar');
+            // Create a "wave" shape naturally
+            const height = 20 + Math.random() * 60; 
+            bar.style.height = `${height}%`;
+            visualizer.appendChild(bar);
+        }
+
+        const bars = document.querySelectorAll('.bar');
+
+        function formatSeconds(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        function updateUI() {
+            const val = parseInt(slider.value);
+            const max = parseInt(slider.max);
+            const percent = val / max;
+            
+            display.textContent = formatSeconds(val);
+
+            // 2. Dynamic Color Logic
+            let color = '#3b82f6'; // Blue
+            if (percent > 0.3) color = '#10b981'; // Green
+            if (percent > 0.7) color = '#f59e0b'; // Orange
+            if (percent > 0.9) color = '#ef4444'; // Red
+
+            document.documentElement.style.setProperty('--primary-glow', color);
+
+            // 3. Update Bars
+            const activeThreshold = Math.floor(percent * totalBars);
+            
+            bars.forEach((bar, index) => {
+                if (index <= activeThreshold) {
+                    bar.style.background = color;
+                    bar.style.boxShadow = `0 0 10px ${color}aa`;
+                    bar.style.transform = 'scaleY(1.1)';
+                } else {
+                    bar.style.background = 'var(--bar-idle)';
+                    bar.style.boxShadow = 'none';
+                    bar.style.transform = 'scaleY(1)';
+                }
+            });
+        }
+
+        // Call this when your music API loads to set the length
+        function setSongDuration(seconds) {
+            slider.max = seconds;
+            totalLabel.textContent = formatSeconds(seconds);
+            updateUI();
+        }
+
+        slider.addEventListener('input', updateUI);
+        
+        // Initialize
+        setSongDuration(180); 
+    </script>
+</body>
+</html>

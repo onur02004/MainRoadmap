@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             li.addEventListener('click', () => {
-                alert("Not Yet implemented, sabir pls tekim burda");
+                //alert("Not Yet implemented, sabir pls tekim burda");
                 toggleUserSelection(user, li);
             });
 
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // NEW: Log artist IDs for debugging
             tracks.forEach((track, index) => {
                 if (track.artistIds) {
-                    console.log(`Track ${index}: ${track.name} - Artist IDs:`, track.artistIds);
+                    console.log(`Track ${index}: ${track.name} - Artist IDs: ${track.artistIds} - duration: `, formatDuration(track.duration_ms));
                 }
             });
 
@@ -1842,7 +1842,7 @@ function renderGlobalUserResults(users) {
     `;
 
     li.addEventListener('click', () => {
-        alert("Not Yet implementd, Bi yavas tek basima yetisemiyom");
+            alert("Not Yet implementd, Bi yavas tek basima yetisemiyom");
             closeGlobalSearchModal();
         });
 
@@ -2124,4 +2124,11 @@ if (sharedSongCommentsBtn) {
         await fetchAndRenderComments(sid);
         openCommentsModal();
     });
+}
+
+
+function formatDuration(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }

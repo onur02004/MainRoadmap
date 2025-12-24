@@ -710,3 +710,6 @@ CREATE TABLE storage_share_links (
 
 ALTER TABLE storage_share_links
 ADD COLUMN allow_subtree boolean NOT NULL DEFAULT true;
+
+
+ALTER TABLE notification_events ADD COLUMN is_read BOOLEAN DEFAULT false;

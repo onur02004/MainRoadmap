@@ -53,32 +53,31 @@ export async function notifyUserByType({
     "SELECT * FROM user_notification_settings WHERE user_id = $1",
     [userId]
   );
-
   if (settingsRows.length === 0) return;
   const settings = settingsRows[0];
 
-  // 2. Check if PUSH is allowed for this type
-  if (!isNotificationAllowed(settings, type, "push")) {
-    return;
-  }
-
-  // 3. Get device tokens
-  const { rows: tokenRows } = await q(
-    "SELECT expo_token FROM device_tokens WHERE user_id = $1",
-    [userId]
+  // 2. SAVE TO DATABASE (Web Infrastructure)
+  // This makes the notification available for the website even if push is disabled
+  await q(
+    `INSERT INTO notification_events (user_id, type, channel, payload)
+   VALUES ($1, $2, $3, $4)`,
+    [
+      userId,
+      type,
+      'push',
+      JSON.stringify({ title, body, imageUrl, ...data }) // This goes into 'payload'
+    ]
   );
 
-  if (tokenRows.length === 0) return;
-
-  // 4. Send push
-  for (const row of tokenRows) {
-    await sendPush(
-      row.expo_token,
-      title,
-      body,
-      { ...data, type },
-      imageUrl
+  // 3. Check if PUSH is allowed and send to mobile
+  if (isNotificationAllowed(settings, type, "push")) {
+    const { rows: tokenRows } = await q(
+      "SELECT expo_token FROM device_tokens WHERE user_id = $1",
+      [userId]
     );
+    for (const row of tokenRows) {
+      await sendPush(row.expo_token, title, body, { ...data, type }, imageUrl);
+    }
   }
 }
 
