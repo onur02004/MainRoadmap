@@ -82,28 +82,29 @@ export async function notifyUserByType({
   }
 }
 
+
 function isNotificationAllowed(settings, type, channel) {
   if (channel === "push") {
     if (!settings.push_enabled) return false;
 
     switch (type) {
+      // Use the exported constants instead of hardcoded strings
       case NotificationType.LOGIN:
         return settings.push_login;
       case NotificationType.PUBLIC_SHARE:
         return settings.push_public_share;
       case NotificationType.DIRECT_SHARE:
         return settings.push_direct_share;
-      case NotificationType.POST_COMMENT:
-        return settings.push_post_comment;
-      case NotificationType.POST_REACTION:
+      case NotificationType.REACTION: // Changed from NotificationType.POST_REACTION
         return settings.push_post_reaction;
-      case NotificationType.SONG_PLAYED:
+      case NotificationType.COMMENT: // Changed from NotificationType.POST_COMMENT
+        return settings.push_post_comment;
+      case NotificationType.PLAY_EVENT: // Changed from NotificationType.SONG_PLAYED
         return settings.push_song_played;
       default:
         return false;
     }
   }
-
   return false;
 }
 
