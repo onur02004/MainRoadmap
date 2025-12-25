@@ -1838,52 +1838,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 1. Generate Bars
+    // songsharescript.js
+
+    // songsharescript.js - Inside DOMContentLoaded
+
+    // 1. Initialize Rating Bars
     const barsWrapper = document.getElementById('bars-wrapper');
     const totalBars = 20;
-    for (let i = 0; i < totalBars; i++) {
-        const bar = document.createElement('div');
-        bar.classList.add('bar');
-        bar.style.height = `${30 + (i * 3.5)}%`;
-        barsWrapper.appendChild(bar);
+
+    if (barsWrapper && barsWrapper.children.length === 0) {
+        for (let i = 0; i < totalBars; i++) {
+            const bar = document.createElement('div');
+            bar.classList.add('bar');
+            // Initial height progression
+            bar.style.height = `${30 + (i * 3.5)}%`;
+            barsWrapper.appendChild(bar);
+        }
     }
 
+    // 2. Define Slider Elements
     const bars = document.querySelectorAll('.bar');
     const ratingSlider = document.getElementById('rating-slider');
-    const actualRatingInput = document.getElementById('songRating'); // The hidden input
     const ratingValDisplay = document.getElementById('rating-value');
+    const actualRatingInput = document.getElementById('songRating'); // Hidden field for payload
 
+    /**
+     * Updates the visual state of the rating bars and glow based on slider value.
+     */
     function updateDynamicRating() {
+        if (!ratingSlider) return;
+
         const val = parseFloat(ratingSlider.value);
         ratingValDisplay.textContent = val.toFixed(1);
-        actualRatingInput.value = val; //
+        if (actualRatingInput) actualRatingInput.value = val;
 
-        // Create or find the suggest bubble
+        // Help bubble logic
         let bubble = document.getElementById('suggestRatingBubble');
         if (!bubble) {
             bubble = document.createElement('div');
             bubble.id = 'suggestRatingBubble';
-            bubble.className = 'importance-bubble'; // Reusing your CSS class
-            document.getElementById('suggestRatingContainer').appendChild(bubble);
+            bubble.className = 'importance-bubble';
+            const container = document.getElementById('suggestRatingContainer');
+            if (container) container.appendChild(bubble);
         }
+        if (bubble) bubble.innerText = getRatingDescription(val);
 
-        // Update text based on value
-        bubble.innerText = getRatingDescription(val);
+        // Color logic from your example
+        let currentColor = '#3b82f6'; // Blue
+        if (val > 3 && val <= 6) currentColor = '#4eba6b';      // Green
+        else if (val > 6 && val <= 8.5) currentColor = '#f59e0b'; // Orange
+        else if (val > 8.5) currentColor = '#ef4444';             // Red
 
-        // Optional: Hide after 2 seconds of inactivity
+        // Update global glow variable
+        document.documentElement.style.setProperty('--primary-glow', currentColor);
+
+        // Animate Bars
+        const percentActive = val / 10;
+        const activeIndex = Math.floor(percentActive * totalBars);
+
+        bars.forEach((bar, index) => {
+            if (index <= activeIndex && val > 0) {
+                bar.style.background = 'var(--primary-glow)';
+                bar.style.boxShadow = `0 0 15px ${currentColor}66`;
+                bar.style.transform = 'scaleY(1.2)';
+            } else {
+                bar.style.background = '#2d3748';
+                bar.style.boxShadow = 'none';
+                bar.style.transform = 'scaleY(1)';
+            }
+        });
+
+        // Auto-remove bubble
         clearTimeout(window.ratingBubbleTimeout);
         window.ratingBubbleTimeout = setTimeout(() => {
-            if (bubble) bubble.remove();
+            const b = document.getElementById('suggestRatingBubble');
+            if (b) b.remove();
         }, 2000);
-
-        // Existing color logic...
-        let currentColor = '#3b82f6';
-        if (val > 3 && val <= 6) currentColor = '#4eba6b';
-        else if (val > 6 && val <= 8.5) currentColor = '#f59e0b';
-        else if (val > 8.5) currentColor = '#ef4444';
-        // ...
     }
 
-    ratingSlider.addEventListener('input', updateDynamicRating);
+    // 3. Attach Listener inside the scope
+    if (ratingSlider) {
+        ratingSlider.addEventListener('input', updateDynamicRating);
+        // Initial call to set state
+        updateDynamicRating();
+    }
 
     // 2. Importance Card Selection
     // Locate this block in your DOMContentLoaded listener

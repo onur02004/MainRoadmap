@@ -1039,7 +1039,7 @@ router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, r
                 userId: sharerId,
                 type: NotificationType.PLAY_EVENT, // Now defined in constants!
                 title: "Listening Now!",
-                body: `${playerName} is playing your suggestion: ${songName}`,
+                body: `${playerName} is PROBABLY playing your suggestion: ${songName}`,
                 data: { suggestionId }
             });
         }
