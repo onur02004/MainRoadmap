@@ -946,7 +946,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (playButton) {
                 playButton.addEventListener('click', (e) => {
                     e.preventDefault();
-                    showPlaybackModal(s); // Call the new handler
+
+                    // Trigger the backend notification
+                    fetch(`/api/music/suggestions/${s.id}/play-notify`, {
+                        method: 'POST',
+                        credentials: 'include'
+                    }).catch(err => console.error("Notification trigger failed", err));
+
+                    showPlaybackModal(s); //
                 });
             }
 

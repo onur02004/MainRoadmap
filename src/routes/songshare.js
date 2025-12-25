@@ -1011,11 +1011,11 @@ router.delete("/api/comments/:id", requireAuth, async (req, res) => {
 
 // POST /api/music/suggestions/:id/play-notify
 router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, res) => {
-    const userId = req.user?.sub; // The person who clicked Play
+    const userId = req.user?.sub; // ID of person playing the song
     const suggestionId = req.params.id;
 
     try {
-        // 1. Get the original sharer and the song name
+        // 1. Find the original sharer and the song title
         const { rows: sugRows } = await q(
             "SELECT user_id, song_name FROM song_suggestions WHERE id = $1",
             [suggestionId]
@@ -1026,19 +1026,19 @@ router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, r
         const sharerId = sugRows[0].user_id;
         const songName = sugRows[0].song_name;
 
-        // 2. Get the name of the person playing the song
+        // 2. Identify the player
         const { rows: userRows } = await q(
             "SELECT user_name FROM users WHERE id = $1",
             [userId]
         );
         const playerName = userRows[0]?.user_name || "Someone";
 
-        // 3. Notify the sharer (only if it's not their own song)
+        // 3. Notify the sharer
         if (sharerId && sharerId !== userId) {
             await notifyUserByType({
                 userId: sharerId,
-                type: NotificationType.PLAY_EVENT, // Add this to your types
-                title: "Someone is listening!",
+                type: NotificationType.PLAY_EVENT, // Now defined in constants!
+                title: "Listening Now!",
                 body: `${playerName} is playing your suggestion: ${songName}`,
                 data: { suggestionId }
             });
