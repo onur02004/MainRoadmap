@@ -48,37 +48,42 @@ export async function notifyUserByType({
   data = {},
   imageUrl = null,
 }) {
-  // 1. Load notification settings
-  const { rows: settingsRows } = await q(
-    "SELECT * FROM user_notification_settings WHERE user_id = $1",
-    [userId]
-  );
-  if (settingsRows.length === 0) return;
-  const settings = settingsRows[0];
+  // 1. SAVE TO DATABASE (Web Infrastructure)
+  // This makes the notification available for the website
+  try {
+    await q(
+      `INSERT INTO notification_events (user_id, type, channel, payload)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        userId,
+        type,
+        'push',
+        JSON.stringify({ title, body, imageUrl, ...data })
+      ]
+    );
+  } catch (dbErr) {
+    console.error("Failed to save notification to DB:", dbErr);
+  }
 
-  // 2. SAVE TO DATABASE (Web Infrastructure)
-  // This makes the notification available for the website even if push is disabled
-  await q(
-    `INSERT INTO notification_events (user_id, type, channel, payload)
-   VALUES ($1, $2, $3, $4)`,
-    [
-      userId,
-      type,
-      'push',
-      JSON.stringify({ title, body, imageUrl, ...data }) // This goes into 'payload'
-    ]
-  );
-
-  // 3. Check if PUSH is allowed and send to mobile
-  if (isNotificationAllowed(settings, type, "push")) {
+  // 2. SKIP SETTINGS VERIFICATION
+  // We are bypassing isNotificationAllowed for now to ensure delivery
+  try {
     const { rows: tokenRows } = await q(
       "SELECT expo_token FROM device_tokens WHERE user_id = $1",
       [userId]
     );
+
+    if (tokenRows.length === 0) {
+      console.log(`No device tokens found for user: ${userId}`);
+      return;
+    }
+
     for (const row of tokenRows) {
-      console.log("Notifying user: " + title + "-" +  body);
+      console.log(`Sending Push [${type}]: ${title} - ${body}`);
       await sendPush(row.expo_token, title, body, { ...data, type }, imageUrl);
     }
+  } catch (pushErr) {
+    console.error("Failed to fetch tokens or send push:", pushErr);
   }
 }
 
