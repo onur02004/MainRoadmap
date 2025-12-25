@@ -208,94 +208,180 @@
                 </div>
             </div>
 
-            <div class="page page-suggest">
-                <div class="page page-suggest">
-                    <h2 style="font-size: 40px;">Pick a Song</h2>
+            <div class="page page-suggest" id="suggestPage">
+                <h2 class="jersey-10-regular" style="font-size: 3rem;">Suggest a Song</h2>
+                <div class="step-indicator">
+                    <span class="step-dot active" data-step="1"></span>
+                    <span class="step-dot" data-step="2"></span>
+                    <span class="step-dot" data-step="3"></span>
+                    <span class="step-dot" data-step="4"></span>
+                    <span class="step-dot" data-step="5"></span>
+                </div>
 
-                    <button type="button" id="openSearchModalBtn" class="primary-btn">
-                        Select Song to Suggest <i class="fas fa-search"></i>
-                    </button>
+                <form id="multiStepSuggestForm">
+                    <input type="hidden" id="selectedSongName">
+                    <input type="hidden" id="selectedSongArtist">
+                    <input type="hidden" id="selectedSongImageUrl">
+                    <input type="hidden" id="selectedSongUriInput">
+                    <input type="hidden" id="selectedSongDuration">
 
-                    <div class="suggest-layout selected-song-display">
-                        <div class="cover-wrapper">
-                            <img id="suggestCover" src="./content/song-placeholder.svg" alt="Selected song cover"
-                                class="song-cover-placeholder" style="display: none;">
-                            <div class="selected-info">
-                                <div id="selectedSongTitle" class="selected-title" style="display: none;">No song
-                                    selected </div>
-                                <div id="selectedSongArtistName" class="selected-artist" style="display: none;">
-                                    Click 'Select Song' to search!</div>
-                            </div>
-                            <div id="spotifyPreviewContainer" class="spotify-preview-container">
-                            </div>
+                    <div class="suggest-step active" id="step1">
+                        <h2 class="step-title jersey-10-regular">Step One:</h2>
+
+                        <div class="search-visual-container">
+                            <div class="glow-icon"><i class="fas fa-search"></i></div>
+                            <div class="glow-icon spotify"><i class="fab fa-spotify"></i></div>
                         </div>
 
-                        <div class="suggest-form final-submission-form">
-                            <input type="hidden" id="selectedSongName">
-                            <input type="hidden" id="selectedSongArtist">
-                            <input type="hidden" id="selectedSongImageUrl">
-                            <input type="hidden" id="selectedSongUriInput">
+                        <p class="search-instruction jersey-10-regular">Search Spotify for the Song</p>
 
-                            <div class="field-group">
-                                <label for="suggestionImportance" class="field-label">Suggestion Importance</label>
-                                <div class="importance-selector" id="suggestionImportance">
-                                    <button type="button" class="imp-btn" data-value="low">Low</button>
-                                    <button type="button" class="imp-btn" data-value="neutral"
-                                        data-default="true">Neutral</button>
-                                    <button type="button" class="imp-btn" data-value="high">High</button>
-                                    <button type="button" class="imp-btn" data-value="extreme">Extreme</button>
-                                </div>
-                            </div>
+                        <button type="button" id="openSearchModalBtn" class="search-trigger-btn jersey-10-regular">
+                            Search For the Song
+                        </button>
 
-                            <div class="field-group">
-                                <label for="songRating" class="field-label">Your Rating (0-10)</label>
-                                <input type="range" id="songRating" min="0" max="10" step="1" value="5"
-                                    class="modern-slider">
-                                <div class="slider-labels">
-                                    <span>0</span>
-                                    <span id="ratingValue">5</span>
-                                    <span>10</span>
-                                </div>
-                            </div>
+                        <div id="searchResults" class="search-results"></div>
 
-                            <div class="field-group">
-                                <label for="bestTimeInput" class="field-label">Highlight Time (e.g., 1:30)
-                                    (Optional)</label>
-                                <div class="search-row time-input-row">
-                                    <input type="text" id="bestTimeInput"
-                                        placeholder="Best Seconds (e.g., 1:30 or 90) (Optional)" class="modern-input">
-                                </div>
-                            </div>
+                    </div>
 
-                            <div class="field-group">
-                                <label for="suggestionComment" class="field-label">Comment (Optional)</label>
-                                <textarea id="suggestionComment" placeholder="Enter your thoughts on this suggestion..."
-                                    class="modern-textarea"></textarea>
-                            </div>
+                    <div class="suggest-step" id="step2">
+                        <h2 class="step-title jersey-10-regular">Step One: Preview</h2>
 
-                            <div class="field-group visibility-toggle-row">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="suggestionVisibility" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span class="field-label toggle-label">Make Suggestion Public</span>
-                            </div>
+                        <div id="searchResults" class="search-results"></div>
 
-                            <div id="targetUsersDisplay" class="target-users-display" style="display: none;">
-                                <span class="field-label">Sending to:</span>
-                                <div id="targetUsersList" class="target-users-list">
-                                </div>
-                                <button type="button" id="editTargetUsersBtn" class="text-button">
-                                    Edit Recipients
-                                </button>
-                            </div>
-
-                            <button type="button" id="sendSuggestionButton" class="primary-btn" disabled>
-                                Suggest this song
-                            </button>
+                        <div>
+                            <div id="spotifyPreviewContainer"></div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="suggest-step" id="step3">
+                        <h2 class="jersey-10-regular" style="font-size: 3rem; margin-bottom: 10px;">Step Two: Your
+                            Rating
+                            & Vibe</h2>
+
+                        <div class="importance-section">
+                            <p class="field-label" style="text-align: center; color: #9ca3af; font-size: 0.9rem;">
+                                Effects the notifications and the order of the listed main feed. Indicates whether the
+                                song is truly unique.
+                            </p>
+                            <div class="importance-grid" id="suggestionImportance">
+                                <button type="button" class="imp-card low" data-value="low">
+                                    <img src="./content/iceCubeIcon.png" alt="Low">
+                                    <span>LOW</span>
+                                </button>
+                                <button type="button" class="imp-card neutral active" data-value="neutral">
+                                    <img src="./content/LightningIconYellow.png" alt="Neutral">
+                                    <span>Natural</span>
+                                </button>
+                                <button type="button" class="imp-card high" data-value="high">
+                                    <img src="./content/fireIcon.png" alt="High">
+                                    <span>High</span>
+                                </button>
+                                <button type="button" class="imp-card extreme" data-value="extreme">
+                                    <img src="./content/explosionIcon.png" alt="Extreme">
+                                    <span>Extreme</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="rating-dynamic-container">
+                            <div id="rating-value">5.0</div>
+                            <div class="bars-container" id="bars-wrapper"></div>
+                            <div class="slider-wrapper">
+                                <input type="range" min="0" max="10" step="1" value="5" id="rating-slider">
+                                <input type="hidden" id="songRating" value="5">
+                            </div>
+                            <div class="labels">
+                                <span>Poor</span>
+                                <span>Excellent</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="suggest-step" id="step4">
+                        <h2 class="step-title jersey-10-regular" style="margin-bottom: 10px;">Step Three: Add Context
+                        </h2>
+
+                        <div class="time-picker-card">
+                            <div class="header"
+                                style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+                                <div class="label-group">
+                                    <label class="field-label">Highlight Moment</label>
+                                    <h3
+                                        style="margin: 0; font-size: 0.9rem; text-transform: uppercase; color: #94a3b8; padding-bottom: 10px;">
+                                        (OPTIONAL)</h3>
+                                    <div id="highlightDisplay">0:00</div>
+                                </div>
+                            </div>
+
+                            <div class="visualizer-container" id="visualizer"
+                                style="position: relative; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 3px; margin-bottom: 10px;">
+                                <input type="range" id="highlightSlider" min="0" max="180" step="1" value="0"
+                                    class="slider-overlay">
+                            </div>
+
+                            <div class="footer-labels"
+                                style="display: flex; justify-content: space-between; font-family: 'Jersey 10', sans-serif; color: #64748b; font-size: 1.2rem;">
+                                <span>0:00</span>
+                                <span id="totalDurationLabel">3:00</span>
+                            </div>
+                            <input type="hidden" id="bestTimeInput" value="0:00">
+                        </div>
+
+                        <div class="field-group" style="margin-top: 10px;">
+                            <label class="field-label">Your Thoughts</label>
+                            <h3
+                                style="margin: 0; font-size: 0.9rem; text-transform: uppercase; color: #94a3b8; padding-bottom: 10px;">
+                                (OPTIONAL)</h3>
+                            <textarea id="suggestionComment" placeholder="Why should they listen?"
+                                class="modern-textarea" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="suggest-step" id="step5" style="align-items: center;">
+                        <h2 class="step-title jersey-10-regular" style="margin-bottom: 10px;">Final Step: Choose Target
+                            Audience</h2>
+
+                        <div class="sharing-container">
+                            <div class="selector-track">
+                                <div class="selector-pill" id="pill"></div>
+                                <button type="button" class="selector-btn active" id="btnPublic">Public</button>
+                                <button type="button" class="selector-btn" id="btnSpecific">Specific</button>
+                            </div>
+
+                            <div class="display-area">
+                                <div id="publicUI" class="status-msg">
+                                    <div class="dot"></div>
+                                    <span>Sharing publicly</span>
+                                </div>
+
+                                <div id="specificUI" class="hidden">
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px;">
+                                        Share this song with specific friends.
+                                    </p>
+                                    <button type="button" id="triggerUserSearchBtn" class="primary-btn"
+                                        style="background: var(--m-purple); margin-top: 0;">
+                                        <i class="fas fa-user-plus"></i> Find Users to Add
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="selectedPillsContainer" class="target-users-list"
+                                style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        </div>
+
+                        <button type="button" id="sendSuggestionButton" class="search-trigger-btn jersey-10-regular" disabled>
+                            Finalize Suggestion
+                        </button>
+
+                        <input type="checkbox" id="suggestionVisibility" checked style="display: none;">
+                    </div>
+
+                    <div class="step-navigation">
+                        <button type="button" id="prevStep" class="nav-step-btn"
+                            style="visibility: hidden;">Back</button>
+                        <button type="button" id="nextStep" class="nav-step-btn">Next</button>
+                    </div>
+                </form>
             </div>
 
             <div class="page page-profile">

@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const coverImg = document.getElementById('suggestCover');
     const selectedSongNameInput = document.getElementById('selectedSongName');
+    const selectedSongDurationInput = document.getElementById('selectedSongDuration');
     const selectedSongArtistInput = document.getElementById('selectedSongArtist');
     const selectedSongImageUrlInput = document.getElementById('selectedSongImageUrl');
     const sendSuggestionButton = document.getElementById('sendSuggestionButton');
@@ -64,9 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedSongArtistName = document.getElementById('selectedSongArtistName');
     const selectedSongUriInput = document.getElementById('selectedSongUriInput');
 
-    const suggestionVisibilityToggle = document.getElementById('suggestionVisibility');
     const targetUsersDisplay = document.getElementById('targetUsersDisplay');
-    const targetUsersList = document.getElementById('targetUsersList');
+    const targetUsersList = document.getElementById('selectedPillsContainer');
     const editTargetUsersBtn = document.getElementById('editTargetUsersBtn');
 
     const userSearchModal = document.getElementById('userSearchModal');
@@ -115,6 +115,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const reactionsListModal = document.getElementById('reactionsListModal');
     const reactionsList = document.getElementById('reactionsList');
     const reactionsListCloseBtn = document.getElementById('reactionsListCloseBtn');
+    const suggestionVisibilityToggle = document.getElementById('suggestionVisibility');
+
+    const btnPublic = document.getElementById('btnPublic');
+    const pill = document.getElementById('pill');
+    const pubUI = document.getElementById('publicUI');
+    const specUI = document.getElementById('specificUI');
+    const btnSpecific = document.getElementById('btnSpecific');
+    const visibilityCheckbox = document.getElementById('suggestionVisibility');
+    const finalUserInput = document.getElementById('finalUserSearchInput');
+    const finalResults = document.getElementById('finalUserSearchResults');
+    const pillsContainer = document.getElementById('selectedPillsContainer');
+
+    const triggerUserSearchBtn = document.getElementById('triggerUserSearchBtn');
+
+    const importanceCards = document.querySelectorAll('.imp-card');
+
 
     let currentSuggestionId = null;
     window.currentLoggedInUserId = null;
@@ -141,24 +157,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Event listener for the "Make Public" toggle
-    suggestionVisibilityToggle.addEventListener('change', () => {
+    // Replace the block at line 144 with this:
+    const updateToggleVisibility = () => {
         const isPublic = suggestionVisibilityToggle.checked;
         if (isPublic) {
             // It's public, hide the user list
-            targetUsersDisplay.style.display = 'none';
-            selectedTargetUsers = []; // Clear selection
-            renderSelectedUsers(); // Update UI (clears it)
+            if (targetUsersDisplay) targetUsersDisplay.style.display = 'none';
+            selectedTargetUsers = [];
+            renderSelectedUsers();
         } else {
-            // It's private, show the user list and open the modal to select users
-            targetUsersDisplay.style.display = 'block';
-            openUserSearchModal();
+            // It's private, show the list
+            if (targetUsersDisplay) targetUsersDisplay.style.display = 'block';
         }
+    };
+
+    // Listen for clicks on your new segmented buttons to trigger the visibility logic
+    btnPublic?.addEventListener('click', () => {
+        suggestionVisibilityToggle.checked = true;
+        updateToggleVisibility();
     });
 
-    // 4. Event listeners for the new modal
-    editTargetUsersBtn.addEventListener('click', openUserSearchModal);
-    userSearchCloseBtn.addEventListener('click', closeUserSearchModal);
-    userSearchDoneBtn.addEventListener('click', closeUserSearchModal);
+    btnSpecific?.addEventListener('click', () => {
+        suggestionVisibilityToggle.checked = false;
+        updateToggleVisibility();
+        openUserSearchModal(); // Automatically open search when 'Specific' is clicked
+    });
+
+    editTargetUsersBtn?.addEventListener('click', openUserSearchModal);
+    userSearchCloseBtn?.addEventListener('click', closeUserSearchModal);
+    userSearchDoneBtn?.addEventListener('click', closeUserSearchModal);
 
     // Close modal if user clicks outside of it
     window.addEventListener('click', (event) => {
@@ -249,19 +276,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 8. Function to update the list of selected users (outside the modal)
     function renderSelectedUsers() {
+        // Check if the container exists to prevent the 'null' error
+        if (!pillsContainer) return;
+
         if (selectedTargetUsers.length === 0) {
-            targetUsersList.innerHTML = '<i>No users selected.</i>';
+            pillsContainer.innerHTML = '<i>No users selected.</i>';
             return;
         }
 
-        targetUsersList.innerHTML = '';
-        selectedTargetUsers.forEach(user => {
-            // You can style this better with CSS (e.g., as "pills" or "tags")
-            const userTag = document.createElement('span');
-            userTag.className = 'user-tag'; // Add a class for styling
-            userTag.textContent = user.user_name;
-            targetUsersList.appendChild(userTag);
+        pillsContainer.innerHTML = '';
+        selectedTargetUsers.forEach((user, index) => {
+            const pill = document.createElement('div');
+            pill.className = 'user-pill';
+            pill.innerHTML = `
+            <span>${user.user_name}</span>
+            <span class="remove-user" onclick="removeSelectedUser(${index})">×</span>
+        `;
+            pillsContainer.appendChild(pill);
         });
+
+        updateVisibilityUI();
     }
 
     // 9. Add event listeners for user search
@@ -363,6 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedSongImageUrlInput.value = track.imageUrl;
         selectedSongUriInput.value = track.uri;
 
+        if (selectedSongDurationInput) {
+            selectedSongDurationInput.value = track.duration_ms;
+        }
+
         // Enable "Suggest this song" button
         sendSuggestionButton.disabled = false;
 
@@ -370,6 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close the modal after selecting the track!
         closeModal();
+
+        const nextBtn = document.getElementById('nextStep');
+        if (nextBtn) {
+            nextBtn.click();
+        }
     }
 
     async function fetchArtistImage(track) {
@@ -511,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // 2. Gather remaining data
-            payload.importance = importanceSelector.querySelector('.imp-btn.active')?.getAttribute('data-value') || 'neutral';
+            payload.importance = importanceSelector.querySelector('.imp-card.active')?.getAttribute('data-value') || 'neutral';
             payload.rating = songRatingInput.value;
             payload.bestTime = bestTimeInput.value;
             payload.comment = document.getElementById('suggestionComment').value;
@@ -585,15 +628,12 @@ document.addEventListener('DOMContentLoaded', () => {
         defaultBtn.classList.add('active');
     }
 
-    importanceButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            // Remove 'active' from all buttons
-            importanceButtons.forEach(btn => btn.classList.remove('active'));
-            // Add 'active' to the clicked button
+    importanceCards.forEach(card => {
+        card.addEventListener('click', function () {
+            // Remove 'active' from all cards
+            importanceCards.forEach(c => c.classList.remove('active'));
+            // Add 'active' to the clicked card
             this.classList.add('active');
-            // Optional: Store the value
-            // let selectedImportance = this.getAttribute('data-value');
-            // console.log('Importance:', selectedImportance);
         });
     });
 
@@ -688,16 +728,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'suggestion-card';
 
             // 1. Determine Importance SVG
-            let importanceSvgFile = 'Neutralimportance.svg'; // Default
+            let importanceSvgFile = 'LightningIconYellow.png'; // Default
             switch (s.importance) {
                 case 'low':
-                    importanceSvgFile = 'Lowimportance.svg';
+                    importanceSvgFile = 'iceCubeIcon.png';
                     break;
                 case 'high':
-                    importanceSvgFile = 'Highimportance.svg';
+                    importanceSvgFile = 'fireIcon.png';
                     break;
                 case 'extreme':
-                    importanceSvgFile = 'Extremeimportance.svg';
+                    importanceSvgFile = 'explosionIcon.png';
                     break;
                 // 'neutral' case is handled by the default
             }
@@ -786,8 +826,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="artistElement">${s.song_artist}</p>
                 </div>
                 
-                <div class="importanceHolder">
-                    <img src="./content/${importanceSvgFile}">
+                <div class="importanceHolder" title="${getImportanceText(s.importance)}">
+                    <img src="./content/${importanceSvgFile}" alt="${s.importance}">
                 </div>
                 
                 <div class="ratingHolder" data-rating="${s.rating_by_user}">
@@ -962,6 +1002,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusHolder.addEventListener('click', (e) => {
                     e.preventDefault();
                     showSharedUsers(s.id);
+                });
+            }
+
+            // Inside renderSuggestions loop
+            const impIcon = card.querySelector('.importanceHolder');
+            if (impIcon) {
+                impIcon.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent triggering other card clicks
+                    const msg = getImportanceText(s.importance);
+                    alert(msg); // You can replace this with a modern Toast library or a custom div
                 });
             }
 
@@ -1494,35 +1544,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function resetSuggestionForm() {
-        // 1. Clear text inputs
-        document.getElementById('suggestionComment').value = '';
-        bestTimeInput.value = '';
-        songRatingInput.value = '5';
-        document.getElementById('ratingValue').textContent = '5';
+        // 1. Clear text/comment inputs
+        const commentInput = document.getElementById('suggestionComment');
+        if (commentInput) commentInput.value = '';
 
-        // 2. Clear hidden song data
-        selectedSongNameInput.value = '';
-        selectedSongArtistInput.value = '';
-        selectedSongImageUrlInput.value = '';
-        document.getElementById('selectedSongUriInput').value = '';
+        // 2. Reset the Dynamic Rating (Step 2)
+        const ratingSlider = document.getElementById('rating-slider');
+        const ratingDisplay = document.getElementById('rating-value'); // Updated ID
+        const hiddenRating = document.getElementById('songRating');
 
-        // 3. Reset Visuals (Hide cover, show search button)
-        document.getElementById('suggestCover').style.display = 'none';
-        document.getElementById('suggestCover').src = './content/song-placeholder.svg';
-        selectedSongTitle.style.display = 'none';
-        selectedSongArtistName.style.display = 'none';
+        if (ratingSlider) ratingSlider.value = '5';
+        if (ratingDisplay) ratingDisplay.textContent = '5.0'; // Fixes the textContent error
+        if (hiddenRating) hiddenRating.value = '5';
 
-        // 4. Clear Spotify Preview
-        document.getElementById('spotifyPreviewContainer').innerHTML = '';
+        // 3. Reset the Highlight Picker (Step 4)
+        const highlightSlider = document.getElementById('highlightSlider');
+        const highlightDisplay = document.getElementById('highlightDisplay');
+        const hiddenBestTime = document.getElementById('bestTimeInput');
 
-        // 5. Reset Importance to Neutral
-        const importanceBtns = document.querySelectorAll('.importance-selector .imp-btn');
-        importanceBtns.forEach(btn => btn.classList.remove('active'));
-        document.querySelector('.importance-selector .imp-btn[data-value="neutral"]').classList.add('active');
+        if (highlightSlider) highlightSlider.value = '0';
+        if (highlightDisplay) highlightDisplay.textContent = '0:00';
+        if (hiddenBestTime) hiddenBestTime.value = '0:00';
 
-        // 6. Reset Visibility
-        document.getElementById('suggestionVisibility').checked = true;
-        document.getElementById('targetUsersDisplay').style.display = 'none';
+        // 4. Clear hidden song data
+        if (selectedSongNameInput) selectedSongNameInput.value = '';
+        if (selectedSongArtistInput) selectedSongArtistInput.value = '';
+        if (selectedSongImageUrlInput) selectedSongImageUrlInput.value = '';
+        if (selectedSongUriInput) selectedSongUriInput.value = '';
+        if (selectedSongDurationInput) selectedSongDurationInput.value = '';
+
+        // 5. Reset UI Elements
+        if (coverImg) {
+            coverImg.style.display = 'none';
+            coverImg.src = './content/song-placeholder.svg';
+        }
+        if (spotifyPreviewContainer) spotifyPreviewContainer.innerHTML = '';
+
+        // 6. Reset Importance Cards
+        importanceCards.forEach(card => card.classList.remove('active'));
+        const neutralCard = document.querySelector('.imp-card.neutral');
+        if (neutralCard) neutralCard.classList.add('active');
+
+        updateSharingMode('public');
+
+        // 8. Return to Step 1
+        if (typeof setStep === "function") {
+            setStep(0);
+        }
+
         selectedTargetUsers = [];
         renderSelectedUsers();
     }
@@ -1711,6 +1780,284 @@ document.addEventListener('DOMContentLoaded', () => {
             sharedUsersList.innerHTML = '<li>Error loading info.</li>';
         }
     }
+
+    // 1. Generate Bars
+    const barsWrapper = document.getElementById('bars-wrapper');
+    const totalBars = 20;
+    for (let i = 0; i < totalBars; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+        bar.style.height = `${30 + (i * 3.5)}%`;
+        barsWrapper.appendChild(bar);
+    }
+
+    const bars = document.querySelectorAll('.bar');
+    const ratingSlider = document.getElementById('rating-slider');
+    const actualRatingInput = document.getElementById('songRating'); // The hidden input
+    const ratingValDisplay = document.getElementById('rating-value');
+
+    function updateDynamicRating() {
+        const val = parseFloat(ratingSlider.value);
+        ratingValDisplay.textContent = val.toFixed(1);
+        actualRatingInput.value = val; // Keep the hidden field updated for the database
+
+        let currentColor = '#3b82f6';
+        if (val > 3 && val <= 6) currentColor = '#4eba6b';
+        else if (val > 6 && val <= 8.5) currentColor = '#f59e0b';
+        else if (val > 8.5) currentColor = '#ef4444';
+
+        document.documentElement.style.setProperty('--primary-glow', currentColor);
+
+        const activeIndex = Math.floor((val / 10) * totalBars);
+        bars.forEach((bar, index) => {
+            if (index <= activeIndex && val > 0) {
+                bar.style.background = currentColor;
+                bar.style.boxShadow = `0 0 10px ${currentColor}66`;
+                bar.style.transform = 'scaleY(1.2)';
+            } else {
+                bar.style.background = '#2d3748';
+                bar.style.boxShadow = 'none';
+                bar.style.transform = 'scaleY(1)';
+            }
+        });
+    }
+
+    ratingSlider.addEventListener('input', updateDynamicRating);
+
+    // 2. Importance Card Selection
+    // Locate this block in your DOMContentLoaded listener
+    const impCards = document.querySelectorAll('.imp-card');
+    impCards.forEach(card => {
+        card.addEventListener('click', function () {
+            // Remove 'active' from all cards
+            impCards.forEach(c => c.classList.remove('active'));
+
+            // Add 'active' to the clicked card (triggers the white border)
+            this.classList.add('active');
+
+            // Ensure the hidden input or state is updated for your payload
+            console.log("Importance Selected:", this.dataset.value);
+        });
+    });
+
+
+    // --- HIGHLIGHT PICKER LOGIC ---
+    const highlightSlider = document.getElementById('highlightSlider');
+    const highlightDisplay = document.getElementById('highlightDisplay');
+    const visualizer = document.getElementById('visualizer');
+    const totalDurationLabel = document.getElementById('totalDurationLabel');
+    const actualBestTimeInput = document.getElementById('bestTimeInput'); // Hidden field
+    const totalBarsCount = 40;
+
+    // 1. Create the Visualizer Bars
+    for (let i = 0; i < totalBarsCount; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+        const height = 20 + Math.random() * 60;
+        bar.style.height = `${height}%`;
+        visualizer.appendChild(bar);
+    }
+    const visualizerBars = visualizer.querySelectorAll('.bar');
+
+    // 2. Formatting Function
+    function formatSecondsSimple(s) {
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    // 3. Update Visuals
+    function updateHighlightUI() {
+        const val = parseInt(highlightSlider.value);
+        const max = parseInt(highlightSlider.max) || 1;
+        const percent = val / max;
+        const timeStr = formatSecondsSimple(val);
+
+        highlightDisplay.textContent = timeStr;
+        actualBestTimeInput.value = timeStr; // Keep hidden input updated for payload
+
+        let color = '#3b82f6';
+        if (percent > 0.3) color = '#10b981';
+        if (percent > 0.7) color = '#f59e0b';
+        if (percent > 0.9) color = '#ef4444';
+
+        document.documentElement.style.setProperty('--primary-glow', color);
+
+        const activeThreshold = Math.floor(percent * totalBarsCount);
+        visualizerBars.forEach((bar, index) => {
+            if (index <= activeThreshold) {
+                bar.style.background = color;
+                bar.style.boxShadow = `0 0 8px ${color}aa`;
+                bar.style.transform = 'scaleY(1.1)';
+            } else {
+                bar.style.background = '#334155';
+                bar.style.boxShadow = 'none';
+                bar.style.transform = 'scaleY(1)';
+            }
+        });
+    }
+
+    highlightSlider.addEventListener('input', updateHighlightUI);
+
+    // 4. Connect to Song Selection
+    // Update this inside your existing selectTrack(index) function
+    const originalSelectTrack = selectTrack;
+    selectTrack = function (index) {
+        originalSelectTrack(index); // Run existing logic
+
+        const track = currentResults[index];
+        if (track && track.duration_ms) {
+            const seconds = Math.floor(track.duration_ms / 1000);
+            highlightSlider.max = seconds;
+            highlightSlider.value = 0;
+            totalDurationLabel.textContent = formatSecondsSimple(seconds);
+            updateHighlightUI();
+        }
+    };
+
+
+    // --- STEP 5: MODE SWITCHING & MULTI-SELECT ---
+
+
+    // 1. Corrected Sharing Mode Toggle
+    function updateSharingMode(mode) {
+        const isPublic = (mode === 'public');
+
+        // Toggle active classes on the buttons
+        btnPublic?.classList.toggle('active', isPublic);
+        btnSpecific?.classList.toggle('active', !isPublic);
+
+        // Explicitly hide/show the specific search UI
+        if (isPublic) {
+            pubUI?.classList.remove('hidden');
+            specUI?.classList.add('hidden'); // This hides the "Find Users" button
+            pillsContainer?.classList.add('hidden');
+            selectedTargetUsers = [];
+            renderSelectedUsers();
+        } else {
+            pubUI?.classList.add('hidden');
+            specUI?.classList.remove('hidden'); // This shows the "Find Users" button
+            pillsContainer?.classList.remove('hidden');
+        }
+
+        // Move the pill indicator background
+        if (pill) {
+            pill.style.transform = isPublic ? 'translateX(0%)' : 'translateX(100%)';
+            pill.style.background = isPublic ? 'var(--m-blue)' : 'var(--m-purple)';
+        }
+    }
+
+    // 2. Attach the search trigger to the new button
+    triggerUserSearchBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openUserSearchModal(); // This opens your existing user selection modal
+    });
+
+    btnPublic.addEventListener('click', () => updateSharingMode('public'));
+    btnSpecific.addEventListener('click', () => updateSharingMode('specific'));
+
+    // --- MULTI-SELECT SEARCH LOGIC ---
+    if (finalUserInput && finalResults) {
+        finalUserInput.addEventListener('input', async () => {
+            const query = finalUserInput.value.trim();
+            if (query.length < 2) {
+                finalResults.innerHTML = '';
+                return;
+            }
+
+            try {
+                const res = await fetch(`api/searchUsers?q=${encodeURIComponent(query)}`);
+                const users = await res.json();
+
+                finalResults.innerHTML = '';
+                users.forEach(user => {
+                    const li = document.createElement('div');
+                    li.className = 'search-result-item';
+                    li.innerHTML = `<span>${user.user_name}</span>`;
+                    li.onclick = () => {
+                        if (!selectedTargetUsers.some(u => u.id === user.id)) {
+                            selectedTargetUsers.push({ id: user.id, user_name: user.user_name });
+                            renderSelectedPills();
+                        }
+                        finalUserInput.value = '';
+                        finalResults.innerHTML = '';
+                    };
+                    finalResults.appendChild(li);
+                });
+            } catch (err) {
+                console.error("Search error", err);
+            }
+        });
+    }
+
+    function renderSelectedPills() {
+        if (!pillsContainer) return;
+        pillsContainer.innerHTML = '';
+        selectedTargetUsers.forEach((user, index) => {
+            const pill = document.createElement('div');
+            pill.className = 'user-pill';
+            pill.innerHTML = `
+            <span>${user.user_name}</span>
+            <span class="remove-user" onclick="removeSelectedUser(${index})">&times;</span>
+        `;
+            pillsContainer.appendChild(pill);
+        });
+    }
+
+
+    // Global helper for the 'x' button
+    window.removeSelectedUser = (index) => {
+        selectedTargetUsers.splice(index, 1);
+        renderSelectedPills();
+    };
+
+
+
+    // Locate and replace the navigation block at the bottom of songsharescript.js
+    const form = document.getElementById('multiStepSuggestForm');
+    if (form) {
+        const steps = Array.from(form.querySelectorAll('.suggest-step'));
+        const dots = Array.from(document.querySelectorAll('.step-dot'));
+        const prev = document.getElementById('prevStep');
+        const next = document.getElementById('nextStep');
+
+        let currentIdx = 0;
+
+        const setStep = (i) => {
+            currentIdx = Math.min(Math.max(i, 0), steps.length - 1);
+
+            steps.forEach((s, k) => s.classList.toggle('active', k === currentIdx));
+            dots.forEach((d, k) => d.classList.toggle('active', k === currentIdx));
+
+            // Manage button visibility
+            prev.style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+
+            if (currentIdx === steps.length - 1) {
+                next.style.display = 'none'; // Hide next on last step, let 'Finalize' show
+            } else {
+                next.style.display = 'block';
+                next.textContent = 'Next';
+            }
+        };
+
+        next.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Step 1 Validation: Check if URI is present
+            if (currentIdx === 0 && !document.getElementById('selectedSongUriInput')?.value) {
+                alert("Please search and select a song first!");
+                return;
+            }
+            setStep(currentIdx + 1);
+        });
+
+        prev.addEventListener('click', (e) => {
+            e.preventDefault();
+            setStep(currentIdx - 1);
+        });
+
+        // Initialize UI
+        setStep(0);
+    }
 });
 
 
@@ -1841,7 +2188,7 @@ function renderGlobalUserResults(users) {
       </div>
     `;
 
-    li.addEventListener('click', () => {
+        li.addEventListener('click', () => {
             alert("Not Yet implementd, Bi yavas tek basima yetisemiyom");
             closeGlobalSearchModal();
         });
@@ -2131,4 +2478,50 @@ function formatDuration(ms) {
     const minutes = Math.floor(ms / 60000);
     const seconds = ((ms % 60000) / 1000).toFixed(0);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+}
+
+/**
+ * Updates the UI based on whether the suggestion is public or private.
+ */
+function updateVisibilityUI() {
+    // Re-select if not globally available
+    const toggle = document.getElementById('suggestionVisibility');
+    const displayArea = document.getElementById('specificUI');
+    const pills = document.getElementById('selectedPillsContainer');
+
+    if (!toggle) return;
+
+    const isPublic = toggle.checked;
+
+    if (isPublic) {
+        if (displayArea) displayArea.classList.add('hidden');
+        if (pills) pills.classList.add('hidden');
+        // Clear recipients if switching back to public
+        selectedTargetUsers = [];
+        renderSelectedUsers();
+    } else {
+        if (displayArea) displayArea.classList.remove('hidden');
+        if (pills) pills.classList.remove('hidden');
+    }
+}
+
+// Ensure the listener at the bottom uses the correct ID and scope:
+const visibilityCheckbox = document.getElementById('suggestionVisibility');
+if (visibilityCheckbox) {
+    visibilityCheckbox.addEventListener('change', updateVisibilityUI);
+}
+
+function getImportanceText(level) {
+    switch (level) {
+        case 'low':
+            return "Low: Just a casual share. No rush to listen.";
+        case 'neutral':
+            return "Natural: A solid recommendation worth checking out.";
+        case 'high':
+            return "High: This song is fire! You should definitely listen soon.";
+        case 'extreme':
+            return "Extreme: Life-changing track. Listen to this immediately!";
+        default:
+            return "Song Importance";
+    }
 }
