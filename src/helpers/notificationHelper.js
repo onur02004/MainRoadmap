@@ -40,50 +40,32 @@ router.post("/api/register-device", requireAuth, async (req, res) => {
   }
 });
 
-export async function notifyUserByType({
-  userId,
-  type,
-  title,
-  body,
-  data = {},
-  imageUrl = null,
-}) {
-  // 1. SAVE TO DATABASE (Web Infrastructure)
-  // This makes the notification available for the website
-  try {
-    await q(
-      `INSERT INTO notification_events (user_id, type, channel, payload)
-       VALUES ($1, $2, $3, $4)`,
-      [
-        userId,
-        type,
-        'push',
-        JSON.stringify({ title, body, imageUrl, ...data })
-      ]
-    );
-  } catch (dbErr) {
-    console.error("Failed to save notification to DB:", dbErr);
-  }
+export async function notifyUserByType({ userId, type, title, body, data = {}, imageUrl = null }) {
+  // DEBUG LOG 1: See if the function is even called
+  console.log(`[DEBUG] notifyUserByType triggered for User: ${userId}, Type: ${type}`);
 
-  // 2. SKIP SETTINGS VERIFICATION
-  // We are bypassing isNotificationAllowed for now to ensure delivery
-  try {
-    const { rows: tokenRows } = await q(
-      "SELECT expo_token FROM device_tokens WHERE user_id = $1",
-      [userId]
-    );
+  // 1. SAVE TO DATABASE
+  await q(
+    `INSERT INTO notification_events (user_id, type, channel, payload)
+     VALUES ($1, $2, $3, $4)`,
+    [userId, type, 'push', JSON.stringify({ title, body, imageUrl, ...data })]
+  );
 
-    if (tokenRows.length === 0) {
-      console.log(`No device tokens found for user: ${userId}`);
-      return;
-    }
+  // 2. TOKEN LOOKUP
+  const { rows: tokenRows } = await q(
+    "SELECT expo_token FROM device_tokens WHERE user_id = $1",
+    [userId]
+  );
 
-    for (const row of tokenRows) {
-      console.log(`Sending Push [${type}]: ${title} - ${body}`);
-      await sendPush(row.expo_token, title, body, { ...data, type }, imageUrl);
-    }
-  } catch (pushErr) {
-    console.error("Failed to fetch tokens or send push:", pushErr);
+  // DEBUG LOG 2: Check if tokens were actually found
+  console.log(`[DEBUG] Found ${tokenRows.length} tokens for user ${userId}`);
+
+  if (tokenRows.length === 0) return;
+
+  for (const row of tokenRows) {
+    // THIS IS THE OUTPUT YOU ARE LOOKING FOR
+    console.log("Notifying user: " + title + " - " + body); 
+    await sendPush(row.expo_token, title, body, { ...data, type }, imageUrl);
   }
 }
 
