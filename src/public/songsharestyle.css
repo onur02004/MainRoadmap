@@ -979,6 +979,21 @@ section {
     .reatcionsHolder {
         padding: 1.4rem;
     }
+
+    .modal-content {
+        width: 95%; /* Use more of the screen width */
+        padding: 15px; /* Reduce padding to give results more space */
+        max-height: 85vh;
+    }
+
+    #songSearchInput {
+        font-size: 1.1rem !important; /* Slightly smaller for mobile keyboards */
+    }
+
+    .search-result-cover {
+        width: 45px; /* Scale down image slightly for more text room */
+        height: 45px;
+    }
 }
 
 .LyricsBtnHolder {
@@ -1645,11 +1660,151 @@ section {
 }
 
 
+/* Ensure the holder can contain the absolute bubble */
 .importanceHolder {
-    cursor: help; /* Changes cursor to a question mark/pointer */
-    transition: transform 0.2s ease;
+    position: relative; 
+    cursor: pointer;
 }
 
-.importanceHolder:hover {
-    transform: scale(1.1);
+.importance-bubble {
+    position: absolute;
+    bottom: 120%; /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    animation: fadeInBubble 0.2s ease-out;
+}
+
+/* Small arrow pointing down */
+.importance-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+@keyframes fadeInBubble {
+    from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+
+/* Help text bubble (Importance/Rating/Suggest) */
+.importance-bubble {
+    position: absolute;
+    bottom: 120%; 
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    z-index: 1000; /* Above the notification bubble */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    pointer-events: none;
+}
+
+/* Red Notification Bubble (Counts) */
+.notification-bubble {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ef4444; 
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border: 2px solid #111827;
+    z-index: 10;
+}
+
+
+/* Update these in songsharestyle.css */
+
+.search-results {
+    width: 100%;
+    padding: 0;
+    margin: 10px 0;
+    box-sizing: border-box; /* Ensures padding doesn't add to width */
+}
+
+.search-result-item {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-result-info {
+    flex: 1;
+    min-width: 0; /* Critical for text-overflow to work in flexbox */
+}
+
+.search-result-title, 
+.search-result-artist {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adds "..." if text is too long */
+    display: block;
+}
+
+
+.page {
+    display: none; 
+    visibility: hidden; /* Extra safety */
+    height: 0;         /* Prevent hidden pages from taking up vertical space */
+    overflow: hidden;  /* Ensure no content leaks out */
+}
+
+.page.is-active {
+    display: flex;
+    visibility: visible;
+    height: auto;      /* Return to normal height */
+    flex-direction: column;
+    padding-bottom: 120px; /* Space for the nav bar */
+}
+
+/* Ensure the container doesn't keep old snap points */
+section[style*="overflow-y: scroll"] {
+    scroll-behavior: auto !important; /* Prevents "sliding" animation when switching tabs */
+}
+
+/* Add to songsharestyle.css */
+.playBtn:active {
+    transform: scale(0.9);
+    filter: brightness(1.2);
+    transition: transform 0.1s ease;
+}
+
+@keyframes playPulse {
+    0% { box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(29, 185, 84, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(29, 185, 84, 0); }
+}
+
+.playBtn.notified {
+    animation: playPulse 0.5s ease-out;
 }

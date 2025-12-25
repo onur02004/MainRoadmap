@@ -76,6 +76,7 @@ export async function notifyUserByType({
       [userId]
     );
     for (const row of tokenRows) {
+      console.log("Notifying user: " + title + "-" +  body);
       await sendPush(row.expo_token, title, body, { ...data, type }, imageUrl);
     }
   }

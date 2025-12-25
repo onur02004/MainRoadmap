@@ -523,40 +523,29 @@ router.get("/api/music/feed", requireAuth, async (req, res) => {
     // It also JOINS with the users table to get the suggester's info.
     // It orders by date_added DESC to show the newest first.
     const sql = `
-        SELECT
-            s.id,
-            s.song_name,
-            s.song_artist,
-            s.song_cover_url,
-            s.spotify_uri,
-            s.importance,
-            s.rating_by_user,
-            s.comment_by_user,
-            s.recommended_time_by_user,
-            s.date_added,
-            s.visibility_public,
-            s.song_artist_genre,
-            s.song_artist_cover_url,
-            s.overall_dominant_color,
-            s.dominant_colors_points,
-            s.user_id,
-            u.user_name AS suggester_username,
-            u.profile_pic_path AS suggester_avatar,
-            r.song_reaction_type AS current_user_reaction
-        FROM
-            song_suggestions s
-        JOIN
-            users u ON s.user_id = u.id
-        LEFT JOIN
-            song_suggestion_reactions r
-            ON r.suggestion_id = s.id AND r.user_id = $1 
-        WHERE
-            (s.visibility_public = true OR $1 = ANY(s.target_users) OR s.user_id = $1)
-        ORDER BY
-            s.date_added DESC
-        LIMIT $2
-        OFFSET $3;
-    `;
+    SELECT
+        s.*,
+        u.user_name AS suggester_username,
+        u.profile_pic_path AS suggester_avatar,
+        r.song_reaction_type AS current_user_reaction,
+        -- Count total comments
+        (SELECT COUNT(*) FROM song_suggestion_comments WHERE suggestion_id = s.id) AS comment_count,
+        -- Count total reactions (likes, mehs, dislikes)
+        (SELECT COUNT(*) FROM song_suggestion_reactions WHERE suggestion_id = s.id) AS reaction_count
+    FROM
+        song_suggestions s
+    JOIN
+        users u ON s.user_id = u.id
+    LEFT JOIN
+        song_suggestion_reactions r
+        ON r.suggestion_id = s.id AND r.user_id = $1 
+    WHERE
+        (s.visibility_public = true OR $1 = ANY(s.target_users) OR s.user_id = $1)
+    ORDER BY
+        s.date_added DESC
+    LIMIT $2
+    OFFSET $3;
+`;
 
     // 3. Define parameters
     const params = [userId, limit, offset];
@@ -673,6 +662,38 @@ router.post("/api/music/suggestions/:id/react", requireAuth, async (req, res) =>
 
         await q('COMMIT');
 
+        if (newReaction) { // Only notify if a reaction was added, not removed
+            try {
+                // 1. Get the original suggestion owner and song title
+                const { rows: sugRows } = await q(
+                    "SELECT user_id, song_name FROM song_suggestions WHERE id = $1",
+                    [suggestionId]
+                );
+                const suggestionOwnerId = sugRows[0]?.user_id;
+                const songName = sugRows[0]?.song_name;
+
+                // 2. Get the name of the person reacting (current user)
+                const { rows: userRows } = await q(
+                    "SELECT user_name FROM users WHERE id = $1",
+                    [userId]
+                );
+                const reactorName = userRows[0]?.user_name || "Someone";
+
+                // 3. Notify owner if they aren't the one reacting
+                if (suggestionOwnerId && suggestionOwnerId !== userId) {
+                    await notifyUserByType({
+                        userId: suggestionOwnerId,
+                        type: NotificationType.REACTION, // Ensure this exists in your constants
+                        title: "New Reaction!",
+                        body: `${reactorName} reacted with ${action} to your suggestion: ${songName}`,
+                        data: { suggestionId, action }
+                    });
+                }
+            } catch (notifyErr) {
+                console.error("Failed to send reaction notification:", notifyErr);
+            }
+        }
+
         res.status(200).json({
             message: "Reaction updated.",
             currentReaction: newReaction // 'like' | 'meh' | 'dislike' | null
@@ -745,6 +766,36 @@ router.post("/api/music/suggestions/:id/comments", requireAuth, async (req, res)
 
     try {
         const result = await q(sql, [suggestionId, userId, commentText.trim()]);
+
+        try {
+            // 1. Get the original suggestion owner and song title
+            const { rows: sugRows } = await q(
+                "SELECT user_id, song_name FROM song_suggestions WHERE id = $1",
+                [suggestionId]
+            );
+            const suggestionOwnerId = sugRows[0]?.user_id;
+            const songName = sugRows[0]?.song_name;
+
+            // 2. Get the name of the person commenting
+            const { rows: userRows } = await q(
+                "SELECT user_name FROM users WHERE id = $1",
+                [userId]
+            );
+            const commenterName = userRows[0]?.user_name || "Someone";
+
+            // 3. Notify the owner (if it's not their own comment)
+            if (suggestionOwnerId && suggestionOwnerId !== userId) {
+                await notifyUserByType({
+                    userId: suggestionOwnerId,
+                    type: NotificationType.COMMENT, // Ensure this exists in your constants
+                    title: "New Comment!",
+                    body: `${commenterName} commented on ${songName}: "${commentText.substring(0, 50)}..."`,
+                    data: { suggestionId }
+                });
+            }
+        } catch (notifyErr) {
+            console.error("Failed to send comment notification:", notifyErr);
+        }
 
         res.status(201).json({
             message: "Comment added successfully!",
@@ -883,18 +934,18 @@ router.get("/api/music/suggestions/:id/targets", requireAuth, async (req, res) =
 
 // Search shared songs (public OR targeted OR owner)
 router.get("/api/music/search-shared", requireAuth, async (req, res) => {
-  const userId = req.user?.sub;
-  const qText = (req.query.q || "").trim();
+    const userId = req.user?.sub;
+    const qText = (req.query.q || "").trim();
 
-  if (!userId) {
-    return res.status(401).json({ error: "Authentication error: User ID not found." });
-  }
+    if (!userId) {
+        return res.status(401).json({ error: "Authentication error: User ID not found." });
+    }
 
-  if (qText.length < 2) {
-    return res.status(400).json({ error: "Query must be at least 2 characters." });
-  }
+    if (qText.length < 2) {
+        return res.status(400).json({ error: "Query must be at least 2 characters." });
+    }
 
-  const sql = `
+    const sql = `
     SELECT
       s.id,
       s.song_name,
@@ -927,36 +978,78 @@ router.get("/api/music/search-shared", requireAuth, async (req, res) => {
     LIMIT 30;
   `;
 
-  try {
-    const result = await q(sql, [userId, qText]);
-    res.json({ suggestions: result.rows });
-  } catch (err) {
-    console.error("Error searching shared songs:", err);
-    res.status(500).json({ error: "Failed to search songs." });
-  }
+    try {
+        const result = await q(sql, [userId, qText]);
+        res.json({ suggestions: result.rows });
+    } catch (err) {
+        console.error("Error searching shared songs:", err);
+        res.status(500).json({ error: "Failed to search songs." });
+    }
 });
 
 
 // DELETE /api/comments/:id
 router.delete("/api/comments/:id", requireAuth, async (req, res) => {
-  const commentId = req.params.id;
-  const userId = req.user.sub;
+    const commentId = req.params.id;
+    const userId = req.user.sub;
 
-  // 1) Find comment + owner
-  const { rows } = await q("SELECT user_id FROM song_suggestion_comments WHERE id = $1", [commentId]);
-  if (!rows.length) return res.status(404).json({ error: "Not found" });
+    // 1) Find comment + owner
+    const { rows } = await q("SELECT user_id FROM song_suggestion_comments WHERE id = $1", [commentId]);
+    if (!rows.length) return res.status(404).json({ error: "Not found" });
 
-  const c = rows[0];
+    const c = rows[0];
 
-  // 2) Check permission
-  const isAdmin = req.user.role?.toLowerCase?.().includes("admin"); // adapt to your auth
-  if (!isAdmin && c.user_id !== userId) return res.status(403).json({ error: "Forbidden" });
+    // 2) Check permission
+    const isAdmin = req.user.role?.toLowerCase?.().includes("admin"); // adapt to your auth
+    if (!isAdmin && c.user_id !== userId) return res.status(403).json({ error: "Forbidden" });
 
-  // 3) Delete
-  await q("DELETE FROM song_suggestion_comments WHERE id = $1", [commentId]);
-  res.json({ ok: true, songId: c.song_id });
+    // 3) Delete
+    await q("DELETE FROM song_suggestion_comments WHERE id = $1", [commentId]);
+    res.json({ ok: true, songId: c.song_id });
 });
 
+
+// POST /api/music/suggestions/:id/play-notify
+router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, res) => {
+    const userId = req.user?.sub; // The person who clicked Play
+    const suggestionId = req.params.id;
+
+    try {
+        // 1. Get the original sharer and the song name
+        const { rows: sugRows } = await q(
+            "SELECT user_id, song_name FROM song_suggestions WHERE id = $1",
+            [suggestionId]
+        );
+        
+        if (sugRows.length === 0) return res.status(404).json({ error: "Suggestion not found" });
+
+        const sharerId = sugRows[0].user_id;
+        const songName = sugRows[0].song_name;
+
+        // 2. Get the name of the person playing the song
+        const { rows: userRows } = await q(
+            "SELECT user_name FROM users WHERE id = $1",
+            [userId]
+        );
+        const playerName = userRows[0]?.user_name || "Someone";
+
+        // 3. Notify the sharer (only if it's not their own song)
+        if (sharerId && sharerId !== userId) {
+            await notifyUserByType({
+                userId: sharerId,
+                type: NotificationType.PLAY_EVENT, // Add this to your types
+                title: "Someone is listening!",
+                body: `${playerName} is playing your suggestion: ${songName}`,
+                data: { suggestionId }
+            });
+        }
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error("Play notification error:", err);
+        res.status(500).json({ error: "Failed to send notification" });
+    }
+});
 
 
 export default router;

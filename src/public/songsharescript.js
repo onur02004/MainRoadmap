@@ -4,11 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const pages = document.querySelectorAll('.page');
 
 
+    // Around line 6 in songsharescript.js
     function showPage(pageName) {
         pages.forEach(p => {
             const isTarget = p.classList.contains(`page-${pageName}`);
             p.classList.toggle('is-active', isTarget);
         });
+
+        // FIX: Force the main section to scroll back to the top
+        const mainScrollSection = document.querySelector('section[style*="overflow-y: scroll"]');
+        if (mainScrollSection) {
+            mainScrollSection.scrollTop = 0;
+        }
     }
 
     function handleNavigation(event) {
@@ -789,98 +796,101 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = new Date(s.date_added).toLocaleDateString();
 
             // 2. Updated Card InnerHTML
+            const commentIconHTML = `
+    <div class="icon-wrapper" style="grid-area: commentsIcon; position: relative;">
+        <img class="commentsIcon" data-action="comment" data-id="${s.id}" src="./content/commentsIcon.svg">
+        ${s.comment_count > 0 ? `<span class="notification-bubble">${s.comment_count}</span>` : ''}
+    </div>`;
+
+            // 2. Prepare HTML for Reaction Count Bubble
+            const reactionsHolderHTML = `
+    <div class="reatcionsHolder" style="grid-area: reatcionsHolder; position: relative; cursor: pointer;">
+        <img class="reactionsIcon" data-id="${s.id}" src="./content/reactionsIcon.svg">
+        ${s.reaction_count > 0 ? `<span class="notification-bubble">${s.reaction_count}</span>` : ''}
+    </div>`;
+
+            // 3. Inject variables into the template
             card.innerHTML = `
-            <div class="mainPrefab">
-                
-                <div class="targetInformationHolder" style="${topBarDisplay}">
-                    <p class="tragetInfoText">${targetText}</p>
-                </div>
-                
-                <div class="seenByHolder" style="${topBarDisplay} ${optionsDisplay}">
-                    <svg class="eyeIcon" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2.5 12C3.8 8.8 7 6 12 6C17 6 20.2 8.8 21.5 12C20.2 15.2 17 18 12 18C7 18 3.8 15.2 2.5 12Z"
-                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/>
-                        <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
-                    </svg>
-                </div>
+<div class="mainPrefab">
+    <div class="targetInformationHolder" style="${topBarDisplay}">
+        <p class="tragetInfoText">${targetText}</p>
+    </div>
+    
+    <div class="seenByHolder" style="${topBarDisplay} ${optionsDisplay}">
+        <svg class="eyeIcon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M2.5 12C3.8 8.8 7 6 12 6C17 6 20.2 8.8 21.5 12C20.2 15.2 17 18 12 18C7 18 3.8 15.2 2.5 12Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/>
+            <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+        </svg>
+    </div>
 
-                <div class="editHolder" style="${topBarDisplay} ${optionsDisplay}">
-                    <svg class="editIcon" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 15.5L14.5 6L18 9.5L8.5 19H5V15.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M13.8 6.7L17.3 10.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M4 20H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                    </svg>
-                </div>
+    <div class="editHolder" style="${topBarDisplay} ${optionsDisplay}">
+        <svg class="editIcon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M5 15.5L14.5 6L18 9.5L8.5 19H5V15.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M13.8 6.7L17.3 10.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4 20H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+    </div>
 
-                <div class="albumCover">
-                    <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
-                </div>
-                <img class="artistCover" src="${s.song_artist_cover_url}">
-                <img class="playBtn" src="./content/playIcon.svg">
-                
-                <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
-                    <p class="titleElement">${s.song_name}</p>
-                    <p class="artistElement">${s.song_artist}</p>
-                </div>
-                
-                <div class="importanceHolder" title="${getImportanceText(s.importance)}">
-                    <img src="./content/${importanceSvgFile}" alt="${s.importance}">
-                </div>
-                
-                <div class="ratingHolder" data-rating="${s.rating_by_user}">
-                    <svg class="rating-star" viewBox="0 0 24 24">
-                        <defs>
-                            <linearGradient id="star-fill-${s.id}" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="${s.rating_by_user * 10}%" stop-color="#FFC107" />
-                                <stop offset="${s.rating_by_user * 10}%" stop-color="#334155" />
-                            </linearGradient>
-                        </defs>
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                            fill="url(#star-fill-${s.id})" stroke="#FFC107" stroke-width="1.5" class="star-polygon" style="opacity: 0.3" />
-                    </svg>
-                    <span id="rating-number">${s.rating_by_user}</span>
-                </div>
-                
-                <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
-                <div class="userInfo">
-                    <p>${date}</p>
-                    <p>${s.suggester_username}</p>
-                </div>
+    <div class="albumCover">
+        <img class="albumCoverMAIN" src="${s.song_cover_url || placeholder}" alt="Song Cover">
+    </div>
+    <img class="artistCover" src="${s.song_artist_cover_url}">
+    <img class="playBtn" src="./content/playIcon.svg">
+    
+    <div class="SongInfoContainer" style="background-color:${s.overall_dominant_color}">
+        <p class="titleElement">${s.song_name}</p>
+        <p class="artistElement">${s.song_artist}</p>
+    </div>
+    
+    <div class="importanceHolder" title="${getImportanceText(s.importance)}">
+        <img src="./content/${importanceSvgFile}" alt="${s.importance}">
+    </div>
+    
+    <div class="ratingHolder" data-rating="${s.rating_by_user}">
+        <svg class="rating-star" viewBox="0 0 24 24">
+            <defs>
+                <linearGradient id="star-fill-${s.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="${s.rating_by_user * 10}%" stop-color="#FFC107" />
+                    <stop offset="${s.rating_by_user * 10}%" stop-color="#334155" />
+                </linearGradient>
+            </defs>
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                fill="url(#star-fill-${s.id})" stroke="#FFC107" stroke-width="1.5" class="star-polygon" style="opacity: 0.3" />
+        </svg>
+        <span id="rating-number">${s.rating_by_user}</span>
+    </div>
+    
+    <img class="userProfilePic" src="media/${s.suggester_avatar || './content/default.jpg'}" alt="Avatar">
+    <div class="userInfo">
+        <p>${date}</p>
+        <p>${s.suggester_username}</p>
+    </div>
 
-                <img class="commentsIcon" data-action="comment" data-id="${s.id}" src="./content/commentsIcon.svg">
-                <img class="addIcon" src="./content/addIcon.svg">
-                <img class="likeIcon" data-action="like" data-id="${s.id}" src="./content/likeIcon.svg">
-                <p class="meh" data-action="meh" data-id="${s.id}">MEH</p>
-                <img class="dislikeIcon" data-action="dislike" data-id="${s.id}" src="./content/dislikeIcon.svg">
+    ${commentIconHTML}
+    <img class="addIcon" src="./content/addIcon.svg">
+    <img class="likeIcon" data-action="like" data-id="${s.id}" src="./content/likeIcon.svg">
+    <p class="meh" data-action="meh" data-id="${s.id}">MEH</p>
+    <img class="dislikeIcon" data-action="dislike" data-id="${s.id}" src="./content/dislikeIcon.svg">
+    ${reactionsHolderHTML}
 
-                <div class="reatcionsHolder">
-                    <img class="reactionsIcon" data-id="${s.id}" src="./content/reactionsIcon.svg">
-                </div>
-
-                <div class="highlightTimeContainer">
-                    <p>Highlight time:</p>
-                    <p>${s.recommended_time_by_user || 'N/A'}</p>
-                </div>
-                <div class="publisherCommentHolder">
-                    <p>Publisher Comment:</p>
-                    <p>${safeComment || 'No comment.'}</p>
-                </div>
-                <div class="publicStatusHolder" data-private="${!s.visibility_public}" data-id="${s.id}">
-                    <p>Visibility:</p>
-                    <p>
-                        ${s.visibility_public ? 'Public' : 'Private'} 
-                        ${!s.visibility_public ? '<i class="fas fa-users" style="font-size:0.8em; margin-left:5px;"></i>' : ''}
-                    </p>
-                </div>
-                <div class="LyricsBtnHolder">
-                    <p>Lyrics:</p>
-                    <img class="lyricsIcon" src="./content/lyricsicon.svg">
-                </div>
-            </div>
-                `;
+    <div class="highlightTimeContainer">
+        <p>Highlight time:</p>
+        <p>${s.recommended_time_by_user || 'N/A'}</p>
+    </div>
+    <div class="publisherCommentHolder">
+        <p>Publisher Comment:</p>
+        <p>${safeComment || 'No comment.'}</p>
+    </div>
+    <div class="publicStatusHolder" data-private="${!s.visibility_public}" data-id="${s.id}">
+        <p>Visibility:</p>
+        <p>${s.visibility_public ? 'Public' : 'Private'}</p>
+    </div>
+    <div class="LyricsBtnHolder">
+        <p>Lyrics:</p>
+        <img class="lyricsIcon" src="./content/lyricsicon.svg">
+    </div>
+</div>`;
 
             const mainPrefab = card.querySelector('.mainPrefab');
             let points = s.dominant_colors_points || [];
@@ -1005,13 +1015,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Inside renderSuggestions loop
-            const impIcon = card.querySelector('.importanceHolder');
-            if (impIcon) {
-                impIcon.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent triggering other card clicks
-                    const msg = getImportanceText(s.importance);
-                    alert(msg); // You can replace this with a modern Toast library or a custom div
+            // Inside the loop where you create cards
+            const impHolder = card.querySelector('.importanceHolder');
+            if (impHolder) {
+                impHolder.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    // Remove any existing bubbles first
+                    document.querySelectorAll('.importance-bubble').forEach(b => b.remove());
+
+                    // Create the bubble
+                    const bubble = document.createElement('div');
+                    bubble.className = 'importance-bubble';
+                    bubble.innerText = getImportanceDescription(s.importance);
+
+                    // Append to the holder so it positions relative to it
+                    impHolder.appendChild(bubble);
+
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => bubble.remove(), 3000);
+                });
+            }
+
+            // Inside renderSuggestions loop in songsharescript.js
+            const ratingHolder = card.querySelector('.ratingHolder');
+            if (ratingHolder) {
+                ratingHolder.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    // Remove existing bubbles
+                    document.querySelectorAll('.importance-bubble').forEach(b => b.remove());
+
+                    // Create the bubble
+                    const bubble = document.createElement('div');
+                    bubble.className = 'importance-bubble';
+                    // Get the rating value from the data attribute or inner text
+                    const ratingVal = ratingHolder.getAttribute('data-rating') || s.rating_by_user;
+                    bubble.innerText = getRatingDescription(ratingVal);
+
+                    ratingHolder.appendChild(bubble);
+
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => bubble.remove(), 3000);
                 });
             }
 
@@ -1137,6 +1182,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        fetch(`/api/music/suggestions/${suggestion.id}/play-notify`, {
+            method: 'POST',
+            credentials: 'include'
+        }).catch(err => console.error("Could not notify sharer:", err));
 
         const trackId = songUri.split(':')[2]; // Gets "1GwuB8Vq48Q82kXzV1Lw0Q"
 
@@ -1799,27 +1848,32 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDynamicRating() {
         const val = parseFloat(ratingSlider.value);
         ratingValDisplay.textContent = val.toFixed(1);
-        actualRatingInput.value = val; // Keep the hidden field updated for the database
+        actualRatingInput.value = val; //
 
+        // Create or find the suggest bubble
+        let bubble = document.getElementById('suggestRatingBubble');
+        if (!bubble) {
+            bubble = document.createElement('div');
+            bubble.id = 'suggestRatingBubble';
+            bubble.className = 'importance-bubble'; // Reusing your CSS class
+            document.getElementById('suggestRatingContainer').appendChild(bubble);
+        }
+
+        // Update text based on value
+        bubble.innerText = getRatingDescription(val);
+
+        // Optional: Hide after 2 seconds of inactivity
+        clearTimeout(window.ratingBubbleTimeout);
+        window.ratingBubbleTimeout = setTimeout(() => {
+            if (bubble) bubble.remove();
+        }, 2000);
+
+        // Existing color logic...
         let currentColor = '#3b82f6';
         if (val > 3 && val <= 6) currentColor = '#4eba6b';
         else if (val > 6 && val <= 8.5) currentColor = '#f59e0b';
         else if (val > 8.5) currentColor = '#ef4444';
-
-        document.documentElement.style.setProperty('--primary-glow', currentColor);
-
-        const activeIndex = Math.floor((val / 10) * totalBars);
-        bars.forEach((bar, index) => {
-            if (index <= activeIndex && val > 0) {
-                bar.style.background = currentColor;
-                bar.style.boxShadow = `0 0 10px ${currentColor}66`;
-                bar.style.transform = 'scaleY(1.2)';
-            } else {
-                bar.style.background = '#2d3748';
-                bar.style.boxShadow = 'none';
-                bar.style.transform = 'scaleY(1)';
-            }
-        });
+        // ...
     }
 
     ratingSlider.addEventListener('input', updateDynamicRating);
@@ -2524,4 +2578,23 @@ function getImportanceText(level) {
         default:
             return "Song Importance";
     }
+}
+
+function getImportanceDescription(level) {
+    const descriptions = {
+        'low': "Low: A casual share for when you have extra time.",
+        'neutral': "Natural: A solid track that fits the vibe.",
+        'high': "High: Seriously good. Don't skip this one!",
+        'extreme': "Extreme: Absolute masterpiece. Listen NOW."
+    };
+    return descriptions[level] || "Song Importance";
+}
+
+function getRatingDescription(rating) {
+    const val = parseFloat(rating);
+    if (val >= 9) return "Masterpiece: A must-listen for everyone.";
+    if (val >= 7) return "Great: High quality and very enjoyable.";
+    if (val >= 5) return "Good: A solid track worth a play.";
+    if (val >= 3) return "Okay: It has its moments, but not for everyone.";
+    return "Poor: Not recommended unless you're a die-hard fan.";
 }
