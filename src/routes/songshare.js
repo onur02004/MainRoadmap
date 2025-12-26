@@ -467,6 +467,8 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
             );
 
             const recommendedSongID = suggestedSongRows[0]?.id || "Yikes";
+            const trimmedComment = typeof comment === "string" ? comment.trim() : "";
+            const commentPart = trimmedComment ? ` || With Comment: ${trimmedComment}` : "";
 
 
             for (const targetUserId of targetUsers) {
@@ -474,12 +476,11 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
                     userId: targetUserId,
                     type: NotificationType.DIRECT_SHARE,
                     title: "New music suggestion",
-                    body: `${recommenderName} suggested: ${name} – ${artist}`,
+                    body: `${recommenderName} suggested: ${name} – ${artist}${commentPart}`,
                     data: {
                         suggestionId: recommendedSongID,
                         spotifyUri: uri,
                     },
-                    // FIX: Reverted to 'deafult.jpg' as requested
                     imageUrl: imageUrl || "https://pi.330nur.org/content/deafult.jpg"
                 });
             }
@@ -1020,7 +1021,7 @@ router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, r
             "SELECT user_id, song_name FROM song_suggestions WHERE id = $1",
             [suggestionId]
         );
-        
+
         if (sugRows.length === 0) return res.status(404).json({ error: "Suggestion not found" });
 
         const sharerId = sugRows[0].user_id;
