@@ -12,17 +12,11 @@ export async function logUserActivity(userId, activityType, req) {
 
     const sql = `
       INSERT INTO user_activity 
-      (user_id, activity_type, page_path, http_method, endpoint, ip_address, user_agent)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (user_id, activity_type, page_path, http_method, endpoint, user_agent)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `;
 
-    // 1. Safe IP Extraction (handles proxies like Nginx/Cloudflare)
-    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
-    // Postgres 'inet' type fails on empty strings, convert to null or localhost if missing
-    if (!ip || ip === '::1') ip = '127.0.0.1';
-    if (ip.includes(',')) ip = ip.split(',')[0].trim(); // Take first IP if multiple
 
-    // 2. Data prep
     const pagePath = req.path; // e.g., "/account"
     const httpMethod = req.method; // "GET", "POST"
     const endpoint = req.originalUrl || req.url; // e.g., "/account?details=true"
@@ -35,11 +29,42 @@ export async function logUserActivity(userId, activityType, req) {
       pagePath,
       httpMethod,
       endpoint,
-      ip,
       userAgent
     ]).catch(err => console.error("Activity Log SQL Error:", err.message));
 
   } catch (err) {
     console.error("Failed to prepare activity log:", err);
+  }
+}
+
+const lastUpdateCache = new Map();
+const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 min
+export async function keepLastOnline(userId) {
+  try {
+    if (!userId) {
+      console.log("Err No ID yok. keepLastOnline() activity.js");
+      return;
+    }
+
+    const now = Date.now();
+    const lastUpdate = lastUpdateCache.get(userId);
+
+    if (lastUpdate && (now - lastUpdate < UPDATE_INTERVAL)) {
+      return;
+    }
+
+    const sql = `
+      UPDATE users SET last_online = CURRENT_TIMESTAMP WHERE id = $1;
+    `;
+
+    lastUpdateCache.set(userId, now);
+
+    q(sql, [userId]).catch(err => {
+      console.error("keepLastOnline SQL Error:", err.message);
+      lastUpdateCache.delete(userId);
+    });
+
+  } catch (err) {
+    console.log("Err saving keepLastOnline");
   }
 }

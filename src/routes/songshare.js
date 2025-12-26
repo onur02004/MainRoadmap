@@ -789,7 +789,7 @@ router.post("/api/music/suggestions/:id/comments", requireAuth, async (req, res)
                     userId: suggestionOwnerId,
                     type: NotificationType.COMMENT, // Ensure this exists in your constants
                     title: "New Comment!",
-                    body: `${commenterName} commented on ${songName}: "${commentText.substring(0, 50)}..."`,
+                    body: `${commenterName} commented on ${songName}: "${commentText.substring(0, 50)}"`,
                     data: { suggestionId }
                 });
             }

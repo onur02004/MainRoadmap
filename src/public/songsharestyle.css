@@ -114,6 +114,7 @@ body {
     color: #fff;
     min-height: 100vh;
     height: 100%;
+    width: 95vw;
 }
 
 .page {
@@ -1274,7 +1275,6 @@ section {
     gap: 1.5rem;
     padding: 15px;
     border-radius: 11px;
-    height: 40vh;
 }
 
 /* Step Indicator Dots */
@@ -1304,7 +1304,6 @@ section {
 .step-navigation {
     display: flex;
     justify-content: space-between;
-    margin-top: 3rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -1323,7 +1322,7 @@ section {
     background: rgba(255, 255, 255, 0.2);
 }
 
-#suggestPage { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 10px 100px 10px; min-height: 400px; width: 80vw; max-width: 850px;}
+#suggestPage { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 10px 100px 10px; min-width: 400px; width: 80vw;}
 #multiStepSuggestForm { width: 100%; max-width: none; /* Remove desktop cap to allow full width */ margin: 0 auto; display: flex; flex-direction: column; padding-inline: 12px; } 
 
 
@@ -1364,7 +1363,6 @@ section {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    margin-top: 2rem;
     padding-top: 1rem;
 }
 
@@ -1916,4 +1914,8 @@ section[style*="overflow-y: scroll"] {
     cursor: pointer;
     box-shadow: 0 0 15px var(--primary-glow);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+form{
+    gap: 0;
 }

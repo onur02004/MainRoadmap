@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>slm Admin</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap">
-    
+
     <style>
         /* --- Base & Reset --- */
         * {
@@ -52,13 +52,32 @@
             background: #000;
         }
 
-        .wave span:nth-child(1) { border-radius: 45%; background: rgba(20, 20, 20, 1); animation: animate 15s linear infinite; }
-        .wave span:nth-child(2) { border-radius: 40%; background: rgba(20, 20, 20, 0.5); animation: animate 20s linear infinite; }
-        .wave span:nth-child(3) { border-radius: 42.5%; background: rgba(20, 20, 20, 0.5); animation: animate 25s linear infinite; }
+        .wave span:nth-child(1) {
+            border-radius: 45%;
+            background: rgba(20, 20, 20, 1);
+            animation: animate 15s linear infinite;
+        }
+
+        .wave span:nth-child(2) {
+            border-radius: 40%;
+            background: rgba(20, 20, 20, 0.5);
+            animation: animate 20s linear infinite;
+        }
+
+        .wave span:nth-child(3) {
+            border-radius: 42.5%;
+            background: rgba(20, 20, 20, 0.5);
+            animation: animate 25s linear infinite;
+        }
 
         @keyframes animate {
-            0% { transform: translate(-50%, -75%) rotate(0deg); }
-            100% { transform: translate(-50%, -75%) rotate(360deg); }
+            0% {
+                transform: translate(-50%, -75%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -75%) rotate(360deg);
+            }
         }
 
         /* --- Layout & Header --- */
@@ -138,7 +157,8 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
 
-        .card h2, .card h3 {
+        .card h2,
+        .card h3 {
             margin-top: 0;
             margin-bottom: 1.5rem;
             font-weight: 400;
@@ -162,7 +182,11 @@
             text-align: center;
             transition: transform 0.2s;
         }
-        .stat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.05); }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.05);
+        }
 
         .stat-number {
             font-size: 3rem;
@@ -179,7 +203,7 @@
         /* --- Tables --- */
         table {
             width: 100%;
-            border-collapse: separate; 
+            border-collapse: separate;
             border-spacing: 0;
             margin-top: 1rem;
         }
@@ -190,9 +214,9 @@
             background: rgba(255, 255, 255, 0.05);
             color: #52c471;
             font-size: 1.2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         td {
             padding: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -218,16 +242,39 @@
             font-family: "Jersey 10", sans-serif;
         }
 
-        .btn:hover { filter: brightness(1.2); transform: scale(1.05); }
-        .btn:active { transform: scale(0.95); }
+        .btn:hover {
+            filter: brightness(1.2);
+            transform: scale(1.05);
+        }
 
-        .btn-primary { background: #52c471; color: #131313; font-weight: bold; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn-success { background: #2ecc71; color: #131313; }
-        .btn-default { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: #52c471;
+            color: #131313;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: #131313;
+        }
+
+        .btn-default {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
 
         /* --- Forms & Inputs --- */
-        input, select {
+        input,
+        select {
             width: 100%;
             padding: 12px;
             background: rgba(0, 0, 0, 0.3);
@@ -237,8 +284,9 @@
             font-size: 1.1rem;
             margin-top: 5px;
         }
-        
-        input:focus, select:focus {
+
+        input:focus,
+        select:focus {
             outline: none;
             border-color: #52c471;
             box-shadow: 0 0 5px rgba(82, 196, 113, 0.3);
@@ -253,8 +301,10 @@
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(5px);
             z-index: 1000;
@@ -264,19 +314,28 @@
             background: #1a1a1a;
             margin: 5% auto;
             padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
             position: relative;
         }
 
-        .modal h2 { color: #52c471; margin-bottom: 1.5rem; }
+        .modal h2 {
+            color: #52c471;
+            margin-bottom: 1.5rem;
+        }
 
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { color: #aaa; font-size: 1.1rem; }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            color: #aaa;
+            font-size: 1.1rem;
+        }
 
         /* Features Grid */
         .feature-grid {
@@ -284,7 +343,7 @@
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 10px;
             padding: 15px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             max-height: 250px;
             overflow-y: auto;
@@ -298,8 +357,15 @@
             padding: 5px;
             border-radius: 4px;
         }
-        .feature-checkbox:hover { background: rgba(255,255,255,0.05); }
-        .feature-checkbox input { width: auto; margin: 0; }
+
+        .feature-checkbox:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-checkbox input {
+            width: auto;
+            margin: 0;
+        }
 
         .feature-tag {
             display: inline-block;
@@ -315,19 +381,30 @@
         /* Pagination */
         .pagination button {
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
         }
+
         .pagination button:hover:not(:disabled) {
             background: #52c471;
             color: #000;
             border-color: #52c471;
         }
-        .pagination button:disabled { opacity: 0.3; }
 
-        .loading, .error { padding: 2rem; text-align: center; color: #aaa; }
-        .error { color: #e74c3c; }
+        .pagination button:disabled {
+            opacity: 0.3;
+        }
 
+        .loading,
+        .error {
+            padding: 2rem;
+            text-align: center;
+            color: #aaa;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
     </style>
 </head>
 
@@ -351,7 +428,8 @@
             <button onclick="showSection('dashboard')" class="active">Dashboard</button>
             <button onclick="showSection('users')">User Management</button>
             <button onclick="showSection('features')">Feature Management</button>
-            <button onclick="window.location.href='/account'" class="btn-default" style="margin-left: auto;">Exit to Account</button>
+            <button onclick="window.location.href='/account'" class="btn-default" style="margin-left: auto;">Exit to
+                Account</button>
         </div>
 
         <div id="dashboard-section" class="section">
@@ -377,7 +455,8 @@
                     <button onclick="showCreateUserForm()" class="btn btn-primary">+ Add User</button>
                 </div>
                 <div class="search-box">
-                    <input type="text" id="userSearch" placeholder="Search by name, email or username..." oninput="searchUsers()">
+                    <input type="text" id="userSearch" placeholder="Search by name, email or username..."
+                        oninput="searchUsers()">
                 </div>
                 <div id="users-table">
                     <div class="loading">Loading users...</div>
@@ -431,7 +510,8 @@
             <form id="createUserForm">
                 <div class="form-group">
                     <label>Username *</label>
-                    <input type="text" name="user_name" required pattern="[A-Za-z0-9_]{3,32}" title="3-32 characters, letters, numbers, and underscores only">
+                    <input type="text" name="user_name" required pattern="[A-Za-z0-9_]{3,32}"
+                        title="3-32 characters, letters, numbers, and underscores only">
                 </div>
                 <div class="form-group">
                     <label>Password *</label>
@@ -458,7 +538,8 @@
                     </select>
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('createUserModal')" class="btn btn-default">Cancel</button>
+                    <button type="button" onclick="closeModal('createUserModal')"
+                        class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create User</button>
                 </div>
             </form>
@@ -479,7 +560,8 @@
                     <input type="password" name="confirmNewPassword" required minlength="6">
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('changePasswordModal')" class="btn btn-default">Cancel</button>
+                    <button type="button" onclick="closeModal('changePasswordModal')"
+                        class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Password</button>
                 </div>
             </form>
@@ -492,7 +574,8 @@
             <form id="createFeatureForm">
                 <div class="form-group">
                     <label>Feature Key *</label>
-                    <input type="text" name="featureKey" required placeholder="e.g., dark_mode" pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores">
+                    <input type="text" name="featureKey" required placeholder="e.g., dark_mode" pattern="[a-zA-Z0-9_]+"
+                        title="Only letters, numbers, and underscores">
                     <small style="color: #666;">Unique code identifier</small>
                 </div>
                 <div class="form-group">
@@ -501,7 +584,8 @@
                     <small style="color: #666;">Human-readable name</small>
                 </div>
                 <div style="text-align: right; margin-top: 1rem;">
-                    <button type="button" onclick="closeModal('createFeatureModal')" class="btn btn-default">Cancel</button>
+                    <button type="button" onclick="closeModal('createFeatureModal')"
+                        class="btn btn-default">Cancel</button>
                     <button type="submit" class="btn btn-primary">Add Feature</button>
                 </div>
             </form>
@@ -538,17 +622,17 @@
             document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
 
             document.getElementById(`${section}-section`).style.display = 'block';
-            
+
             // Highlight active button
             const buttons = document.querySelectorAll('.nav button');
-            for(let btn of buttons) {
-                if(btn.textContent.toLowerCase().includes(section)) {
+            for (let btn of buttons) {
+                if (btn.textContent.toLowerCase().includes(section)) {
                     btn.classList.add('active');
                     break;
                 }
-                if(section === 'dashboard' && btn.textContent === 'Dashboard') btn.classList.add('active');
+                if (section === 'dashboard' && btn.textContent === 'Dashboard') btn.classList.add('active');
             }
-            
+
             currentSection = section;
 
             if (section === 'dashboard') loadDashboard();
@@ -616,25 +700,38 @@
                 `;
 
                 document.getElementById('recent-users').innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Join Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.recentUsers.map(user => `
-                                <tr>
-                                    <td>${user.user_name}</td>
-                                    <td><span class="feature-tag" style="background:transparent; border:none; color: #fff;">${user.role}</span></td>
-                                    <td>${new Date(user.join_date).toLocaleDateString()}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
+            <h3>Currently/Last Online</h3>
+            <table style="margin-bottom: 2rem;">
+                <thead>
+                    <tr><th>Username</th><th>Role</th><th>Last Seen</th></tr>
+                </thead>
+                <tbody>
+                    ${data.lastOnlineUsers.map(user => `
+                        <tr>
+                            <td><strong>${user.user_name}</strong></td>
+                            <td>${user.role}</td>
+                            <td style="color:#52c471;">${formatLastOnline(user.last_online)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <h3>Recently Joined Users</h3>
+            <table>
+                <thead>
+                    <tr><th>Username</th><th>Role</th><th>Join Date</th></tr>
+                </thead>
+                <tbody>
+                    ${data.recentUsers.map(user => `
+                        <tr>
+                            <td>${user.user_name}</td>
+                            <td>${user.role}</td>
+                            <td>${new Date(user.join_date).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
             } catch (error) {
                 document.getElementById('stats-grid').innerHTML = `<div class="error">Error loading statistics: ${error.message}</div>`;
             }
@@ -717,6 +814,10 @@
                 <div>${data.user.real_name || 'N/A'}</div>
             </div>
             <div class="form-group">
+                <label>Last Online:</label>
+                <div style="color: #52c471; font-weight: bold;">${formatLastOnline(data.user.last_online)}</div>
+            </div>
+            <div class="form-group">
                 <label>Email:</label>
                 <div>${data.user.email || 'N/A'}</div>
             </div>
@@ -769,8 +870,8 @@
                 if (!featuresResponse.ok) throw new Error(featuresData.error);
 
                 const user = userData.user;
-                const userFeatures = userData.features || []; 
-                const allFeatures = featuresData.features || []; 
+                const userFeatures = userData.features || [];
+                const allFeatures = featuresData.features || [];
 
                 document.getElementById('editUserFormContent').innerHTML = `
             <input type="hidden" name="userId" value="${userId}">
@@ -1031,8 +1132,20 @@
             });
         };
 
-        // Initialize
+        function formatLastOnline(dateString) {
+            if (!dateString) return 'Never';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000); // seconds
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return date.toLocaleDateString();
+        }
+
         checkAdminStatus();
     </script>
 </body>
+
 </html>

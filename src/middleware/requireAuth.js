@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import 'dotenv/config';
 import { q } from "../db/pool.js";
-import { logUserActivity } from "../db/activity.js";
+import { logUserActivity, keepLastOnline } from "../db/activity.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -28,6 +28,7 @@ export default function requireAuth(req, res, next) {
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     console.log("User authenticated:", req.user);
+    keepLastOnline(req.user.sub);
     next();
   } catch {
     // For simplicity: JSON 401 for APIs, plain 401 for others
@@ -37,7 +38,6 @@ export default function requireAuth(req, res, next) {
     return res.status(401).send("Session expired or invalid token");
   }
 }
-
 
 export function requireFeature(featureKey) {
   return async (req, res, next) => {
