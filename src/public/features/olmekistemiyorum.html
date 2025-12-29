@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simo</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #131313;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #mainVideo {
+            display: none;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #popup {
+            position: fixed;
+            background-color: #2a2a2a;
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #popup h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-yes {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-yes:hover { background-color: #218838; }
+
+        .btn-no {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-no:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+
+    <div id="popup">
+        <h2>File has music. Ses calcak emin misin (Ipad de bazen otomatik olarak kapatiyo sesi)?</h2>
+        <div class="btn-group">
+            <button class="btn-yes" onclick="playVideo()">Yes</button>
+            <button class="btn-no" onclick="redirectHome()">No</button>
+        </div>
+    </div>
+
+    <video id="mainVideo" src="../media/features/olmekistemiyorum/olmekistemiyorum.mp4" playsinline loop></video>
+    
+    <script>
+        function playVideo() {
+            const video = document.getElementById('mainVideo');
+            const popup = document.getElementById('popup');
+
+            popup.style.display = 'none';
+
+            video.style.display = 'block';
+
+            // 3. Attempt to go Full Screen
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.mozRequestFullScreen) {
+                video.mozRequestFullScreen();
+            } else if (video.webkitRequestFullscreen) { 
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+
+            video.play().catch(error => {
+                console.log("Autoplay was prevented:", error);
+            });
+        }
+
+        function redirectHome() {
+            window.location.href = "/";
+        }
+    </script>
+</body>
+</html>

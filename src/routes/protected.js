@@ -123,6 +123,25 @@ router.get('/simo', requireAuth, requireFeature('simo'), (req, res) => {
   });
 });
 
+router.get('/olmekistemiyorum', requireAuth, requireFeature('olmekistemiyorum'), (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public',
+        'features', 
+        'olmekistemiyorum.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending olmekistemiyorum.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
 router.get('/ense25', requireAuth, requireFeature('ense25'), (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
@@ -160,7 +179,6 @@ router.get('/dgkoense2025morepicpage', requireAuth, requireFeature('ense25'), (r
     }
   });
 });
-
 
 router.get("/remote-control", requireAuth, (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
