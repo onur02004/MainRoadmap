@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Roadmap - Humor</title>
+    <link rel="stylesheet" href="mainsitestyle.css">
+    <style>
+        .joke-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Large clear area for the joke */
+        .joke-display {
+            max-width: 800px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .joke-text { font-size: 2.5rem; line-height: 1.2; color: #fff; }
+        .setup { opacity: 0.6; margin-bottom: 10px; }
+        .delivery { color: #52c471; text-shadow: 0 0 10px rgba(82, 196, 113, 0.3); }
+
+        /* Modern Cycle Button */
+        .cycle-btn {
+            background: #52c471;
+            color: #131313;
+            border: none;
+            padding: 15px 40px;
+            font-family: "Jersey 10", sans-serif;
+            font-size: 2rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .cycle-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 20px rgba(82, 196, 113, 0.5);
+        }
+        .cycle-btn:active { transform: translateY(0); }
+
+        /* Disclaimer Styling */
+        .disclaimer-bar {
+            position: absolute;
+            bottom: 20px;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: help;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+        .disclaimer-bar:hover { color: rgba(255, 255, 255, 0.8); }
+
+        /* Modal Customization */
+        .modal-text {
+            font-family: sans-serif;
+            text-align: left;
+            line-height: 1.6;
+            font-size: 1rem;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="apiInfoDialog" class="dialog-backdrop" style="display: none;">
+        <div class="dialog-box">
+            <h2 class="dialog-title">Legal & API Info</h2>
+            <div class="modal-text">
+                <p>This page fetches dynamic content from <strong>JokeAPI</strong> (v2.jokeapi.dev).</p>
+                <p>The developer of this roadmap has no control over, nor prior knowledge of, the specific jokes generated.</p>
+                <p>Content is filtered for "Dark" categories and may be offensive. Use at your own discretion.</p>
+            </div>
+            <button id="closeInfo" class="dialog-btn">Understood</button>
+        </div>
+    </div>
+
+    <div class="joke-container">
+        <div id="jokeWrapper" class="joke-display">
+            <p class="joke-text">Press the button to begin...</p>
+        </div>
+
+        <button id="nextJoke" class="cycle-btn">NEXT JOKE</button>
+
+
+        <p class="disclaimer-bar" id="disclaimerTrigger">
+            Info: The Jokes aren't written nor known by me. Don't visit this website if you can't take a joke.
+
+            Disclaimer: AI/API generated content. Click for details.
+        </p>
+    </div>
+
+    <script>
+        const jokeWrapper = document.getElementById('jokeWrapper');
+        const nextBtn = document.getElementById('nextJoke');
+        const modal = document.getElementById('apiInfoDialog');
+        const trigger = document.getElementById('disclaimerTrigger');
+        const closeBtn = document.getElementById('closeInfo');
+
+        async function fetchJoke() {
+            nextBtn.innerText = "LOADING...";
+            nextBtn.disabled = true;
+
+            try {
+                // Fetching only Dark humor, blacklisting specific flags for safety
+                const res = await fetch('https://v2.jokeapi.dev/joke/Dark?blacklistFlags=nsfw,religious,political,racist,sexist,explicit');
+                const data = await res.json();
+
+                if (data.type === 'single') {
+                    jokeWrapper.innerHTML = `<p class="joke-text">"${data.joke}"</p>`;
+                } else {
+                    jokeWrapper.innerHTML = `
+                        <p class="joke-text setup">${data.setup}</p>
+                        <p class="joke-text delivery">${data.delivery}</p>
+                    `;
+                }
+            } catch (err) {
+                jokeWrapper.innerHTML = `<p class="joke-text">The connection is as dead as these jokes.</p>`;
+            } finally {
+                nextBtn.innerText = "NEXT JOKE";
+                nextBtn.disabled = false;
+            }
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', fetchJoke);
+        trigger.addEventListener('click', () => modal.style.display = 'flex');
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+
+        // Initial fetch
+        fetchJoke();
+    </script>
+</body>
+</html>
