@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,9 +28,21 @@
             margin-bottom: 40px;
         }
 
-        .joke-text { font-size: 2.5rem; line-height: 1.2; color: #fff; }
-        .setup { opacity: 0.6; margin-bottom: 10px; }
-        .delivery { color: #52c471; text-shadow: 0 0 10px rgba(82, 196, 113, 0.3); }
+        .joke-text {
+            font-size: 2.5rem;
+            line-height: 1.2;
+            color: #fff;
+        }
+
+        .setup {
+            opacity: 0.6;
+            margin-bottom: 10px;
+        }
+
+        .delivery {
+            color: #52c471;
+            text-shadow: 0 0 10px rgba(82, 196, 113, 0.3);
+        }
 
         /* Modern Cycle Button */
         .cycle-btn {
@@ -42,13 +55,42 @@
             cursor: pointer;
             border-radius: 4px;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
+
         .cycle-btn:hover {
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 0 20px rgba(82, 196, 113, 0.5);
         }
-        .cycle-btn:active { transform: translateY(0); }
+
+        .cycle-btn:active {
+            transform: translateY(0);
+        }
+
+
+        .exit-btn {
+            background: #e0491b;
+            color: #131313;
+            border: none;
+            padding: 15px 40px;
+            font-family: "Jersey 10", sans-serif;
+            font-size: 2rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-top: 25px;
+        }
+
+        .exit-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 20px rgba(107, 2, 2, 0.5);
+        }
+
+        .exit-btn:active {
+            transform: translateY(0);
+        }
+
 
         /* Disclaimer Styling */
         .disclaimer-bar {
@@ -61,7 +103,10 @@
             text-decoration: underline;
             transition: color 0.3s;
         }
-        .disclaimer-bar:hover { color: rgba(255, 255, 255, 0.8); }
+
+        .disclaimer-bar:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
 
         /* Modal Customization */
         .modal-text {
@@ -73,6 +118,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div id="apiInfoDialog" class="dialog-backdrop" style="display: none;">
@@ -80,7 +126,8 @@
             <h2 class="dialog-title">Legal & API Info</h2>
             <div class="modal-text">
                 <p>This page fetches dynamic content from <strong>JokeAPI</strong> (v2.jokeapi.dev).</p>
-                <p>The developer of this roadmap has no control over, nor prior knowledge of, the specific jokes generated.</p>
+                <p>The developer of this roadmap has no control over, nor prior knowledge of, the specific jokes
+                    generated.</p>
                 <p>Content is filtered for "Dark" categories and may be offensive. Use at your own discretion.</p>
             </div>
             <button id="closeInfo" class="dialog-btn">Understood</button>
@@ -93,6 +140,7 @@
         </div>
 
         <button id="nextJoke" class="cycle-btn">NEXT JOKE</button>
+        <button id="exit" class="exit-btn">EXIT</button>
 
 
         <p class="disclaimer-bar" id="disclaimerTrigger">
@@ -141,6 +189,11 @@
 
         // Initial fetch
         fetchJoke();
+
+        document.getElementById('exit').addEventListener('click', () => {
+            window.location.href = '/';
+        });
     </script>
 </body>
+
 </html>
