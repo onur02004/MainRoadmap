@@ -46,7 +46,6 @@ router.get("/account", requireAuth, (req, res) => {
   });
 });
 
-
 router.get('/kt', requireAuth, requireFeature('kt'), (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
@@ -229,6 +228,25 @@ router.get("/file-storage", requireAuth, (req, res) => {
   res.sendFile(filePath, (err) => {
     if (err) {
       console.error("Error sending fileStorage.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
+router.get("/mt", requireAuth, (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public', 
+        'features', 
+        'moodTracker.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending moodTracker.html:", err);
       res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
     }
   });

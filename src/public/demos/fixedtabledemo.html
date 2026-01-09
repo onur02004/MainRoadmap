@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+
+
+        :root {
+            --primary-bg: #131313
+        }
+
+        body {
+            margin: 0px;
+            background-color: var(--primary-bg);
+            color: white;
+            font-family: "Jersey 10", sans-serif;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar-wrapper {
+            display: flex;
+            width: calc(100px + 30%);
+            height: 100vh;
+        }
+
+        .icon-bar {
+            width: 100px;
+            background: #2c3e50;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .info-pane {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            align-items: end;
+            justify-content: start;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            /* This enables the scrollbar */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scroll-content {
+            /* This pushes the content to the bottom while allowing it to grow */
+            margin-top: auto;
+        }
+
+        /* --- Mobile Layout (< 768px) --- */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+
+            .sidebar-wrapper {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            /* Bar moves to bottom and stays fixed */
+            .icon-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 60px;
+                z-index: 100;
+            }
+
+            .info-pane {
+                width: 100%;
+                height: 200px;
+                /* Adjust as needed for the top space */
+            }
+
+            .content-area {
+                width: 100%;
+                padding-bottom: 80px;
+                /* Space so content isn't hidden by the fixed bottom bar */
+            }
+        }
+
+
+        /* #region Wave Animation (Background) */
+        .waveanim {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -100;
+        }
+
+        .waveanim .wave {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #52c471;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            transition: 0.5s;
+        }
+
+        .waveanim .wave span {
+            content: "";
+            position: absolute;
+            width: 325vh;
+            height: 325vh;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -75%);
+            background: #000;
+        }
+
+        .waveanim .wave span:nth-child(1) {
+            border-radius: 45%;
+            background: rgba(20, 20, 20, 1);
+            animation: animate 15s linear infinite;
+        }
+
+        .waveanim .wave span:nth-child(2) {
+            border-radius: 40%;
+            background: rgba(20, 20, 20, 0.5);
+            animation: animate 20s linear infinite;
+        }
+
+        .waveanim .wave span:nth-child(3) {
+            border-radius: 42.5%;
+            background: rgba(20, 20, 20, 0.5);
+            animation: animate 25s linear infinite;
+        }
+
+        @keyframes animate {
+            0% {
+                transform: translate(-50%, -75%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -75%) rotate(360deg);
+            }
+        }
+
+        /* #endregion */
+
+
+        /* #region User Info Card */
+        .userinfo {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 1rem;
+
+            background: rgba(19, 19, 19, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            overflow: hidden;
+            /* Contains the rainbow wrapper */
+        }
+
+        .profilepic {
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            z-index: 20000;
+        }
+
+        .profilbilgi {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        /* #endregion */
+
+        /* #region Animated Rainbow Background (Subtler) */
+        .wrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.15;
+            background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #dd00f3, #dd00f3);
+            background-size: 1800% 1800%;
+            animation: rainbow 18s ease infinite;
+        }
+
+        @keyframes rainbow {
+            0% {
+                background-position: 0% 82%
+            }
+
+            50% {
+                background-position: 100% 19%
+            }
+
+            100% {
+                background-position: 0% 82%
+            }
+        }
+
+        /* #endregion */
+
+        /* #region Titles */
+        .maintitleholder p {
+            line-height: 0.9;
+        }
+
+        .maintitleholder p:nth-child(1) {
+            font-size: 3rem;
+            opacity: 0.8;
+        }
+
+        .maintitleholder p:nth-child(2) {
+            font-size: 4rem;
+            color: #52c471;
+            /* Slightly increased stroke for better contrast against the glow */
+            -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
+
+            /* Add the animation */
+            animation: titlePulse 5s ease-in-out infinite;
+        }
+
+        .maintitleholder p:nth-child(3) {
+            font-size: 1.2rem;
+            opacity: 0.5;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* #endregion */
+
+        .welcomeHolder{
+            display:  flex;
+            flex-direction: column-reverse;
+            margin: 11px;
+            height: 100vh;
+        }
+
+        .mainfgupperholder{
+            display: flex;
+            flex-direction: column-reverse;
+            padding-bottom: 20px;
+        }
+
+        p{
+            margin: 0px;
+        }
+
+        /* #region Vertical Scroll Snap Calendar */
+        .vertical-cal-wrapper {
+            width: fit-content;
+            /*height: calc(100vh - 100px); */
+            overflow-y: auto;
+            scroll-snap-type: y mandatory; /* Otomatik hizalama kilit noktası */
+            padding-bottom: 50px; /* Alttan biraz boşluk */
+            
+            /* Scrollbar gizleme */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        .vertical-cal-wrapper::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        /* Gün Kartı (Satır) */
+        .v-day-card {
+            /* Mobilde ekranın %20-25'ini kaplasın ki odaklanılabilsin */
+            height: 120px; 
+            margin: 15px 10px;
+            scroll-snap-align: center; /* Kart ekranın ortasına yapışsın */
+            
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+
+
+            width: min-content;
+        }
+
+        /* Sol Taraf: Tarih */
+        .v-date-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            min-width: 60px;            
+        }
+        .v-day-text {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .v-day-num {
+            font-size: 3rem;
+            line-height: 1;
+            color: white;
+        }
+
+        /* Orta: İçerik / Skor */
+        .v-content {
+            flex-grow: 1;
+        }
+        .v-score-bar {
+            height: 6px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .v-score-fill {
+            height: 100%;
+            border-radius: 10px;
+            width: 0%; /* JS ile dinamikleşir, şimdilik CSS'te width veriyoruz */
+            box-shadow: 0 0 10px currentColor;
+        }
+        .v-status-text {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        /* Sağ: Aksiyon İkonu */
+        .v-action {
+            font-size: 1.5rem;
+            opacity: 0.2;
+        }
+
+        /* --- DURUMLAR --- */
+
+        /* BUGÜN */
+        .v-day-card.today {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(82, 196, 113, 0.5);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            gap: 30px;
+        }
+        .v-day-card.today .v-day-text { color: #52c471; font-weight: bold; }
+        .v-day-card.today::before {
+            content: "TODAY";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            opacity: 0.03;
+            pointer-events: none;
+            font-weight: 900;
+        }
+
+        /* GELECEK (Gray Area) */
+        .v-day-card.future {
+            opacity: 0.25;
+            filter: grayscale(100%);
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(0,0,0,0.2),
+                rgba(0,0,0,0.2) 10px,
+                rgba(0,0,0,0.3) 10px,
+                rgba(0,0,0,0.3) 20px
+            );
+            pointer-events: none; /* Tıklanamaz */
+            border-style: dashed;
+        }
+
+        /* SKOR RENKLERİ */
+        .sc-good { background-color: #52c471; opacity: .7;}
+        .sc-good .v-score-fill { background: #52c471; width: 90%; }
+        
+        .sc-avg { background-color: orange; opacity: .7;}
+        .sc-avg .v-score-fill { background: orange; width: 50%; }
+        
+        .sc-bad { background-color: #ff3232; opacity: .7;}
+        .sc-bad .v-score-fill { background: #ff3232; width: 20%; }
+
+        /* Mobil Optimizasyon */
+        @media (max-width: 600px) {
+            .v-day-card { height: 100px; padding: 0 15px; margin: 10px; }
+            .v-day-num { font-size: 2.5rem; }
+            .v-status-text { font-size: 1rem; }
+        }
+        /* #endregion */
+
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <section class="waveanim">
+            <div class="wave">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </section>
+
+        <aside class="sidebar-wrapper">
+            <div>
+                <nav class="icon-bar">Bar (100px)</nav>
+                <nav class="icon-bar">Bar (100px)</nav>
+            </div>
+            <div class="welcomeHolder">
+                <div class="mainfgupperholder">
+
+                    <div class="userinfo">
+                        <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
+
+                        <div class="profilbilgi">
+                            <p id="authLabel"></p>
+                            <div class="logged-in-infos">
+                                <p style="font-size: 2rem;" id="usernameLabel">Username</p>
+                                <p id="realnameLabel">Real Name</p>
+                                <p id="roleLabel">Role</p>
+                            </div>
+                            <div class="wrapper"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="maintitleholder">
+                        <p style="font-size: 3.5em; font-weight: 200">Welcome To</p>
+                        <p style="font-size: 5.5em; font-weight: 400">Main Roadmap</p>
+                        <p style="font-size: 1em; font-weight: 400; padding-bottom: 10px;">
+                            Built By: Onur Dönmez
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area" style="padding: 0; overflow: hidden;"> 
+            
+        </main>
+
+    </div>  
+</body>
+
+</html>

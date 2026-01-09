@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Roadmap Denied</title>
+    <link rel="stylesheet" href="mainsitestyle.css">
+    <style>
+        .error-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .error-code { font-size: 10rem; color: #52c471; margin: 0; line-height: 1; }
+        .naas-reason { 
+            font-size: 2.5rem; 
+            max-width: 800px; 
+            margin: 20px 0; 
+            color: #fff;
+            opacity: 0.9;
+        }
+        .naas-label { font-size: 1rem; color: #52c471; opacity: 0.5; margin-bottom: 40px; }
+        .back-btn {
+            padding: 12px 40px;
+            border: 2px solid #52c471;
+            color: #52c471;
+            text-decoration: none;
+            font-size: 1.8rem;
+            transition: 0.3s;
+        }
+        .back-btn:hover { background: #52c471; color: #131313; box-shadow: 0 0 20px rgba(82, 196, 113, 0.4); }
+        
+        .error-label{
+
+        }
+
+        .textHolder{
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="textHolder">
+            <h1 class="error-code">404</h1>
+            <h7 class="error-label">error</h7>
+        </div>
+        <div id="no-content" class="naas-reason">Calculating rejection...</div>
+        <p class="naas-label">REJECTION PROVIDED BY NO-AS-A-SERVICE</p>
+        <a href="/" class="back-btn">RETURN TO ROADMAP</a>
+    </div>
+
+    <script>
+        async function fetchNo() {
+            const display = document.getElementById('no-content');
+            try {
+                // Fetching from the official NaaS API
+                const response = await fetch('https://naas.isalman.dev/no');
+                const data = await response.json();
+                display.innerText = `"${data.reason}"`;
+            } catch (err) {
+                // Fallback if the API is unreachable
+                display.innerText = "The roadmap says no, but it's being too polite to say why.";
+            }
+        }
+        fetchNo();
+    </script>
+</body>
+</html>

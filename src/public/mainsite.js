@@ -80,7 +80,7 @@
                         // Populate the holder with the latest message and a bell icon
                         holder.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px; padding: 10px; width: 100%;">
-                    <span style="font-size: 1.5rem;">🔔</span>
+                    <span style="font-size: 1.5rem; max-width: 90vw";>🔔</span>
                     <div style="overflow: hidden;">
                         <p style="margin: 0; font-weight: bold; color: #52c471;">${last.title}</p>
                         <p style="margin: 0; font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
@@ -134,10 +134,25 @@
 
 
         } else {
-            loggedInInfos[0].style.display = 'none';
-            label.innerHTML = `<a href="/login.html" style="text-decoration:underline">Login</a>`;
-            console.log('User is not authenticated');
-            document.getElementById('featuresyazisi').style.display = 'none';
+            const notifHolder = document.querySelector('.notificationMainHolder');
+    if (notifHolder) notifHolder.style.display = 'none';
+
+    // 2. Clear the internal content of the user info card
+    const userInfoCard = document.querySelector('.userinfo');
+    if (userInfoCard) {
+        // Remove existing items like the profile pic and labels
+        userInfoCard.innerHTML = `
+            <a href="/login.html" class="full-space-login">
+                <span>LOGIN TO ACCESS ROADMAP</span>
+            </a>
+        `;
+        // Adjust padding to let the button fill the edges
+        userInfoCard.style.padding = '0'; 
+    }
+
+    // 3. Hide other elements as before
+    const featuresLabel = document.getElementById('featuresyazisi');
+    if (featuresLabel) featuresLabel.style.display = 'none';
 
         }
     } catch (err) {

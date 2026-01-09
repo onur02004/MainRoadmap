@@ -515,7 +515,8 @@ html.leaving { transition: opacity .18s ease; opacity: 0; }
     position: relative; 
     margin: 6vh auto 0; 
     width: min(980px, 92vw); 
-    max-height: 88vh;
+    height: 90vh;
+    max-height: 90vh;
     background: rgba(19,19,19,.9); 
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 14px; 
@@ -605,3 +606,75 @@ input:disabled + .slider:before { background-color: #555; }
 .switch.small { width: 40px; height: 22px; }
 .switch.small .slider:before { height: 16px; width: 16px; bottom: 2px; }
 .switch.small input:checked + .slider:before { transform: translateX(18px); }
+
+/* Modern Avatar Picker Layout */
+.pm-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr; /* Sidebar and Content Area */
+    height: 100%;
+}
+
+.pm-sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 15px 10px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.category-btn {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: transparent;
+    border: none;
+    color: #888;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.category-btn.active {
+    background: #52c471;
+    color: #131313;
+    font-weight: 600;
+}
+
+.pm-main-content {
+    padding: 24px;
+    overflow-y: auto;
+    background: linear-gradient(to bottom right, rgba(255,255,255,0.02), transparent);
+}
+
+/* Skeleton Loading State */
+.skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: skeleton-wave 1.5s infinite;
+    border-radius: 12px;
+}
+
+@keyframes skeleton-wave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .pm-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .pm-sidebar { 
+        display: flex; 
+        overflow-x: auto; 
+        border-right: none; 
+        border-bottom: 1px solid rgba(255,255,255,0.08); 
+        padding: 10px;
+        gap: 10px;
+    }
+    .category-btn { width: auto; white-space: nowrap; margin-bottom: 0; }
+}

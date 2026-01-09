@@ -343,8 +343,8 @@
           const adminBtn = document.getElementById('adminPanelBtn');
           if (adminBtn) {
             // Make the button visible
-            adminBtn.style.display = 'block'; 
-            
+            adminBtn.style.display = 'block';
+
             // Add navigation functionality
             adminBtn.addEventListener('click', () => {
               window.location.href = '/admin'; // Redirect to your admin route
@@ -373,49 +373,122 @@
     profileModal.querySelector('.pm-backdrop').addEventListener('click', closeProfileModal);
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !profileModal.hidden) closeProfileModal(); });
 
-    
+
     document.getElementById('changeAvatarBtn').addEventListener('click', changeAvatar);
     document.querySelector('.profilepic').addEventListener('click', changeAvatar);
 
+    let avatarData = []; // Store fetched data globally
+
     async function changeAvatar() {
       openProfileModal();
-      pmContent.innerHTML = '<div class="pm-loading">Loading…</div>';
+      pmContent.innerHTML = '<div class="pm-loading">Loading Collections...</div>';
+
       try {
         const res = await fetch('/api/avatars', { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load');
         const { people = [] } = await res.json();
-        if (!people.length) {
-          pmContent.innerHTML = '<p class="pm-hint">No avatar sets found yet. Ask admin to add images under <code>/media/avatars/&lt;name&gt;</code>.</p>';
+        avatarData = people;
+
+        if (!avatarData.length) {
+          pmContent.innerHTML = '<p class="pm-hint">No avatars found.</p>';
           return;
         }
-        renderAvatars(people);
+
+        renderModernLayout();
       } catch (err) {
         console.error(err);
         pmContent.innerHTML = '<p class="pm-hint">Could not load avatars.</p>';
       }
     }
 
-    function renderAvatars(people) {
-      pmContent.innerHTML = '';
-      people.forEach(p => {
-        const sec = document.createElement('section');
-        sec.className = 'pm-person';
-        sec.innerHTML = `<h3>${escapeHtml(p.name)}</h3>`;
-        const grid = document.createElement('div');
-        grid.className = 'pm-grid';
-        (p.images || []).forEach(img => {
-          const card = document.createElement('button');
-          card.type = 'button';
-          card.className = 'pm-pick';
-          card.innerHTML = `
-          <img src="${img.url}" alt="">
-          <small>${escapeHtml(img.file)}</small>
-        `;
-          card.addEventListener('click', () => selectAvatar(img));
-          grid.appendChild(card);
-        });
-        sec.appendChild(grid);
-        pmContent.appendChild(sec);
+    function renderModernLayout() {
+      // Create the split-screen structure
+      pmContent.innerHTML = `
+    <div class="pm-layout">
+      <aside class="pm-sidebar" id="pmSidebar"></aside>
+      <main class="pm-main-content" id="pmMain"></main>
+    </div>
+  `;
+
+      const sidebar = document.getElementById('pmSidebar');
+
+      avatarData.forEach((person, index) => {
+        const btn = document.createElement('button');
+        btn.className = `category-btn ${index === 0 ? 'active' : ''}`;
+        btn.innerText = person.name;
+        btn.onclick = () => {
+          // Update Active State
+          document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderCategory(person.name);
+        };
+        sidebar.appendChild(btn);
+      });
+
+      // Render the first category by default
+      renderCategory(avatarData[0].name);
+    }
+
+    function renderCategory(name) {
+      const main = document.getElementById('pmMain');
+      const person = avatarData.find(p => p.name === name);
+
+      main.innerHTML = `<div class="pm-grid" id="activeGrid"></div>`;
+      const grid = document.getElementById('activeGrid');
+
+      if (!person || !person.images.length) {
+        grid.innerHTML = '<p>No images in this collection.</p>';
+        return;
+      }
+
+      person.images.forEach(img => {
+        const card = document.createElement('button');
+        card.className = 'pm-pick';
+
+        // Modern Image Loading with Placeholder
+        card.innerHTML = `
+      <div class="skeleton-container">
+        <img src="${img.url}" loading="lazy" alt="" onload="this.parentElement.classList.remove('skeleton')">
+      </div>
+      <small>${escapeHtml(img.file)}</small>
+    `;
+
+        card.querySelector('.skeleton-container').classList.add('skeleton');
+        card.onclick = () => selectAvatar(img);
+        grid.appendChild(card);
+      });
+    }
+
+    function switchCategory(name, activeBtn) {
+      if (activeBtn) {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        activeBtn.classList.add('active');
+      }
+
+      const main = document.getElementById('pmMain');
+      const person = avatarCollections.find(p => p.name === name);
+
+      main.innerHTML = `<div class="pm-grid" id="avatarGrid"></div>`;
+      const grid = document.getElementById('avatarGrid');
+
+      person.images.forEach(img => {
+        const item = document.createElement('div');
+        item.className = 'pm-pick skeleton'; // Start with skeleton state
+
+        const imageObj = new Image();
+        imageObj.src = img.url;
+        imageObj.loading = "lazy"; // Browser native lazy load
+
+        imageObj.onload = () => {
+          item.classList.remove('skeleton');
+          item.innerHTML = `
+                <img src="${img.url}" alt="">
+                <small>${escapeHtml(img.file)}</small>
+            `;
+        };
+
+        item.onclick = () => selectAvatar(img);
+        grid.appendChild(item);
       });
     }
 

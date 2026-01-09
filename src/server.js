@@ -60,8 +60,9 @@ app.get("/media/*", requireAuth, (req, res) => {
 
   // check exists
   if (!fs.existsSync(absolutePath)) {
-    return res.status(404).json({ error: "not found" });
-  }
+  // Instead of: return res.status(404).json({ error: "not found" });
+  return res.status(404).sendFile(path.join(__dirname, "public", "error.html"));
+}
 
   // send file
   res.sendFile(absolutePath, (err) => {
@@ -108,6 +109,8 @@ app.get("/", (req, res) => {
 });
 
 
+
+
 app.get("/adjustled", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "adjustled.html"));
 });
@@ -139,6 +142,16 @@ app.post("/api/led", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
+});
+
+// 404 Handler (Placed after all other routes)
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "public", "error.html"));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).sendFile(path.join(__dirname, "public", "error.html"));
 });
 
 //setInterval(async () => {
