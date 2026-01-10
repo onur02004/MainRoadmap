@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import requireAuth from '../middleware/requireAuth.js';
 import { q } from '../db/pool.js'; // Use 'q' as defined in your pool.js
+import { requireFeature } from "../middleware/requireAuth.js";
 
 const router = Router();
 
