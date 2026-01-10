@@ -135,24 +135,24 @@
 
         } else {
             const notifHolder = document.querySelector('.notificationMainHolder');
-    if (notifHolder) notifHolder.style.display = 'none';
+            if (notifHolder) notifHolder.style.display = 'none';
 
-    // 2. Clear the internal content of the user info card
-    const userInfoCard = document.querySelector('.userinfo');
-    if (userInfoCard) {
-        // Remove existing items like the profile pic and labels
-        userInfoCard.innerHTML = `
+            // 2. Clear the internal content of the user info card
+            const userInfoCard = document.querySelector('.userinfo');
+            if (userInfoCard) {
+                // Remove existing items like the profile pic and labels
+                userInfoCard.innerHTML = `
             <a href="/login.html" class="full-space-login">
                 <span>LOGIN TO ACCESS ROADMAP</span>
             </a>
         `;
-        // Adjust padding to let the button fill the edges
-        userInfoCard.style.padding = '0'; 
-    }
+                // Adjust padding to let the button fill the edges
+                userInfoCard.style.padding = '0';
+            }
 
-    // 3. Hide other elements as before
-    const featuresLabel = document.getElementById('featuresyazisi');
-    if (featuresLabel) featuresLabel.style.display = 'none';
+            // 3. Hide other elements as before
+            const featuresLabel = document.getElementById('featuresyazisi');
+            if (featuresLabel) featuresLabel.style.display = 'none';
 
         }
     } catch (err) {

@@ -717,3 +717,34 @@ ALTER TABLE notification_events ADD COLUMN is_read BOOLEAN DEFAULT false;
 ALTER TYPE notification_type ADD VALUE 'reaction';
 ALTER TYPE notification_type ADD VALUE 'comment';
 ALTER TYPE notification_type ADD VALUE 'play_event';
+
+
+CREATE TABLE mood_entries (
+    id SERIAL PRIMARY KEY,
+    -- Match the UUID type from your users table
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, 
+    log_date DATE NOT NULL,
+    rating VARCHAR(10) NOT NULL, -- 'green', 'blue', 'yellow', 'red'
+    note TEXT,
+    image_data TEXT, -- Stores the base64 string
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Keep this to prevent duplicate entries for the same day
+    UNIQUE(user_id, log_date)
+);
+
+-- Create an index to make lookups fast as the table grows
+CREATE INDEX idx_mood_user_date ON mood_entries(user_id, log_date);
+
+
+DROP TABLE IF EXISTS mood_entries;
+
+CREATE TABLE mood_entries (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, 
+    log_date DATE NOT NULL,
+    rating VARCHAR(10) NOT NULL,
+    note TEXT,
+    image_data TEXT, 
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, log_date)
+);

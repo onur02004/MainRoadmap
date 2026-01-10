@@ -21,6 +21,7 @@ import notificationHelper from "./helpers/notificationHelper.js";
 import storageRoutes from "./routes/storage.js";
 import publicShareRoutes from "./routes/publicShare.js";
 import notificationsRoute from "./routes/notifications.js";
+import moodRoutes from "./routes/moodRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -30,7 +31,7 @@ const PORT = 3000;
 
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(fitnessRoutes);
 app.use(deviceRoutes); 
 app.use(adminRoutes);
@@ -43,6 +44,7 @@ app.use(notificationHelper);
 app.use(storageRoutes);
 app.use(publicShareRoutes);
 app.use(notificationsRoute);
+app.use(moodRoutes);
 
 //PROTECTED
 //PROTECTED

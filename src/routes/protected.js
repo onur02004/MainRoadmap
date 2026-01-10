@@ -233,7 +233,7 @@ router.get("/file-storage", requireAuth, (req, res) => {
   });
 });
 
-router.get("/mt", requireAuth, (req, res) => {
+router.get("/mt", requireAuth, requireFeature('mt'), (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
   const filePath = path.join(
@@ -252,7 +252,7 @@ router.get("/mt", requireAuth, (req, res) => {
   });
 });
 
-router.get("/jks", requireAuth, (req, res) => {
+router.get("/jks", requireAuth , requireFeature('jks'), (req, res) => {
   const projectRoot = path.join(__dirname, '../..');
 
   const filePath = path.join(
