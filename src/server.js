@@ -18,6 +18,7 @@ import userRoutes from "./routes/userRoutes.js";
 import wishlistRouter from './routes/wishlistRoutes.js'; 
 import { trackActivity } from "./middleware/activityTracker.js";
 import notificationHelper from "./helpers/notificationHelper.js";
+import { sendEmail } from "./helpers/emailHelper.js";
 import storageRoutes from "./routes/storage.js";
 import publicShareRoutes from "./routes/publicShare.js";
 import notificationsRoute from "./routes/notifications.js";

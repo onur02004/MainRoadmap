@@ -176,7 +176,9 @@ router.get("/meinfo", async (req, res) => {
               tel_nr,
               location,
               profile_pic_path,
-              updated_at
+              updated_at,
+              email_verified,
+              email_confirmed_by_user
        FROM users
        WHERE user_name = $1
        LIMIT 1`,
@@ -207,7 +209,9 @@ router.get("/meinfo", async (req, res) => {
       location: user.location,
       profilePic: user.profile_pic_path,
       updatedAt: user.updated_at,
-      features: feats.rows.map(r => r.key) // e.g. ['x','y']
+      features: feats.rows.map(r => r.key),
+      email_verified: user.email_verified,
+      email_confirmed_by_user: user.email_confirmed_by_user
     });
   } catch (err) {
     console.error("Error retrieving user info:", err);
@@ -311,7 +315,7 @@ router.get("/api/me", requireAuth, async (req, res) => {
 });
 
 
-//FORGOT PASSWORD
+//FORGOT PASSWORD CALISMIYO 
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body || {};
   console.log("Birisi email forgot etti =>", email);
@@ -383,7 +387,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-
+//CALISMIYO
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body || {};
 
@@ -439,6 +443,112 @@ router.post("/reset-password", async (req, res) => {
 });
 
 
+// GET /api/me/notifications - Fetch current notification settings
+router.get("/api/me/notifications", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await q(
+      `SELECT push_enabled, email_enabled, 
+              push_login, push_public_share, push_direct_share, push_post_comment, push_post_reaction, push_song_played,
+              email_login, email_public_share, email_direct_share, email_post_comment, email_post_reaction, email_song_played
+       FROM user_notification_settings 
+       WHERE user_id = $1`,
+      [req.user.sub]
+    );
+
+    if (rows.length === 0) {
+      // If no settings exist yet, create default entry or return defaults
+      return res.json({
+        push_enabled: true,
+        email_enabled: false,
+        push_login: true,
+        // ... fill other defaults matching your DB schema
+      });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Failed to fetch notification settings:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /api/me/notifications - Update specific notification settings
+router.patch("/api/me/notifications", requireAuth, async (req, res) => {
+  try {
+    const settings = req.body;
+    // In auth.js
+    const allowedKeys = [
+      'push_enabled', 'email_enabled',
+      'push_login', 'push_public_share', 'push_direct_share', 'push_post_comment', 'push_post_reaction', 'push_song_played',
+      'email_login', 'email_public_share', 'email_direct_share', 'email_post_comment', 'email_post_reaction', 'email_song_played'
+    ];
+
+    // Filter body to only include valid columns
+    const updates = {};
+    for (const key of allowedKeys) {
+      if (typeof settings[key] === 'boolean') {
+        updates[key] = settings[key];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid settings provided" });
+    }
+
+    // Build dynamic SQL query
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 2}`)
+      .join(', ');
+    const values = [req.user.sub, ...Object.values(updates)];
+
+    const query = `
+      UPDATE user_notification_settings 
+      SET ${setClause}, updated_at = NOW() 
+      WHERE user_id = $1 
+      RETURNING *`;
+
+    const { rows } = await q(query, values);
+    res.json({ ok: true, settings: rows[0] });
+  } catch (err) {
+    console.error("Failed to update notification settings:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/notifications/global-status - Check if systems/categories are globally enabled
+router.get("/api/notifications/global-status", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await q(`SELECT feature_key, is_enabled FROM global_notification_controls`);
+    // Convert array to a key-value object for easier frontend lookup: { email_login: true, ... }
+    const statusMap = rows.reduce((acc, row) => {
+      acc[row.feature_key] = row.is_enabled;
+      return acc;
+    }, {});
+
+    res.json(statusMap);
+  } catch (err) {
+    console.error("Error fetching global status:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/me/push-subscription-status - Check if user has registered push devices
+router.get("/api/me/push-subscription-status", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await q(
+      `SELECT COUNT(*) as count FROM push_subscriptions WHERE user_id = $1`,
+      [req.user.sub]
+    );
+
+    const hasSubscription = parseInt(rows[0].count) > 0;
+    res.json({ hasSubscription });
+  } catch (err) {
+    console.error("Error checking push subscription:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 //POST WEIGHT INPUT
 router.post('/api/weight', requireAuth, express.json(), async (req, res) => {
   try {
@@ -468,6 +578,7 @@ router.post('/api/weight', requireAuth, express.json(), async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 // GET /api/weights?days=7|30|90|180|365
 router.get('/api/weights', requireAuth, async (req, res) => {
@@ -518,6 +629,7 @@ router.get('/api/weights', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 router.patch('/api/weight/:date', requireAuth, express.json(), async (req, res) => {
   try {

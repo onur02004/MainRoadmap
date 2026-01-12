@@ -580,7 +580,7 @@ html.leaving { transition: opacity .18s ease; opacity: 0; }
 .pm-hint { color: #aaa; font-size: .85rem; }
 
 /* --- Settings Content Styles --- */
-.st-section { margin-bottom: 20px; }
+.st-section { margin-bottom: 20px;     padding: 12px 14px;}
 .st-heading { color: #fff; font-size: 1.4rem; font-weight: 400; margin-bottom: 4px; }
 .st-desc { color: #aaa; font-size: 0.9rem; margin-bottom: 15px; }
 .st-divider { border: 0; height: 1px; background: rgba(255, 255, 255, 0.1); margin: 20px 0; }
@@ -677,4 +677,52 @@ input:disabled + .slider:before { background-color: #555; }
         gap: 10px;
     }
     .category-btn { width: auto; white-space: nowrap; margin-bottom: 0; }
+}
+
+/* --- Input & Action Button Styles --- */
+.st-row.column {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.st-input-group {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+.st-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.st-input:focus {
+    border-color: #52c471;
+}
+
+.st-save-btn {
+    background: #52c471;
+    color: #131313;
+    border: none;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s active, opacity 0.2s;
+}
+
+.st-save-btn:hover {
+    opacity: 0.9;
+}
+
+.st-save-btn:active {
+    transform: scale(0.95);
 }

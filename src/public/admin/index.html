@@ -428,6 +428,8 @@
             <button onclick="showSection('dashboard')" class="active">Dashboard</button>
             <button onclick="showSection('users')">User Management</button>
             <button onclick="showSection('features')">Feature Management</button>
+            <button onclick="showSection('notifications')">Notifications</button>
+
             <button onclick="window.location.href='/account'" class="btn-default" style="margin-left: auto;">Exit to
                 Account</button>
         </div>
@@ -474,6 +476,23 @@
 
                 <div id="features-list">
                     <div class="loading">Loading features...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifications-section" class="section" style="display: none;">
+            <div class="card">
+                <h2>Global Notification Kill-Switches</h2>
+                <p style="color: #aaa; margin-bottom: 20px;">Turning these OFF overrides all user settings and stops the
+                    system from sending alerts.</p>
+
+                <div id="master-switches-grid"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                </div>
+
+                <h3>Category Controls</h3>
+                <div id="notification-controls-table">
+                    <div class="loading">Loading controls...</div>
                 </div>
             </div>
         </div>
@@ -638,6 +657,7 @@
             if (section === 'dashboard') loadDashboard();
             if (section === 'users') loadUsers();
             if (section === 'features') loadFeatures();
+            if (section === 'notifications') loadNotificationControls();
         }
 
         // Dashboard functions
@@ -1143,6 +1163,72 @@
             if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
             return date.toLocaleDateString();
         }
+
+
+        async function loadNotificationControls() {
+            try {
+                const response = await fetch('/admin/notification-controls', { credentials: 'include' });
+                const data = await response.json();
+
+                const masterGrid = document.getElementById('master-switches-grid');
+                const tableDiv = document.getElementById('notification-controls-table');
+
+                // Split data into Systems vs Categories
+                const masters = data.filter(c => c.feature_key.includes('_system_master'));
+                const categories = data.filter(c => !c.feature_key.includes('_system_master'));
+
+                // Render System Masters (Big Boxes)
+                masterGrid.innerHTML = masters.map(m => `
+            <div class="stat-card" style="border: 1px solid ${m.is_enabled ? '#52c471' : '#e74c3c'};">
+                <div class="stat-label">${m.feature_key.replace('_system_master', '').toUpperCase()} SYSTEM</div>
+                <div style="margin-top: 10px;">
+                    <label class="switch">
+                        <input type="checkbox" ${m.is_enabled ? 'checked' : ''} onchange="toggleMasterControl('${m.feature_key}', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        `).join('');
+
+                // Render Individual Categories
+                tableDiv.innerHTML = `
+            <table>
+                <thead>
+                    <tr><th>Notification Type</th><th>Status</th><th>Toggle</th></tr>
+                </thead>
+                <tbody>
+                    ${categories.map(c => `
+                        <tr>
+                            <td>${c.feature_key.replace(/_/g, ' ').toUpperCase()}</td>
+                            <td style="color: ${c.is_enabled ? '#52c471' : '#e74c3c'}">${c.is_enabled ? 'Active' : 'Disabled'}</td>
+                            <td>
+                                <label class="switch small">
+                                    <input type="checkbox" ${c.is_enabled ? 'checked' : ''} onchange="toggleMasterControl('${c.feature_key}', this.checked)">
+                                    <span class="slider round"></span>
+                                </label>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+            } catch (error) {
+                console.error("Failed to load notifications:", error);
+            }
+        }
+
+        async function toggleMasterControl(key, status) {
+            await fetch("/admin/notification-controls", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feature_key: key, is_enabled: status }),
+                credentials: 'include'
+            });
+            loadNotificationControls(); // Refresh UI
+        }
+
+        // Update your showSection function to include:
+        // if (section === 'notifications') loadNotificationControls();
 
         checkAdminStatus();
     </script>

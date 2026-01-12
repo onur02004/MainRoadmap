@@ -453,35 +453,71 @@ router.post("/api/music/suggestions", requireAuth, async (req, res) => {
     try {
         const result = await q(sql, params);
 
-        if (!isPublic && Array.isArray(targetUsers) && targetUsers.length > 0) {
-            console.log("Notifying user about the shared music");
-            const { rows: userRows } = await q(
-                "SELECT user_name FROM users WHERE id = $1",
-                [userId]
-            );
-            const recommenderName = userRows[0]?.user_name || "Someone";
+        // if (!isPublic && Array.isArray(targetUsers) && targetUsers.length > 0) {
+        //     console.log("Notifying user about the shared music");
+        //     const { rows: userRows } = await q(
+        //         "SELECT user_name FROM users WHERE id = $1",
+        //         [userId]
+        //     );
+        //     const recommenderName = userRows[0]?.user_name || "Someone";
 
-            const { rows: suggestedSongRows } = await q(
-                "SELECT id FROM song_suggestions WHERE user_id = $1 AND spotify_uri = $2",
-                [userId, uri]
-            );
+        //     const { rows: suggestedSongRows } = await q(
+        //         "SELECT id FROM song_suggestions WHERE user_id = $1 AND spotify_uri = $2",
+        //         [userId, uri]
+        //     );
 
-            const recommendedSongID = suggestedSongRows[0]?.id || "Yikes";
-            const trimmedComment = typeof comment === "string" ? comment.trim() : "";
-            const commentPart = trimmedComment ? ` || With Comment: ${trimmedComment}` : "";
+        //     const recommendedSongID = suggestedSongRows[0]?.id || "Yikes";
+        //     const trimmedComment = typeof comment === "string" ? comment.trim() : "";
+        //     const commentPart = trimmedComment ? ` || With Comment: ${trimmedComment}` : "";
 
 
-            for (const targetUserId of targetUsers) {
+        //     for (const targetUserId of targetUsers) {
+        //         await notifyUserByType({
+        //             userId: targetUserId,
+        //             type: NotificationType.DIRECT_SHARE,
+        //             title: "New music suggestion",
+        //             body: `${recommenderName} suggested: ${name} – ${artist}${commentPart}`,
+        //             data: {
+        //                 suggestionId: recommendedSongID,
+        //                 spotifyUri: uri,
+        //             },
+        //             imageUrl: imageUrl || "https://pi.330nur.org/content/deafult.jpg"
+        //         });
+        //     }
+        // }
+
+        const newPost = result.rows[0];
+
+        const { rows: senderRows } = await q("SELECT user_name FROM users WHERE id = $1", [req.user.sub]);
+        const senderName = senderRows[0]?.user_name || "Someone";
+
+        // SCENARIO 1: Private Post (Direct Share)
+        if (!isPublic && Array.isArray(targetUsers)) {
+            for (const targetId of targetUsers) {
                 await notifyUserByType({
-                    userId: targetUserId,
-                    type: NotificationType.DIRECT_SHARE,
-                    title: "New music suggestion",
-                    body: `${recommenderName} suggested: ${name} – ${artist}${commentPart}`,
-                    data: {
-                        suggestionId: recommendedSongID,
-                        spotifyUri: uri,
-                    },
-                    imageUrl: imageUrl || "https://pi.330nur.org/content/deafult.jpg"
+                    userId: targetId,
+                    type: 'direct_share', // Matches DB column 'push_direct_share' / 'email_direct_share'
+                    title: "New Private Suggestion",
+                    body: `${senderName} sent you a song: ${name}`,
+                    data: { suggestionId: newPost.id },
+                    imageUrl: imageUrl
+                });
+            }
+        }
+
+        // SCENARIO 2: Public Post
+        if (isPublic) {
+            // Notify all active users (who are not the sender)
+            const { rows: allUsers } = await q("SELECT id FROM users WHERE id != $1 AND is_verified = true", [req.user.sub]);
+
+            for (const user of allUsers) {
+                await notifyUserByType({
+                    userId: user.id,
+                    type: 'public_share', // Matches DB column 'push_public_share'
+                    title: "New Public Post",
+                    body: `${senderName} shared a new song with everyone: ${name}`,
+                    data: { suggestionId: newPost.id },
+                    imageUrl: imageUrl
                 });
             }
         }

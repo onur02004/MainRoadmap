@@ -108,7 +108,6 @@
             setInterval(updateWebNotifications, 60000);
 
 
-            console.log('User features (from /api/session):', uniq);
 
             const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
             const pic = document.querySelector('.profilepic');
@@ -131,6 +130,90 @@
                 document.getElementById('profileWarning').style.display = 'none';
             }
 
+
+            // ... inside if (data.authenticated) block ...
+
+            const userEmailStatus = async () => {
+                // Check if the user has opted out of seeing these prompts
+                const hidePrompt = localStorage.getItem('hideEmailPrompt');
+                if (hidePrompt === 'true') return;
+
+                const notificationHolder = document.querySelector('.notificationMainHolder');
+
+                if(me.email && me.email_verified){
+                    console.log("has email and verified");
+                }
+                // SCENARIO 1: No email exists
+                else if (!me.email) {
+                    showEmailPrompt(
+                        "Add email for roadmap updates?",
+                        "Get notified about new features and activities.",
+                        "Add Email",
+                        "/account" // Redirect to account to add email
+                    );
+                }
+                // SCENARIO 2: Email exists but is NOT verified AND NOT confirmed by user prompt
+                else if (me.email && !me.email_verified) {
+                    showEmailPrompt(
+                        `Is ${me.email} correct?`,
+                        "Confirm your email to receive important alerts.",
+                        "Verify Now",
+                        null, // Logic handled by button click
+                        true  // isVerification flag
+                    );
+                    
+                }
+            };
+
+            const showEmailPrompt = (title, body, actionText, actionLink, isVerification = false) => {
+                const holder = document.querySelector('.notificationMainHolder');
+                holder.style.height = "auto";
+                holder.style.padding = "15px";
+                holder.style.flexDirection = "column";
+                holder.style.alignItems = "flex-start";
+
+                holder.innerHTML = `
+        <div style="width: 100%;">
+            <p style="margin: 0; font-weight: bold; color: #52c471;">${title}</p>
+            <p style="margin: 5px 0 15px 0; font-size: 0.9rem; opacity: 0.8;">${body}</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="emailActionBtn" class="dialog-btn" style="margin:0; padding: 5px 15px; font-size: 1rem;">${actionText}</button>
+                <button id="emailIgnoreBtn" style="background:transparent; color:#fff; border:1px solid #444; cursor:pointer; border-radius:8px; padding: 5px 15px;">Ignore</button>
+                <button id="emailNeverBtn" style="padding: 10px; border-radius:11px; background:#ff4444; border:none; cursor:pointer; font-size: 0.8rem;">Never show again</button>
+            </div>
+        </div>
+    `;
+
+                // Handle "Add/Verify" Button
+                document.getElementById('emailActionBtn').addEventListener('click', async () => {
+                    if (isVerification) {
+                        // Call the endpoint you created earlier to trigger the verification email
+                        await fetch('/api/me/update-email', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ newEmail: me.email })
+                        });
+                        alert("Verification email sent!");
+                        localStorage.removeItem('hideEmailPrompt');
+                    } else {
+                        window.location.href = actionLink;
+                    }
+                });
+
+                // Handle "Ignore" (Closes it for this session)
+                document.getElementById('emailIgnoreBtn').addEventListener('click', () => {
+                    holder.style.display = 'none';
+                });
+
+                // Handle "Never show again" (Persistent)
+                document.getElementById('emailNeverBtn').addEventListener('click', () => {
+                    localStorage.setItem('hideEmailPrompt', 'true');
+                    holder.style.display = 'none';
+                });
+            };
+
+            // Trigger the check
+            userEmailStatus();
 
 
         } else {

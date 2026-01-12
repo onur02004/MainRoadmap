@@ -748,3 +748,33 @@ CREATE TABLE mood_entries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(user_id, log_date)
 );
+
+
+ALTER TABLE users 
+  ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN email_confirmed_by_user BOOLEAN DEFAULT NULL;
+
+
+
+CREATE TABLE global_notification_controls (
+    feature_key VARCHAR(50) PRIMARY KEY, -- e.g., 'email_login', 'push_post_comment'
+    is_enabled BOOLEAN NOT NULL DEFAULT true,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Seed with your current categories
+INSERT INTO global_notification_controls (feature_key) VALUES 
+('push_login'), ('push_post_comment'), ('push_post_reaction'), 
+('email_login'), ('email_post_comment'), ('email_post_reaction'), ('email_song_played');
+
+-- Add master switches for the entire notification systems
+INSERT INTO global_notification_controls (feature_key, is_enabled) VALUES 
+('push_system_master', true), 
+('email_system_master', true);
+
+INSERT INTO global_notification_controls (feature_key, is_enabled) VALUES 
+('push_public_share', true), 
+('push_direct_share', true),
+('email_public_share', true),
+('email_direct_share', true)
+ON CONFLICT (feature_key) DO NOTHING;

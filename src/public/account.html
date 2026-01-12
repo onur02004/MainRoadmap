@@ -6,10 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Account Details</title>
   <link rel="stylesheet" href="accountstyle.css" />
-
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-
 </head>
 
 <body>
@@ -20,59 +18,43 @@
   <div class="mainbggrid">
     <section class="waveanim">
       <div class="wave">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </div>
     </section>
 
     <div class="mainfgholder">
-
       <div class="mainfgupperholder">
-
-
-
         <div class="userinfo">
-          <img class="profilepic" src="content/deafult.jpg" alt="profile_pic">
-
-
+          <img class="profilepic" src="content/deafult.jpg" alt="profile_pic" style="cursor: pointer;">
           <div class="profilbilgi">
             <p id="authLabel"></p>
             <div class="logged-in-infos">
               <p id="usernameLabel">Username</p>
             </div>
-
-
-
             <div class="wrapper"></div>
           </div>
 
           <div class="zartzurtbilgi">
             <div class="zartzurtbilgibox">
               <h3>Join Date</h3>
-              <p id="joindatecontent">Join date Content</p>
+              <p id="joindatecontent">-</p>
             </div>
-
             <div class="zartzurtbilgibox">
               <h3>Verified</h3>
-              <p id="verificationcontent">Verification Content</p>
+              <p id="verificationcontent">-</p>
             </div>
-
             <div class="zartzurtbilgibox">
               <h3>Role</h3>
-              <p id="rolecontent">Role Content</p>
+              <p id="rolecontent">-</p>
             </div>
-
             <div class="zartzurtbilgibox" id="zartzurtbilgitel">
               <h3 style="grid-area: head;">Contact</h3>
-              <p style="grid-area: content;" id="contactcontent">Email / Tel Content</p>
-              <div style="grid-area: edit;" class="editimgholder">
+              <p style="grid-area: content;" id="contactcontent">-</p>
+              <div style="grid-area: edit;" id="emailEditIcon" class="editimgholder">
                 <img class="editimg" src="/content/editIconWhite.png" alt="Edit">
               </div>
             </div>
-
           </div>
-
         </div>
 
         <div class="maintitleholder">
@@ -80,491 +62,338 @@
           <p id="realnameLabel"
             style="font-size: 4.5em; font-weight: 400; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
             Real Name</p>
-          <p style="font-size: 1em; font-weight: 400">
-            Built By: Onur Dönmez
-          </p>
+          <p style="font-size: 1em; font-weight: 400">Built By: Onur Dönmez</p>
         </div>
-
       </div>
 
       <div class="mainfglowerholder">
         <div data-aos="fade-up" class="routeoption" id="changeAvatarBtn">
           <h1>Update My Profile Pic</h1>
         </div>
-
-        <div data-aos="fade-up" class="routeoption" notavailable>
-          <h1>My Images</h1>
-        </div>
-
-        <div data-aos="fade-up" class="routeoption" notavailable>
-          <h1>Relations</h1>
-        </div>
-
         <div data-aos="fade-up" class="routeoption" id="settingsButton">
           <h1>Settings</h1>
         </div>
-
         <div data-aos="fade-up" class="routeoption" id="adminPanelBtn" style="display: none;">
           <h1>Admin Panel</h1>
         </div>
-
         <div data-aos="fade-up" class="routeoption" id="logoutholder">
           <h1 id="logoutButton">Log Out</h1>
         </div>
-
-
       </div>
-
     </div>
   </div>
 
-  <!-- Profile / Avatar modal -->
   <div id="profileModal" hidden>
     <div class="pm-backdrop"></div>
-    <div class="pm-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+    <div class="pm-dialog">
       <div class="pm-head">
         <h2 id="pm-title">Choose a profile picture</h2>
-        <button class="pm-close" type="button" aria-label="Close">✕</button>
+        <button class="pm-close">✕</button>
       </div>
-      <div id="pm-content" class="pm-content">
-        <!-- avatars grid will be injected here -->
-        <div class="pm-loading">Loading…</div>
+      <div id="pm-content" class="pm-content" style="padding:0; height:100%;">
+        <div class="pm-loading">Loading Collections...</div>
       </div>
     </div>
   </div>
 
   <div id="settingsModal" hidden>
     <div class="pm-backdrop"></div>
-    <div class="pm-dialog settings-dialog" role="dialog" aria-modal="true">
+    <div class="pm-dialog settings-dialog">
       <div class="pm-head">
-        <h2 id="sm-title">Settings</h2>
-        <button class="pm-close" type="button" aria-label="Close">✕</button>
+        <h2>Settings</h2><button class="pm-close">✕</button>
       </div>
-
       <div class="pm-content">
-
         <div class="st-section">
-          <h3 class="st-heading">Notification Channels</h3>
-          <p class="st-desc">Choose how you want to be notified.</p>
-
-          <div class="st-row">
-            <div class="st-info">
-              <span class="st-label">Push Notifications</span>
-              <small class="st-sub">
-                Android Mobile Only. <br>
-                Enable system-level alerts on your device.
-              </small>
+          <h3 class="st-heading">Account Identity</h3>
+          <div class="st-row column">
+            <span class="st-label">Email</span>
+            <div class="st-input-group">
+              <input type="text" id="newEmail" class="st-input" placeholder="New Email">
+              <button class="st-save-btn" id="updateEmaileBtn">Update</button>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="togglePush" disabled>
-              <span class="slider round"></span>
-            </label>
           </div>
-
-          <div class="st-row">
-            <div class="st-info">
-              <span class="st-label">Email Notifications</span>
+        </div>
+        <div class="st-section">
+          <h3 class="st-heading">Security</h3>
+          <div class="st-row column">
+            <span class="st-label">New Password</span>
+            <div class="st-input-group">
+              <input type="password" id="newPassword" class="st-input" placeholder="New Password">
+              <button class="st-save-btn" id="updatePasswordBtn">Change</button>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggleEmail" disabled>
-              <span class="slider round"></span>
-            </label>
           </div>
         </div>
 
         <hr class="st-divider">
 
         <div class="st-section">
-          <h3 class="st-heading">Notification Categories</h3>
-          <p class="st-desc">Select which activities trigger a notification.</p>
-
-
-          <div class="st-list">
-            <div class="st-row compact">
-              <span class="st-label">Login Event</span>
-              <label class="switch small">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <div class="st-row compact">
-              <span class="st-label">Public Song Shared</span>
-              <label class="switch small">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <div class="st-row compact">
-              <span class="st-label">Private Song Sent To You</span>
-              <label class="switch small">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <div class="st-row compact">
-              <span class="st-label">Someone Commented on Your Song Suggestion</span>
-              <label class="switch small">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <div class="st-row compact">
-              <span class="st-label">Someone Reacted on Your Song Suggestion</span>
-              <label class="switch small">
-                <input type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <div class="st-row compact">
-              <span class="st-label">Your Suggested Song Has Been Played</span>
-              <label class="switch small">
-                <input type="checkbox">
-                <span class="slider round"></span>
-              </label>
-            </div>
+          <h3 class="st-heading">Global Channels</h3>
+          <div class="st-row">
+            <div class="st-info"><span class="st-label">Push Notifications</span></div>
+            <label class="switch"><input type="checkbox" id="push_enabled"><span class="slider round"></span></label>
+          </div>
+          <div class="st-row">
+            <div class="st-info"><span class="st-label">Email Notifications</span></div>
+            <label class="switch"><input type="checkbox" id="email_enabled"><span class="slider round"></span></label>
           </div>
         </div>
 
+        <hr class="st-divider">
+
+        <div class="st-section">
+          <h3 class="st-heading">Push Alerts (App)</h3>
+          <div class="st-list">
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Login Event</span></div><label class="switch small"><input type="checkbox" id="push_login"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Public Post Created</span></div><label class="switch small"><input type="checkbox" id="push_public_share"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Private Post Sent to You</span></div><label class="switch small"><input type="checkbox" id="push_direct_share"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Comments</span></div><label class="switch small"><input type="checkbox" id="push_post_comment"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Reactions</span></div><label class="switch small"><input type="checkbox" id="push_post_reaction"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Song Played</span></div><label class="switch small"><input type="checkbox" id="push_song_played"><span class="slider round"></span></label></div>
+          </div>
+        </div>
+
+        <hr class="st-divider">
+
+        <div class="st-section">
+          <h3 class="st-heading">Email Alerts</h3>
+          <div class="st-list">
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Login Event</span></div><label class="switch small"><input type="checkbox" id="email_login"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Public Post Created</span></div><label class="switch small"><input type="checkbox" id="email_public_share"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Private Post Sent to You</span></div><label class="switch small"><input type="checkbox" id="email_direct_share"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Comments</span></div><label class="switch small"><input type="checkbox" id="email_post_comment"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Reactions</span></div><label class="switch small"><input type="checkbox" id="email_post_reaction"><span class="slider round"></span></label></div>
+            <div class="st-row compact"><div class="st-info"><span class="st-label">Song Played</span></div><label class="switch small"><input type="checkbox" id="email_song_played"><span class="slider round"></span></label></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
     AOS.init();
+    let avatarData = [];
 
-    const mq = window.matchMedia("(min-width: 800px)");
-    if (mq.matches) {
-      document.querySelectorAll("[data-aos]").forEach(el => {
-        el.removeAttribute("data-aos");
-        el.style.opacity = "";
-        el.style.transform = "";
-      });
-
-      AOS.refreshHard = () => { };
-      AOS.init = () => { };
-    }
-
-    document.querySelector('#logoutholder').addEventListener('click', () => {
-      handleLogout();
-    });
-
-    async function handleLogout() {
-      const button = document.getElementById('logoutButton');
-      console.log("loggin out bi sn..");
-
-      const originalText = button.textContent;
-      button.textContent = 'Logging out...';
-      button.disabled = true;
-      button.classList.add('opacity-70', 'cursor-not-allowed');
-
-      try {
-        const response = await fetch('/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // You might include an Authorization header here if needed (e.g., JWT)
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-          },
-          body: JSON.stringify({})
-        });
-
-        if (response.ok) { // This will now catch the 204 No Content
-          showMessage('Logout successful. Redirecting...', 'success');
-          localStorage.removeItem('token');
-          window.location.href = '/login'; // Redirect on the client
-        }
-        else if (response.status === 401) {
-          showMessage('Session expired. Logout forced.', 'info');
-          window.location.href = '/login';
-        }
-        else {
-          const errorData = await response.json().catch(() => ({ message: 'Server error occurred.' }));
-          showMessage(`Logout failed: ${errorData.message || response.statusText}`, 'error');
-        }
-
-      } catch (error) {
-        // Handle network errors (e.g., server offline, CORS issues)
-        console.error('Network Error during logout:', error);
-        showMessage('Network error. Could not reach server.', 'error');
-      }
-    }
-
-
-    function showMessage(message, type = 'info') {
-      console.log("showMessage(): ", message);
-    }
-
-
+    // --- 1. Load User Profile ---
     async function loadProfile() {
       try {
-        const res = await fetch("/meinfo", {
-          method: "GET",
-          credentials: "include"
-        });
-
-        if (!res.ok) {
-          // e.g. 401, 404, 500...
-          console.error("Profile fetch failed:", res.status);
-          if (res.status === 401) {
-            // not logged in -> back to login
-            window.location.href = "/login";
-          }
-          return;
-        }
-
+        const res = await fetch("/meinfo", { credentials: "include" });
+        if (!res.ok) return window.location.href = "/login";
         const profile = await res.json();
-        console.log("profile:", profile);
 
-        // Example: fill DOM
-        document.getElementById("usernameLabel").innerHTML = profile.username;
+        document.getElementById("usernameLabel").innerText = profile.username;
+        document.getElementById("rolecontent").innerText = profile.role;
+        document.getElementById("verificationcontent").innerText = profile.email_verified ? "Verified" : "NOT Verified";
+        document.getElementById("contactcontent").innerText = `${profile.email || 'No Email'} | ${profile.phone || 'No Tel'}`;
+        document.getElementById("realnameLabel").innerText = profile.realName || "No Name Set";
+        document.getElementById("joindatecontent").innerText = profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : "-";
 
-        document.getElementById("rolecontent").innerHTML = profile.role;
-        document.getElementById("verificationcontent").innerHTML = profile.verified || "NOT Verified";
-        document.getElementById("contactcontent").innerHTML = profile.email + " | " + profile.phone;
-        document.getElementById("realnameLabel").innerHTML = profile.realName;
-
-        const joinDateText = profile.joinDate
-          ? new Date(profile.joinDate).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric"
-          })
-          : "-";
-        document.getElementById("joindatecontent").textContent = joinDateText;
-
-        const me = await fetch('/meinfo', { credentials: 'include' }).then(r => r.json());
         const pic = document.querySelector('.profilepic');
-        if (pic) {
-          if (me.profilePic) pic.src = `/media/${me.profilePic}`;
-          else pic.src = 'content/deafult.jpg';
+        pic.src = profile.profilePic ? `/media/${profile.profilePic}` : 'content/deafult.jpg';
+
+        if (profile.role?.toLowerCase().includes('admin')) {
+          document.getElementById('adminPanelBtn').style.display = 'block';
         }
 
-        if (profile.role && profile.role.toLowerCase().includes('admin')) {
-          const adminBtn = document.getElementById('adminPanelBtn');
-          if (adminBtn) {
-            // Make the button visible
-            adminBtn.style.display = 'block';
-
-            // Add navigation functionality
-            adminBtn.addEventListener('click', () => {
-              window.location.href = '/admin'; // Redirect to your admin route
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-      }
+        loadNotificationSettings();
+      } catch (err) { console.error(err); }
     }
 
-    loadProfile();
+    // --- 2. Load Notifications (with Admin Lock & Mobile Check) ---
+    async function loadNotificationSettings() {
+      try {
+        const [settingsRes, globalRes, pushStatusRes] = await Promise.all([
+          fetch("/api/me/notifications"),
+          fetch("/api/notifications/global-status"),
+          fetch("/api/me/push-subscription-status")
+        ]);
 
-  </script>
+        if (!settingsRes.ok || !globalRes.ok || !pushStatusRes.ok) return;
 
-  <script>
-    // Utility: open/close modal
-    const profileModal = document.getElementById('profileModal');
-    const pmContent = document.getElementById('pm-content');
-    const pmCloseBtn = profileModal.querySelector('.pm-close');
-    const openProfileModal = () => { profileModal.hidden = false; document.documentElement.classList.add('no-scroll'); };
-    const closeProfileModal = () => { profileModal.hidden = true; document.documentElement.classList.remove('no-scroll'); };
+        const settings = await settingsRes.json();
+        const globalStatus = await globalRes.json();
+        const { hasSubscription } = await pushStatusRes.json();
 
-    // Close interactions
-    pmCloseBtn.addEventListener('click', closeProfileModal);
-    profileModal.querySelector('.pm-backdrop').addEventListener('click', closeProfileModal);
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !profileModal.hidden) closeProfileModal(); });
+        // Database column keys
+        const columns = [
+          'push_enabled', 'email_enabled',
+          'push_login', 'push_public_share', 'push_direct_share', 'push_post_comment', 'push_post_reaction', 'push_song_played',
+          'email_login', 'email_public_share', 'email_direct_share', 'email_post_comment', 'email_post_reaction', 'email_song_played'
+        ];
 
+        columns.forEach(col => {
+          const checkbox = document.getElementById(col);
+          if (!checkbox) return;
 
-    document.getElementById('changeAvatarBtn').addEventListener('click', changeAvatar);
-    document.querySelector('.profilepic').addEventListener('click', changeAvatar);
+          checkbox.checked = settings[col];
+          checkbox.disabled = false;
+          const row = checkbox.closest('.st-row') || checkbox.closest('.compact');
+          row.querySelectorAll('.admin-warning').forEach(w => w.remove());
 
-    let avatarData = []; // Store fetched data globally
+          const systemMaster = col.startsWith('email') ? 'email_system_master' : 'push_system_master';
+          let reason = null;
 
-    async function changeAvatar() {
-      openProfileModal();
-      pmContent.innerHTML = '<div class="pm-loading">Loading Collections...</div>';
+          // Hierarchy: Global Admin Switch > Category Switch > Mobile Registration
+          if (globalStatus[systemMaster] === false) reason = '⚠️ System disabled by Admin';
+          else if (globalStatus[col] === false) reason = '⚠️ Category disabled by Admin';
+          else if (col.startsWith('push') && !hasSubscription) reason = '⚠️ No mobile device registered';
+
+          if (reason) {
+            checkbox.disabled = true;
+            const warning = document.createElement('small');
+            warning.className = 'admin-warning';
+            warning.style.cssText = 'color: #e74c3c; font-size: 0.75rem; display: block;';
+            warning.innerText = reason;
+            row.querySelector('.st-info').appendChild(warning);
+          }
+        });
+      } catch (err) { console.error(err); }
+    }
+
+    // --- 3. Modern Avatar Sidebar Selector ---
+    async function openAvatarSelector() {
+      const profileModal = document.getElementById('profileModal');
+      const pmContent = document.getElementById('pm-content');
+      profileModal.hidden = false;
+      document.documentElement.classList.add('no-scroll');
 
       try {
         const res = await fetch('/api/avatars', { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to load');
-        const { people = [] } = await res.json();
-        avatarData = people;
+        const data = await res.json();
+        avatarData = data.people || [];
 
-        if (!avatarData.length) {
-          pmContent.innerHTML = '<p class="pm-hint">No avatars found.</p>';
-          return;
-        }
+        pmContent.innerHTML = `
+          <div class="pm-layout">
+            <aside class="pm-sidebar" id="pmSidebar"></aside>
+            <main class="pm-main-content" id="pmMain"></main>
+          </div>`;
 
-        renderModernLayout();
-      } catch (err) {
-        console.error(err);
-        pmContent.innerHTML = '<p class="pm-hint">Could not load avatars.</p>';
-      }
-    }
-
-    function renderModernLayout() {
-      // Create the split-screen structure
-      pmContent.innerHTML = `
-    <div class="pm-layout">
-      <aside class="pm-sidebar" id="pmSidebar"></aside>
-      <main class="pm-main-content" id="pmMain"></main>
-    </div>
-  `;
-
-      const sidebar = document.getElementById('pmSidebar');
-
-      avatarData.forEach((person, index) => {
-        const btn = document.createElement('button');
-        btn.className = `category-btn ${index === 0 ? 'active' : ''}`;
-        btn.innerText = person.name;
-        btn.onclick = () => {
-          // Update Active State
-          document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          renderCategory(person.name);
-        };
-        sidebar.appendChild(btn);
-      });
-
-      // Render the first category by default
-      renderCategory(avatarData[0].name);
+        const sidebar = document.getElementById('pmSidebar');
+        avatarData.forEach((person, idx) => {
+          const btn = document.createElement('button');
+          btn.className = `category-btn ${idx === 0 ? 'active' : ''}`;
+          btn.innerText = person.name;
+          btn.onclick = () => {
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderCategory(person.name);
+          };
+          sidebar.appendChild(btn);
+        });
+        if (avatarData.length) renderCategory(avatarData[0].name);
+      } catch (err) { pmContent.innerText = "Failed to load avatars."; }
     }
 
     function renderCategory(name) {
       const main = document.getElementById('pmMain');
       const person = avatarData.find(p => p.name === name);
-
-      main.innerHTML = `<div class="pm-grid" id="activeGrid"></div>`;
-      const grid = document.getElementById('activeGrid');
-
-      if (!person || !person.images.length) {
-        grid.innerHTML = '<p>No images in this collection.</p>';
-        return;
-      }
+      main.innerHTML = `<div class="pm-grid"></div>`;
+      const grid = main.querySelector('.pm-grid');
 
       person.images.forEach(img => {
         const card = document.createElement('button');
         card.className = 'pm-pick';
-
-        // Modern Image Loading with Placeholder
         card.innerHTML = `
-      <div class="skeleton-container">
-        <img src="${img.url}" loading="lazy" alt="" onload="this.parentElement.classList.remove('skeleton')">
-      </div>
-      <small>${escapeHtml(img.file)}</small>
-    `;
-
-        card.querySelector('.skeleton-container').classList.add('skeleton');
-        card.onclick = () => selectAvatar(img);
+          <div class="skeleton-container skeleton"><img src="${img.url}" loading="lazy" onload="this.parentElement.classList.remove('skeleton')"></div>
+          <small>${img.file}</small>`;
+        card.onclick = () => selectAvatar(img.url);
         grid.appendChild(card);
       });
     }
 
-    function switchCategory(name, activeBtn) {
-      if (activeBtn) {
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-        activeBtn.classList.add('active');
-      }
-
-      const main = document.getElementById('pmMain');
-      const person = avatarCollections.find(p => p.name === name);
-
-      main.innerHTML = `<div class="pm-grid" id="avatarGrid"></div>`;
-      const grid = document.getElementById('avatarGrid');
-
-      person.images.forEach(img => {
-        const item = document.createElement('div');
-        item.className = 'pm-pick skeleton'; // Start with skeleton state
-
-        const imageObj = new Image();
-        imageObj.src = img.url;
-        imageObj.loading = "lazy"; // Browser native lazy load
-
-        imageObj.onload = () => {
-          item.classList.remove('skeleton');
-          item.innerHTML = `
-                <img src="${img.url}" alt="">
-                <small>${escapeHtml(img.file)}</small>
-            `;
-        };
-
-        item.onclick = () => selectAvatar(img);
-        grid.appendChild(item);
-      });
-    }
-
-    async function selectAvatar(img) {
-      // Persist choice
-      const rel = img.url.replace(/^\/media\//, ''); // "avatars/…"
+    async function selectAvatar(url) {
+      const rel = url.replace('/media/', '');
       try {
         const res = await fetch('/api/me/profile-picture', {
           method: 'POST',
-          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: rel })
         });
-        if (!res.ok) throw new Error(await res.text());
-
-        // Update the visible avatar immediately
-        const pic = document.querySelector('.profilepic');
-        if (pic) pic.src = img.url + '?t=' + Date.now(); // cache-bust
-
-        // Nice little feedback
-        pmContent.scrollTo({ top: 0, behavior: 'smooth' });
-        const msg = document.createElement('div');
-        msg.className = 'pm-row';
-        msg.innerHTML = `<span class="pm-hint">✅ Profile picture updated.</span>`;
-        pmContent.prepend(msg);
-
-        // Close after a short pause
-        setTimeout(closeProfileModal, 600);
-      } catch (e) {
-        console.error(e);
-        alert('Failed to update your profile picture.');
-      }
+        if (res.ok) {
+          document.querySelector('.profilepic').src = url;
+          document.getElementById('profileModal').hidden = true;
+          document.documentElement.classList.remove('no-scroll');
+        }
+      } catch (err) { alert("Update failed"); }
     }
 
-    function escapeHtml(s) {
-      return String(s ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-  </script>
+    // --- 4. Interactions & Listeners ---
+    document.getElementById('changeAvatarBtn').onclick = openAvatarSelector;
+    document.querySelector('.profilepic').onclick = openAvatarSelector;
 
-  <script>
-    // --- Settings Modal Logic ---
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsBtn = document.getElementById('settingsButton');
-    const smCloseBtn = settingsModal.querySelector('.pm-close');
-    const smBackdrop = settingsModal.querySelector('.pm-backdrop');
-
-    // Functions to open/close
-    const openSettingsModal = () => {
-      settingsModal.hidden = false;
+    document.getElementById('settingsButton').onclick = () => {
+      document.getElementById('settingsModal').hidden = false;
       document.documentElement.classList.add('no-scroll');
     };
 
-    const closeSettingsModal = () => {
-      settingsModal.hidden = true;
-      document.documentElement.classList.remove('no-scroll');
+    document.getElementById('emailEditIcon').onclick = () => {
+      document.getElementById('settingsModal').hidden = false;
+      document.documentElement.classList.add('no-scroll');
     };
 
-    // Event Listeners
-    if (settingsBtn) {
-      settingsBtn.addEventListener('click', openSettingsModal);
-    }
-
-    smCloseBtn.addEventListener('click', closeSettingsModal);
-    smBackdrop.addEventListener('click', closeSettingsModal);
-
-    // Close on Escape key (shared logic)
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !settingsModal.hidden) closeSettingsModal();
+    document.querySelectorAll('.pm-close, .pm-backdrop').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('#profileModal, #settingsModal').forEach(m => m.hidden = true);
+        document.documentElement.classList.remove('no-scroll');
+      };
     });
+
+    // Notify backend on toggle change
+    document.querySelector('#settingsModal').addEventListener('change', (e) => {
+      if (e.target.type === 'checkbox') {
+        fetch("/api/me/notifications", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [e.target.id]: e.target.checked })
+        });
+      }
+    });
+
+    // Update Email and Password Handlers
+    document.getElementById('updateEmaileBtn').onclick = async () => {
+      const newEmail = document.getElementById('newEmail').value;
+      const res = await fetch('/api/me/update-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail })
+      });
+      if (res.ok) { alert("Email updated! Check your inbox."); location.reload(); }
+    };
+
+    document.getElementById('updatePasswordBtn').onclick = async () => {
+      const password = document.getElementById('newPassword').value;
+      const res = await fetch('/api/me/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      if (res.ok) { alert("Password changed!"); document.getElementById('newPassword').value = ''; }
+    };
+
+    document.getElementById('logoutholder').onclick = async () => {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/login';
+    };
+
+    document.getElementById('adminPanelBtn').onclick = () => {
+      window.location.href = '/admin';
+    };
+
+    // Initialize Page
+    loadProfile();
+
+    const mq = window.matchMedia("(min-width: 800px)");
+    if (mq.matches) {
+        // 1. remove data-aos attributes so AOS won't animate
+        document.querySelectorAll("[data-aos]").forEach(el => {
+            el.removeAttribute("data-aos");
+            el.style.opacity = ""; // optional: let it use normal styles
+            el.style.transform = ""; // optional cleanup in case AOS touched it
+        });
+
+        // 2. stop AOS from doing anything else
+        AOS.refreshHard = () => { };
+        AOS.init = () => { };
+    }
   </script>
-
 </body>
-
 </html>

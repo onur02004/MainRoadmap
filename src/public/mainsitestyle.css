@@ -393,3 +393,16 @@ html::view-transition-new(root) {
     position: relative;
     z-index: 2;
 }
+
+.notificationMainHolder {
+    min-height: 60px; /* Changed from height to min-height */
+    height: auto;     /* Allow it to expand for the buttons */
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    margin-bottom: 20px; /* Space between notifications and profile */
+}

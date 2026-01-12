@@ -448,4 +448,32 @@ router.patch("/admin/users/:id/password", requireAuth, requireAdmin, async (req,
   }
 });
 
+// GET /api/admin/notification-controls - Fetch global switches
+router.get("/admin/notification-controls", requireAuth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    const { rows } = await q(`SELECT feature_key, is_enabled FROM global_notification_controls`);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch master controls" });
+  }
+});
+
+// PATCH /api/admin/notification-controls - Toggle a master switch
+router.patch("/admin/notification-controls", requireAuth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: "Forbidden" });
+
+  const { feature_key, is_enabled } = req.body;
+  try {
+    await q(
+      `UPDATE global_notification_controls SET is_enabled = $2, updated_at = NOW() WHERE feature_key = $1`,
+      [feature_key, is_enabled]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update master control" });
+  }
+});
+
 export default router;
