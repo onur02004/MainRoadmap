@@ -144,7 +144,7 @@ router.post("/api/me/update-email", requireAuth, async (req, res) => {
     );
 
     // Construct the link (Replace with your actual domain)
-    const verificationLink = `https://330nur.org/api/verify-email?token=${verificationToken}`;
+    const verificationLink = `https://pi.330nur.org/api/verify-email?token=${verificationToken}`;
 
     // Send the email with a styled button
     await sendEmail(
