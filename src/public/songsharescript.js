@@ -1,4 +1,186 @@
+
+
+let ytPlayer;
+let isYTReady = false;
+let syncedLyrics = [];
+let lyricsTimer;
+
+// MUST BE GLOBAL for the YouTube script to find it
+window.onYouTubeIframeAPIReady = function () {
+    console.log("YouTube API Initialization...");
+    ytPlayer = new YT.Player('player', {
+        height: '1',
+        width: '1',
+        playerVars: {
+            'autoplay': 0,
+            'controls': 0,
+            'disablekb': 1,
+            'enablejsapi': 1,
+            'origin': window.location.origin
+        },
+        events: {
+            'onReady': () => {
+                isYTReady = true;
+                console.log("✅ YouTube Player Ready");
+            },
+            'onStateChange': (event) => {
+                // Route to state handler
+                if (window.handleYTStateChange) window.handleYTStateChange(event);
+            }
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Load the API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+
+    window.handleYTStateChange = onYTStateChange;
+
+    async function fetchSyncedLyrics(trackName, artistName) {
+        const wrapper = document.getElementById('l-scroll-wrapper');
+        const playBtn = document.getElementById('l-play-btn');
+
+        wrapper.innerHTML = `<div class="lyric-line active">Searching for synced lyrics...</div>`;
+        playBtn.style.opacity = "0.5"; // Visual feedback that it's loading
+
+        try {
+            const res = await fetch(`/api/auto-sync?track=${encodeURIComponent(trackName)}&artist=${encodeURIComponent(artistName)}`);
+            const data = await res.json();
+
+            if (data.videoId) {
+                syncedLyrics = data.lyrics;
+
+
+                const cueCheck = setInterval(() => {
+                    if (isYTReady && ytPlayer && ytPlayer.cueVideoById) {
+                        ytPlayer.cueVideoById(data.videoId);
+                        clearInterval(cueCheck);
+                        console.log("Video cued successfully");
+                    }
+                }, 200);
+
+                const attemptCue = () => {
+                    if (isYTReady && ytPlayer && ytPlayer.cueVideoById) {
+                        ytPlayer.cueVideoById(data.videoId);
+                        playBtn.style.opacity = "1";
+                        playBtn.disabled = false;
+                    } else {
+                        setTimeout(attemptCue, 200);
+                    }
+                };
+                attemptCue();
+
+                wrapper.innerHTML = syncedLyrics.length > 0
+                    ? syncedLyrics.map((l, i) => `<div class="lyric-line" id="l-line-${i}">${l.words}</div>`).join('')
+                    : `<div class="lyric-line active">Lyrics not found, but you can still play the song!</div>`;
+            } else {
+                wrapper.innerText = "No synchronized video found.";
+            }
+        } catch (err) {
+            wrapper.innerText = "Error loading lyrics system.";
+        }
+    }
+
+    const lPlayBtn = document.getElementById('l-play-btn');
+
+    lPlayBtn.addEventListener('click', () => {
+        if (!isYTReady || !ytPlayer) {
+            console.warn("⏳ Waiting for YouTube handshake...");
+            // Visual feedback
+            lPlayBtn.classList.add('loading-pulse');
+            return;
+        }
+
+        const state = ytPlayer.getPlayerState();
+        // Use the official YT.PlayerState constants
+        if (state === YT.PlayerState.PLAYING) {
+            ytPlayer.pauseVideo();
+        } else {
+            ytPlayer.playVideo();
+        }
+    });
+
+    const lTimeline = document.getElementById('l-timeline');
+
+    if (lTimeline) {
+        lTimeline.addEventListener('input', () => {
+            if (isYTReady && ytPlayer && ytPlayer.seekTo) {
+                // Seek to the slider value (in seconds)
+                ytPlayer.seekTo(lTimeline.value, true);
+
+                // Immediately update the text UI for better responsiveness
+                const currLabel = document.getElementById('l-currTime');
+                if (currLabel) currLabel.innerText = formatDuration(lTimeline.value * 1000);
+            }
+        });
+    }
+
+    // Tab Logic
+    document.querySelectorAll('.preview-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.preview-tab, .tab-pane').forEach(el => el.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.target).classList.add('active');
+
+            // Pause other player when switching
+            if (tab.dataset.target === 'spotify-preview' && isYTReady) ytPlayer.pauseVideo();
+        });
+    });
+
+
+    function onYTStateChange(event) {
+        const btn = document.getElementById('l-play-btn');
+        if (event.data === YT.PlayerState.PLAYING) {
+            btn.innerText = "||";
+            document.getElementById('l-timeline').max = ytPlayer.getDuration();
+            document.getElementById('l-durTime').innerText = formatDuration(ytPlayer.getDuration() * 1000);
+            lyricsTimer = setInterval(syncLyricsUI, 100);
+        } else {
+            btn.innerText = "▶";
+            clearInterval(lyricsTimer);
+        }
+
+        const playIcon = document.querySelector('#l-play-btn i');
+        if (event.data === YT.PlayerState.PLAYING) {
+            if (playIcon) playIcon.className = "fas fa-pause";
+            // ... timeline logic ...
+        } else {
+            if (playIcon) playIcon.className = "fas fa-play";
+            // ... clearInterval ...
+        }
+    }
+
+    function syncLyricsUI() {
+        if (!ytPlayer || !isYTReady) return;
+
+        const time = ytPlayer.getCurrentTime();
+        const timeline = document.getElementById('l-timeline');
+        const currLabel = document.getElementById('l-currTime');
+
+        // Update Slider Position
+        if (timeline) timeline.value = time;
+
+        // Update Current Time Text
+        if (currLabel) currLabel.innerText = formatDuration(time * 1000);
+
+        // --- LYRICS SCROLLING LOGIC ---
+        const idx = syncedLyrics.findLastIndex(l => l.time <= time);
+        if (idx !== -1) {
+            document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+            const activeLine = document.getElementById(`l-line-${idx}`);
+            if (activeLine) {
+                activeLine.classList.add('active');
+                const wrapper = document.getElementById('l-scroll-wrapper');
+                // Keep the active line roughly 100px from the top of the container
+                wrapper.style.transform = `translateY(${-activeLine.offsetTop + 100}px)`;
+            }
+        }
+    }
+
     // ----- NAVIGATION BETWEEN PAGES -----
     const navLinks = document.querySelectorAll('.nav-option a');
     const pages = document.querySelectorAll('.page');
@@ -10,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isTarget = p.classList.contains(`page-${pageName}`);
             p.classList.toggle('is-active', isTarget);
         });
+
 
         // FIX: Force the main section to scroll back to the top
         const mainScrollSection = document.querySelector('section[style*="overflow-y: scroll"]');
@@ -357,6 +540,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Ensure image is updated
+        const lyricsArt = document.getElementById('l-album-art');
+        if (lyricsArt) {
+            lyricsArt.src = track.imageUrl;
+        }
+
+        // Reset the play button icon to "Play" for the new song
+        const playIcon = document.querySelector('#l-play-btn i');
+        if (playIcon) playIcon.className = "fas fa-play";
+
         // --- Generate Spotify Embed URL ---
         // Spotify URI: "spotify:track:1GwuB8Vq48Q82kXzV1Lw0Q"
         // Correct embed URL: "https://open.spotify.com/embed/track/1GwuB8Vq48Q82kXzV1Lw0Q?utm_source=generator&theme=0"
@@ -411,7 +604,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable "Suggest this song" button
         sendSuggestionButton.disabled = false;
 
+        const previewContainer = document.getElementById('preview-container');
+        if (previewContainer) {
+            // Set the CSS variable used by the ::before pseudo-element
+            previewContainer.style.setProperty('--bg-image', `url(${track.imageUrl})`);
+        }
+
         fetchArtistImage(track);
+
+        fetchSyncedLyrics(track.name, track.artist);
 
         // Close the modal after selecting the track!
         closeModal();
@@ -558,6 +759,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!payload.name || !payload.uri) {
                 alert('Please search for and select a song first.');
                 return;
+            }
+
+            if (isYTReady && ytPlayer && ytPlayer.pauseVideo) {
+                ytPlayer.pauseVideo();
+                console.log("⏸ Navigation: Pausing Ghost Player");
             }
 
             // 2. Gather remaining data

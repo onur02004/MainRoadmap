@@ -7,6 +7,8 @@ import { getFreeLyricsSmart } from "../helpers/lyricsService.js";
 import { sendPush } from "../helpers/sendPush.js";
 import { notifyUserByType } from "../helpers/notificationHelper.js";
 import { NotificationType } from "../constants/notificationTypes.js";
+import yts from 'yt-search';
+import axios from 'axios';
 
 
 const router = Router();
@@ -1085,6 +1087,57 @@ router.post("/api/music/suggestions/:id/play-notify", requireAuth, async (req, r
     } catch (err) {
         console.error("Play notification error:", err);
         res.status(500).json({ error: "Failed to send notification" });
+    }
+});
+
+
+function parseLRC(lrcText) {
+    if (!lrcText) return [];
+    return lrcText.split('\n').map(line => {
+        const match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+        if (match) {
+            return {
+                time: (parseInt(match[1]) * 60) + parseFloat(match[2]),
+                words: match[3].trim()
+            };
+        }
+        return null;
+    }).filter(l => l && l.words);
+}
+
+router.get('/api/auto-sync', async (req, res) => {
+    const { track, artist } = req.query;
+    
+    if (!track || !artist) {
+        return res.status(400).json({ error: "Track and artist are required" });
+    }
+
+    try {
+        // 1. Search YouTube for a lyrics-focused video ID
+        const searchResult = await yts(`${track} ${artist} official lyrics`);
+        const videoId = searchResult.videos[0]?.videoId;
+
+        if (!videoId) return res.status(404).json({ error: "YouTube video not found" });
+
+        // 2. Fetch Synced Lyrics from LRCLIB
+        const lyricsResp = await axios.get('https://lrclib.net/api/get', {
+            params: { track_name: track, artist_name: artist }
+        }).catch(() => null);
+
+        let lyrics = [];
+        if (lyricsResp && lyricsResp.data.syncedLyrics) {
+            // Use your existing parseLRC function
+            lyrics = parseLRC(lyricsResp.data.syncedLyrics); 
+        }
+
+        res.json({ 
+            videoId, 
+            lyrics, 
+            plainLyrics: lyricsResp?.data?.plainLyrics || "" 
+        });
+    } catch (e) {
+        console.error("Auto-sync error:", e);
+        res.status(500).json({ error: "Search failed" });
     }
 });
 
