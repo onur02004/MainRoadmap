@@ -5,6 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Main Wegweiser</title>
+
+  <link rel="icon" type="image/x-icon" href="/content/favicon.ico">
+
   <link rel="stylesheet" href="mainsitestyle.css" />
 
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
@@ -17,16 +20,16 @@
 <body>
 
   <!-- Custom Warning Dialog -->
-<div id="profileWarning" class="dialog-backdrop" hidden style="display: none;">
-  <div class="dialog-box" data-aos="zoom-in">
-    <h2 class="dialog-title">Profile Picture Missing</h2>
-    <p class="dialog-text">
-      You haven’t set a profile picture yet.<br>
-      You can add or change it in your <a href="/account" class="dialog-link">account settings</a>.
-    </p>
-    <button id="closeDialog" class="dialog-btn">Okay</button>
+  <div id="profileWarning" class="dialog-backdrop" hidden style="display: none;">
+    <div class="dialog-box" data-aos="zoom-in">
+      <h2 class="dialog-title">Profile Picture Missing</h2>
+      <p class="dialog-text">
+        You haven’t set a profile picture yet.<br>
+        You can add or change it in your <a href="/account" class="dialog-link">account settings</a>.
+      </p>
+      <button id="closeDialog" class="dialog-btn">Okay</button>
+    </div>
   </div>
-</div>
 
 
   <div class="mainbggrid">
@@ -44,7 +47,7 @@
 
 
         <div class="notificationMainHolder">
-          
+
         </div>
 
         <div class="userinfo">
@@ -69,6 +72,11 @@
             Built By: Onur Dönmez
           </p>
         </div>
+
+        <div id="scrollHint" class="scroll-hint">
+          <span>SCROLL</span>
+          <div class="chevron"></div>
+        </div>
       </div>
 
       <div class="mainfglowerholder">
@@ -78,10 +86,10 @@
         <div data-aos="fade-up" class="routeoption" id="songshare">
           <h1>Song Share</h1>
         </div>
-        <div data-aos="fade-up" class="routeoption" notavailable> 
+        <div data-aos="fade-up" class="routeoption" notavailable>
           <h1>Games</h1>
         </div>
-        
+
         <div data-aos="fade-up" class="routeoption" notavailable>
           <h1>Automisation</h1>
         </div>
@@ -102,43 +110,43 @@
         </div>
 
         <p id="featuresyazisi" data-aos="fade-up">User Specific Features</p>
-        
+
         <div class="featuresHolder"></div>
       </div>
-      
+
     </div>
   </div>
 
 
   <script>
-  // init AOS normally first
-  AOS.init();
+    // init AOS normally first
+    AOS.init();
 
-  const goToAccount = () => { window.location.href = '/account'; };
+    const goToAccount = () => { window.location.href = '/account'; };
 
-  document.querySelector('.userinfo')?.addEventListener('click', (e) => {
-    e.preventDefault();
+    document.querySelector('.userinfo')?.addEventListener('click', (e) => {
+      e.preventDefault();
 
-    if ('startViewTransition' in document) {
-      // Modern smooth transition
-      document.startViewTransition(goToAccount);
-    } else {
-      // Fallback: quick fade
-      document.documentElement.classList.add('leaving');
-      setTimeout(goToAccount, 180);
-    }
-  });
+      if ('startViewTransition' in document) {
+        // Modern smooth transition
+        document.startViewTransition(goToAccount);
+      } else {
+        // Fallback: quick fade
+        document.documentElement.classList.add('leaving');
+        setTimeout(goToAccount, 180);
+      }
+    });
 
-  document.getElementById('remotecontrol')?.addEventListener('click', (e)=> {
-    window.location.href = '/remote-control';
-  });
-  document.getElementById('songshare')?.addEventListener('click', (e)=> {
-    window.location.href = '/song-share';
-  });
-  document.getElementById('fileStorage')?.addEventListener('click', (e)=> {
-    window.location.href = '/file-storage';
-  });
-</script>
+    document.getElementById('remotecontrol')?.addEventListener('click', (e) => {
+      window.location.href = '/remote-control';
+    });
+    document.getElementById('songshare')?.addEventListener('click', (e) => {
+      window.location.href = '/song-share';
+    });
+    document.getElementById('fileStorage')?.addEventListener('click', (e) => {
+      window.location.href = '/file-storage';
+    });
+  </script>
 
 
 </body>

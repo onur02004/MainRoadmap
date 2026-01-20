@@ -112,6 +112,11 @@ app.get("/", (req, res) => {
 });
 
 
+app.get("/favicon.ico", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "content", "favicon.ico"));
+});
+
+
 
 
 app.get("/adjustled", (req, res) => {

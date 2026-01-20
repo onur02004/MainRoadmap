@@ -404,5 +404,71 @@ html::view-transition-new(root) {
     align-items: center;
     transition: all 0.2s ease;
     overflow: hidden;
-    margin-bottom: 20px; /* Space between notifications and profile */
+    margin-bottom: 2px; /* Space between notifications and profile */
+}
+
+/* Enhanced Scroll Hint */
+.scroll-hint {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none; /* Hidden on desktop */
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 10001; /* Above the dialog-backdrop if necessary */
+    pointer-events: none;
+
+    /* Background pill to make it stand out */
+    background: rgba(19, 19, 19, 0.6);
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(82, 196, 113, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(82, 196, 113, 0.2);
+}
+
+.scroll-hint span {
+    font-size: 1.3rem;
+    color: #52c471;
+    letter-spacing: 4px;
+    font-weight: 400;
+    /* Glow effect for the text */
+    text-shadow: 0 0 8px rgba(82, 196, 113, 0.6);
+}
+
+.chevron {
+    width: 10px;
+    height: 10px;
+    border-bottom: 3px solid #52c471;
+    border-right: 3px solid #52c471;
+    transform: rotate(45deg);
+    margin-top: -2px;
+    filter: drop-shadow(0 0 3px rgba(82, 196, 113, 0.8));
+}
+
+/* Mobile Animation */
+@media screen and (max-width: 899px) {
+    .scroll-hint {
+        display: flex;
+        /* Duration 2.5s for a smoother feel, 3 iterations */
+        animation: enhancedBounce 2s ease-in-out 5 forwards;
+    }
+}
+
+@keyframes enhancedBounce {
+    0% {
+        transform: translate(-50%, 20px);
+        opacity: 0;
+    }
+    20%, 80% {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -10px);
+        opacity: 0;
+    }
 }

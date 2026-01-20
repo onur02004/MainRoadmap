@@ -133,24 +133,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function onYTStateChange(event) {
-        const btn = document.getElementById('l-play-btn');
+        // Synchronize both the suggestion preview button and the modal play button
+        const buttons = [
+            document.getElementById('l-play-btn'),
+            document.getElementById('m-l-play-btn')
+        ];
+
         if (event.data === YT.PlayerState.PLAYING) {
-            btn.innerText = "||";
-            document.getElementById('l-timeline').max = ytPlayer.getDuration();
-            document.getElementById('l-durTime').innerText = formatDuration(ytPlayer.getDuration() * 1000);
+            buttons.forEach(btn => { if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>'; });
+
+            // Initialize timeline maximums
+            const duration = ytPlayer.getDuration();
+            ['l-timeline', 'm-l-timeline'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.max = duration;
+            });
+
+            // Start high-precision sync loop
+            clearInterval(lyricsTimer);
             lyricsTimer = setInterval(syncLyricsUI, 100);
         } else {
-            btn.innerText = "▶";
+            buttons.forEach(btn => { if (btn) btn.innerHTML = '<i class="fas fa-play"></i>'; });
             clearInterval(lyricsTimer);
-        }
-
-        const playIcon = document.querySelector('#l-play-btn i');
-        if (event.data === YT.PlayerState.PLAYING) {
-            if (playIcon) playIcon.className = "fas fa-pause";
-            // ... timeline logic ...
-        } else {
-            if (playIcon) playIcon.className = "fas fa-play";
-            // ... clearInterval ...
         }
     }
 
@@ -1274,6 +1278,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             updateReactionUI(s.id, s.current_user_reaction || null);
+
+            const userAvatar = card.querySelector('.userProfilePic');
+            const userInfoBox = card.querySelector('.userInfo');
+
+            if (userAvatar) {
+                userAvatar.style.cursor = 'pointer';
+                userAvatar.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPublicUserProfile(suggestionUserId);
+                });
+            }
+
+            if (userInfoBox) {
+                userInfoBox.style.cursor = 'pointer';
+                userInfoBox.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPublicUserProfile(suggestionUserId);
+                });
+            }
         });
     }
 
@@ -1323,7 +1346,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function closePlaybackModal() {
         playbackModal.classList.remove('is-active');
-        playbackSpotifyPreview.innerHTML = ''; // Clear the iframe
+        playbackSpotifyPreview.innerHTML = '';
+        document.body.classList.remove('playback-active');
+
+        document.body.classList.remove('playback-active');
+
+        // 4. STOP THE GHOST PLAYER
+        // We check if the API is ready and the player exists before calling pause
+        if (isYTReady && ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+            ytPlayer.pauseVideo();
+            console.log("Modal Closed: Audio paused.");
+        }
+
+        // 5. KILL THE SYNC TIMER
+        // This stops the lyrics from trying to scroll while the modal is invisible
+        if (lyricsTimer) {
+            clearInterval(lyricsTimer);
+            console.log("Lyrics sync stopped.");
+        }
     }
 
     function openLyricsModal() {
@@ -1386,56 +1426,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     window.showPlaybackModal = function showPlaybackModal(suggestion) {
-        // 1. **CRITICAL FIX**: Use the correct property: 'spotify_uri'
+        // 1. Instant UI Feedback
+        document.body.classList.add('playback-active');
+        playbackModal.classList.add('is-active');
+
+        // Show the loading overlay immediately
+        const loadingOverlay = document.getElementById('m-l-loading-overlay');
+        if (loadingOverlay) loadingOverlay.classList.add('is-active');
+
         const songUri = suggestion.spotify_uri;
+        if (!songUri) return;
 
-        // 2. Updated conditional check using the correct variable
-        if (!songUri || typeof songUri !== 'string') {
-            console.error("Cannot open playback modal: Spotify URI is missing or invalid.", suggestion);
-            return;
-        }
+        // 2. Setup Static UI (Instant)
+        playbackTitle.textContent = suggestion.song_name;
+        playbackArtist.textContent = `by ${suggestion.song_artist}`;
 
+        const modalContainer = document.getElementById('modal-preview-container');
+        modalContainer.style.setProperty('--bg-image', `url(${suggestion.song_cover_url})`);
+        document.getElementById('m-l-album-art').src = suggestion.song_cover_url;
+
+        // 3. Load Spotify Iframe (Async background)
+        const trackId = songUri.split(':')[2];
+        const iframeSrc = `https://open.spotify.com/embed/track/$${trackId}?utm_source=generator&theme=0`;
+        playbackSpotifyPreview.innerHTML = `<iframe style="border-radius:12px" src="${iframeSrc}" width="100%" height="352" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+
+        // 4. Background Fetch Lyrics/YouTube (Don't await here!)
+        loadModalLyrics(suggestion.song_name, suggestion.song_artist).then(() => {
+            // Hide loading once background tasks are "ready enough"
+            if (loadingOverlay) loadingOverlay.classList.remove('is-active');
+        });
+
+        // 5. Fire and forget notification
         fetch(`/api/music/suggestions/${suggestion.id}/play-notify`, {
             method: 'POST',
             credentials: 'include'
-        }).catch(err => console.error("Could not notify sharer:", err));
+        }).catch(() => { });
+    };
 
-        const trackId = songUri.split(':')[2]; // Gets "1GwuB8Vq48Q82kXzV1Lw0Q"
+    // --- FIX 2: Update the Multi-step setStep function to hide nav during Upload Preview ---
+    const setStep = (i) => {
+        currentIdx = Math.min(Math.max(i, 0), steps.length - 1);
 
-        const iframeSrc = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+        steps.forEach((s, k) => s.classList.toggle('active', k === currentIdx));
+        dots.forEach((d, k) => d.classList.toggle('active', k === currentIdx));
 
-        const iframeHTML = `
-    <iframe 
-        data-testid="embed-iframe" 
-        style="border-radius:12px" 
-        src="${iframeSrc}&theme=0" 
-        width="100%" 
-        height="352"
-        frameBorder="0" 
-        allowfullscreen="true" 
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-        loading="lazy">
-    </iframe>
-    `;
+        // Manage button visibility
+        prev.style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
 
+        // NEW LOGIC: Hide navigation bar specifically on Step 2 (The Preview Step)
+        if (currentIdx === 1) {
+            document.body.classList.add('playback-active');
+        } else {
+            // Ensure it doesn't remove it if the playback modal is somehow still open
+            if (!playbackModal.classList.contains('is-active')) {
+                document.body.classList.remove('playback-active');
+            }
+        }
 
-        // 5. Populate the modal content
-        playbackTitle.textContent = suggestion.song_name;
-        playbackArtist.textContent = `by ${suggestion.song_artist}`;
-        playbackSpotifyPreview.innerHTML = iframeHTML;
-
-        // 6. Set the button links
-        const spotifyWebUrl = `https://open.spotify.com/track/${trackId}`; // Use standard Spotify Web URL
-
-        const youtubeQuery = `${suggestion.song_name} ${suggestion.song_artist} official audio`;
-        const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}`;
-
-        openSpotifyBtn.href = spotifyWebUrl;
-        openYoutubeBtn.href = youtubeSearchUrl;
-
-        // 7. Open the modal
-        openPlaybackModal();
-    }
+        if (currentIdx === 1) { // Step 2: Preview
+            document.body.classList.add('playback-active');
+        } else {
+            // Only remove if the modal isn't also open
+            if (!playbackModal.classList.contains('is-active')) {
+                document.body.classList.remove('playback-active');
+            }
+        }
+    };
 
     async function openLyricsForSuggestion(suggestion) {
         if (!suggestion) return;
@@ -1847,12 +1903,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const neutralCard = document.querySelector('.imp-card.neutral');
         if (neutralCard) neutralCard.classList.add('active');
 
+        document.body.classList.remove('playback-active');
+
         updateSharingMode('public');
 
         // 8. Return to Step 1
         if (typeof setStep === "function") {
             setStep(0);
         }
+        document.body.classList.remove('playback-active'); // Show nav bar again
 
         selectedTargetUsers = [];
         renderSelectedUsers();
@@ -2337,6 +2396,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Manage button visibility
             prev.style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
 
+
+            if (currentIdx === 1) {
+                document.body.classList.add('playback-active');
+            } else {
+                // Only remove the class if the playback modal isn't also open
+                const playbackModal = document.getElementById('playbackModal');
+                if (!playbackModal.classList.contains('is-active')) {
+                    document.body.classList.remove('playback-active');
+                }
+            }
+
             if (currentIdx === steps.length - 1) {
                 next.style.display = 'none'; // Hide next on last step, let 'Finalize' show
             } else {
@@ -2363,6 +2433,174 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize UI
         setStep(0);
     }
+
+    function syncLyricsUI() {
+        if (!ytPlayer || !isYTReady) return;
+
+        // Use a small constant offset (e.g., -0.2s) to account for UI lag
+        const time = ytPlayer.getCurrentTime() - 0.2;
+
+        ['l-', 'm-l-'].forEach(prefix => {
+            const timeline = document.getElementById(prefix + 'timeline');
+            const curr = document.getElementById(prefix + 'currTime');
+            const view = document.getElementById(prefix + 'lyrics-view');
+            const scroll = document.getElementById(prefix + 'scroll-wrapper');
+
+            if (timeline) timeline.value = ytPlayer.getCurrentTime();
+            if (curr) curr.innerText = formatDuration(ytPlayer.getCurrentTime() * 1000);
+
+            if (!scroll || !view) return;
+
+            // Find the index of the line that should be active right now
+            const idx = syncedLyrics.findLastIndex(l => l.time <= time);
+
+            if (idx !== -1) {
+                const lines = scroll.querySelectorAll('.lyric-line');
+                const activeLine = document.getElementById(prefix === 'm-l-' ? `m-line-${idx}` : `l-line-${idx}`);
+
+                if (activeLine && !activeLine.classList.contains('active')) {
+                    // Update CSS classes
+                    lines.forEach(el => el.classList.remove('active'));
+                    activeLine.classList.add('active');
+
+                    // DYNAMIC SCROLLING: Keep the active line centered in the lyrics-view
+                    const viewHeight = view.offsetHeight;
+                    const lineOffset = activeLine.offsetTop;
+                    const lineHeight = activeLine.offsetHeight;
+
+                    // Calculate the transform needed to center this specific line
+                    const scrollPos = lineOffset - (viewHeight / 2) + (lineHeight / 2);
+                    scroll.style.transform = `translateY(${-scrollPos}px)`;
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.modal-tab, .modal-tab-pane').forEach(el => el.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.target).classList.add('active');
+
+            // If switching to Spotify, pause YouTube
+            if (tab.dataset.target === 'm-spotify-preview' && isYTReady) ytPlayer.pauseVideo();
+        });
+    });
+
+    // Update the Playback Modal function
+    window.showPlaybackModal = async function showPlaybackModal(suggestion) {
+
+        document.body.classList.add('playback-active');
+
+        const songUri = suggestion.spotify_uri;
+        if (!songUri) return;
+
+        playbackModal.classList.add('is-active');
+
+        // 1. Setup UI
+        playbackTitle.textContent = suggestion.song_name;
+        playbackArtist.textContent = `by ${suggestion.song_artist}`;
+
+        // Set Blurred Background
+        const modalContainer = document.getElementById('modal-preview-container');
+        modalContainer.style.setProperty('--bg-image', `url(${suggestion.song_cover_url})`);
+        document.getElementById('m-l-album-art').src = suggestion.song_cover_url;
+
+        // 2. Load Spotify
+        const trackId = songUri.split(':')[2];
+        const iframeSrc = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+        playbackSpotifyPreview.innerHTML = `<iframe style="border-radius:12px" src="${iframeSrc}" width="100%" height="352" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+
+        // 3. Load Synced Lyrics (YouTube Ghost Player)
+        await loadModalLyrics(suggestion.song_name, suggestion.song_artist);
+
+        // 4. Open Modal
+
+        // 5. Notify Sharer
+        fetch(`/api/music/suggestions/${suggestion.id}/play-notify`, { method: 'POST', credentials: 'include' }).catch(() => { });
+    };
+
+    // Inside window.showPlaybackModal
+    async function loadModalLyrics(track, artist) {
+        const wrapper = document.getElementById('m-l-scroll-wrapper');
+        wrapper.innerHTML = `<div class="lyric-line active">Fetching synced content...</div>`;
+
+        try {
+            const res = await fetch(`/api/auto-sync?track=${encodeURIComponent(track)}&artist=${encodeURIComponent(artist)}`);
+            const data = await res.json();
+
+            if (data.videoId && isYTReady) {
+                syncedLyrics = data.lyrics;
+                ytPlayer.cueVideoById(data.videoId);
+
+                wrapper.innerHTML = syncedLyrics.length > 0
+                    ? syncedLyrics.map((l, i) => `<div class="lyric-line" id="m-line-${i}">${l.words}</div>`).join('')
+                    : `<div class="lyric-line active">No synced lyrics found.</div>`;
+            }
+        } catch (err) {
+            wrapper.innerHTML = `<div class="lyric-line active">Error loading.</div>`;
+        }
+    }
+
+    // Ensure the Play Button in the Modal works
+    document.getElementById('m-l-play-btn').addEventListener('click', () => {
+        if (!isYTReady || !ytPlayer) return;
+        const state = ytPlayer.getPlayerState();
+        if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+        else ytPlayer.playVideo();
+    });
+
+
+    window.showPublicUserProfile = async function (userId) {
+        // 1. Switch to the profile page view
+        showPage('profile');
+
+        // 2. Prepare the UI (Loading state)
+        const profileUsername = document.getElementById('profilePageUsername');
+        const profileRealName = document.getElementById('profilePageRealName');
+        const profileFeedContainer = document.getElementById('profileFeed');
+        const profileAvatar = document.getElementById('profilePageAvatar');
+
+        profileUsername.textContent = "Loading...";
+        profileRealName.textContent = "...";
+        profileFeedContainer.innerHTML = '<div class="spinner"></div>';
+
+        try {
+            // 3. Fetch specific user details
+            const userRes = await fetch(`/api/users/${userId}`, { credentials: 'include' });
+            if (!userRes.ok) throw new Error("Could not load user data");
+
+            const userData = await userRes.json();
+
+            // 4. Update Header with Real Name (Fixes your visibility request)
+            profileUsername.textContent = userData.user_name;
+            profileRealName.textContent = userData.real_name || "No real name provided";
+
+            if (userData.profile_pic_path) {
+                profileAvatar.src = `media/${userData.profile_pic_path}`;
+            } else {
+                profileAvatar.src = './content/default.jpg';
+            }
+
+            // 5. Fetch and Render that specific user's shared songs
+            const historyRes = await fetch(`/api/users/${userId}/suggestions`, { credentials: 'include' });
+            const historyData = await historyRes.json();
+
+            if (historyData.suggestions.length === 0) {
+                profileFeedContainer.innerHTML = '<p style="text-align:center; color:#aaa; margin-top:20px;">This user hasn\'t shared any songs yet.</p>';
+            } else {
+                // Re-use your existing rendering logic to show the cards
+                renderSuggestions(historyData.suggestions, profileFeedContainer);
+            }
+
+        } catch (err) {
+            console.error("Error loading public profile:", err);
+            profileUsername.textContent = "Error";
+            profileFeedContainer.innerHTML = '<p style="text-align:center;">Failed to load profile.</p>';
+        }
+    };
+
+
 });
 
 
@@ -2484,18 +2722,17 @@ function renderGlobalUserResults(users) {
     users.forEach(user => {
         const li = document.createElement('li');
         li.className = 'search-result-item';
-
         li.innerHTML = `
-      <img src="media/${user.profile_pic_path || './content/default.jpg'}" alt="Avatar" class="search-result-cover">
-      <div class="search-result-info">
-        <div class="search-result-title">${user.user_name}</div>
-        <div class="search-result-artist">${user.real_name || ''}</div>
-      </div>
-    `;
+            <img src="media/${user.profile_pic_path || './content/default.jpg'}" alt="Avatar" class="search-result-cover">
+            <div class="search-result-info">
+                <div class="search-result-title">${user.user_name}</div>
+                <div class="search-result-artist">${user.real_name || ''}</div>
+            </div>
+        `;
 
         li.addEventListener('click', () => {
-            alert("Not Yet implementd, Bi yavas tek basima yetisemiyom");
             closeGlobalSearchModal();
+            showPublicUserProfile(user.id); // Replaces the alert
         });
 
         globalSearchResults.appendChild(li);
@@ -2849,3 +3086,27 @@ function getRatingDescription(rating) {
     if (val >= 3) return "Okay: It has its moments, but not for everyone.";
     return "Poor: Not recommended unless you're a die-hard fan.";
 }
+
+// --- MODAL TIMELINE SEEK LOGIC ---
+const mLTimeline = document.getElementById('m-l-timeline');
+
+if (mLTimeline) {
+    mLTimeline.addEventListener('input', () => {
+        if (isYTReady && ytPlayer && ytPlayer.seekTo) {
+            const seekTime = parseFloat(mLTimeline.value);
+
+            // 1. Seek the YouTube player to the selected time
+            ytPlayer.seekTo(seekTime, true);
+
+            // 2. Immediately update the text label for better responsiveness
+            const currLabel = document.getElementById('m-l-currTime');
+            if (currLabel) {
+                currLabel.innerText = formatDuration(seekTime * 1000);
+            }
+        }
+    });
+}
+
+
+
+

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/content/favicon.ico">
     <title>Song-Share</title>
     <link rel="stylesheet" href="loginstyle.css">
     <link rel="stylesheet" href="songsharestyle.css">
@@ -24,6 +25,11 @@
             <div class="page page-home is-active">
                 <h1 style="font-size: 3rem; padding-bottom: 50px;">Home Dashboard</h1>
                 <div id="suggestionFeed" class="suggestion-feed-container">
+                </div>
+
+                <div id="scrollHint" class="scroll-hint">
+                    <span>SCROLL</span>
+                    <div class="chevron"></div>
                 </div>
 
                 <div id="feedLoadingSpinner" class="loading-spinner" style="display: none;">
@@ -84,26 +90,62 @@
                 </div>
             </div>
 
-            <div id="playbackModal" class="modal">
-                <div class="modal-content">
+            <div id="playbackModal" class="modal playback-fullscreen">
+                <div class="modal-content fullscreen-content">
                     <span id="playbackCloseButton" class="close-button">&times;</span>
-                    <h2 id="playbackTitle" style="font-size: 2.5rem; margin-bottom: 0;"></h2>
-                    <p id="playbackArtist"
-                        style="color: #ccc; margin-top: 5px; margin-bottom: 20px; font-size: 1.5rem;"></p>
 
-                    <div id="playbackSpotifyPreview" class="spotify-preview-container" style="margin-bottom: 20px;">
+                    <div id="m-l-loading-overlay" class="modal-loading-overlay">
+                        <div class="spinner"></div>
+                        <p class="jersey-10-regular">Tuning the strings...</p>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <a id="openSpotifyBtn" href="#" target="_blank" class="primary-btn"
-                            style="background: #1DB954;">
-                            Open on Spotify <i class="fab fa-spotify"></i>
+                    <div class="modal-header-info">
+                        <h2 id="playbackTitle" class="jersey-10-regular"></h2>
+                        <p id="playbackArtist"></p>
+                    </div>
+
+                    <div class="modal-footer-actions">
+                        <a id="openSpotifyBtn" href="#" target="_blank" class="primary-btn spotify-btn">
+                            Spotify <i class="fab fa-spotify"></i>
                         </a>
-                        <a id="openYoutubeBtn" href="#" target="_blank" class="primary-btn"
-                            style="background: #FF0000;">
-                            Open on YouTube <i class="fab fa-youtube"></i>
+                        <a id="openYoutubeBtn" href="#" target="_blank" class="primary-btn youtube-btn">
+                            YouTube <i class="fab fa-youtube"></i>
                         </a>
                     </div>
+
+                    <div class="preview-tabs">
+                        <button type="button" class="modal-tab active" data-target="m-spotify-preview">Spotify
+                            Snippet</button>
+                        <button type="button" class="modal-tab" data-target="m-lyrics-preview">Synced Lyrics</button>
+                    </div>
+
+                    <div id="modal-preview-container" class="glass-panel">
+                        <div id="m-spotify-preview" class="modal-tab-pane active">
+                            <div id="playbackSpotifyPreview" class="spotify-preview-container"></div>
+                        </div>
+
+                        <div id="m-lyrics-preview" class="modal-tab-pane">
+                            <div class="lyrics-grid-container">
+                                <div class="lyrics-album-wrapper">
+                                    <img id="m-l-album-art" src="content/default.jpg" alt="Album Art">
+                                    <div id="m-l-play-btn" class="lyrics-overlay-play">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                                <div class="lyrics-content-side">
+                                    <div id="m-l-lyrics-view" style="height:250px; overflow:hidden;">
+                                        <div id="m-l-scroll-wrapper"></div>
+                                    </div>
+                                    <div class="lyrics-mini-controls">
+                                        <span id="m-l-currTime">0:00</span>
+                                        <input type="range" id="m-l-timeline" value="0" min="0" step="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 
@@ -431,6 +473,11 @@
                 <div class="profile-header-container">
                     <div class="profile-avatar-wrapper">
                         <img id="profilePageAvatar" src="./content/default.jpg" alt="Profile Picture">
+                    </div>
+
+                    <div id="scrollHint" class="scroll-hint">
+                        <span>SCROLL</span>
+                        <div class="chevron"></div>
                     </div>
 
                     <h1 id="profilePageUsername" style="margin-bottom: 0;">Loading...</h1>

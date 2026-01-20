@@ -1114,7 +1114,7 @@ router.get('/api/auto-sync', async (req, res) => {
 
     try {
         // 1. Search YouTube for a lyrics-focused video ID
-        const searchResult = await yts(`${track} ${artist} official lyrics`);
+        const searchResult = await yts(`${track} ${artist} official audio lyrics`);
         const videoId = searchResult.videos[0]?.videoId;
 
         if (!videoId) return res.status(404).json({ error: "YouTube video not found" });
@@ -1141,5 +1141,81 @@ router.get('/api/auto-sync', async (req, res) => {
     }
 });
 
+// GET /api/music/song-details?track=...&artist=...
+router.get("/api/music/song-details", requireAuth, async (req, res) => {
+    const { track, artist } = req.query;
+
+    // FIX: Only require track, as the artist is likely part of the track string
+    if (!track) return res.status(400).json({ error: "Missing track name" });
+
+    try {
+        const token = await getSpotifyToken();
+        
+        // FIX: Construct a query that works whether artist is separate or bundled
+        const query = (artist && artist.trim() !== "") ? `track:${track} artist:${artist}` : track;
+        const searchUrl = `${SPOTIFY_SEARCH_URL}?q=${encodeURIComponent(query)}&type=track&limit=1`;
+        
+        const response = await fetch(searchUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const item = data.tracks?.items[0];
+
+        if (!item) return res.status(404).json({ error: "Not found" });
+
+        const imageUrl = item.album.images[0]?.url;
+        const colorData = imageUrl ? await getDominantColors(imageUrl) : null;
+
+        res.json({
+            name: item.name,
+            artist: item.artists.map(a => a.name).join(', '),
+            imageUrl: imageUrl,
+            colors: colorData
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+        const { rows } = await q(
+            "SELECT id, user_name, real_name, profile_pic_path FROM users WHERE id = $1",
+            [req.params.id]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: "User not found" });
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+// GET /api/users/:id/suggestions - Fetch songs shared by a specific user
+router.get("/api/users/:id/suggestions", requireAuth, async (req, res) => {
+    const targetUserId = req.params.id;
+    const currentUserId = req.user.sub;
+
+    const sql = `
+        SELECT
+            s.*,
+            u.user_name AS suggester_username,
+            u.profile_pic_path AS suggester_avatar,
+            r.song_reaction_type AS current_user_reaction
+        FROM song_suggestions s
+        JOIN users u ON s.user_id = u.id
+        LEFT JOIN song_suggestion_reactions r ON r.suggestion_id = s.id AND r.user_id = $2
+        WHERE s.user_id = $1
+          AND (s.visibility_public = true OR $2 = ANY(s.target_users))
+        ORDER BY s.date_added DESC
+    `;
+
+    try {
+        const result = await q(sql, [targetUserId, currentUserId]);
+        res.json({ suggestions: result.rows });
+    } catch (err) {
+        console.error("Error fetching user history:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
 export default router;

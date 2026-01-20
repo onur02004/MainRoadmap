@@ -356,7 +356,7 @@ body {
     border-radius: 16px;
     position: relative;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    max-width: 1100px;
+    max-width: 87vw;
     max-height: 90vh;
     /* Don't overflow screen height */
     overflow-y: auto;
@@ -2067,8 +2067,8 @@ section[style*="overflow-y: scroll"] {
     position: relative;
 }
 #l-scroll-wrapper { transition: transform 0.4s ease; padding: 20px; }
-.lyric-line { font-size: 1.2rem; padding: 8px 0; opacity: 0.2; transition: 0.3s; }
-.lyric-line.active { opacity: 1; color: #1DB954; font-weight: bold; transform: scale(1.1); }
+.lyric-line { font-size: 1.2rem; padding: 8px 0; opacity: 0.2; transition: 0.3s; padding-left: 20px;}
+.lyric-line.active { opacity: 1; color: #1DB954; font-weight: bold; transform: scale(1.1); padding-left: 35px;}
 
 /* Container for the preview */
 .glass-panel {
@@ -2156,7 +2156,7 @@ section[style*="overflow-y: scroll"] {
     opacity: 1;
     color: #4eba6b; /* Matching the green in your screenshot */
     transform: scale(1.05);
-    font-size: 2rem;
+    font-size: 2.2rem;
 }
 
 /* Mini Timeline */
@@ -2213,14 +2213,22 @@ section[style*="overflow-y: scroll"] {
     left: 0;
     right: 0;
     bottom: 0;
-    /* Use the variable we will set in JavaScript */
+    /* Use the variable set in JavaScript */
     background-image: var(--bg-image, none);
     background-size: cover;
     background-position: center;
-    /* This creates the deep "Hue" blur effect */
-    filter: blur(40px) brightness(0.6);
-    z-index: -1; /* Moves the blurred image behind the text/controls */
+    /* Normal/Desktop blur value */
+    filter: blur(40px) brightness(0.6); 
+    z-index: -1; 
     transition: background-image 0.5s ease-in-out;
+}
+
+/* Mobile override for smaller screens */
+@media (max-width: 768px) {
+    .glass-panel::before {
+        /* Mobile blur value */
+        filter: blur(10px) brightness(0.6);
+    }
 }
 
 
@@ -2248,4 +2256,211 @@ section[style*="overflow-y: scroll"] {
 #spotifyPreviewContainer iframe {
     width: 100% !important;
     max-width: none !important;
+}
+
+/* Fullscreen Modal */
+.playback-fullscreen .fullscreen-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 90vh;
+    border-radius: 0;
+    border: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}
+
+.modal-header-info {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-header-info h2 { font-size: 3rem; margin: 0; }
+.modal-header-info p { font-size: 1.2rem; color: #9ca3af; margin: 0; }
+
+.modal-tab-pane { display: none; width: 100%; }
+.modal-tab-pane.active { display: block; height: 100%;}
+
+.modal-footer-actions {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+
+.spotify-btn { background: #1DB954; max-width: 200px; }
+.youtube-btn { background: #FF0000; max-width: 200px; }
+
+
+/* --- Desktop: Lyrics Grid Layout --- */
+@media (min-width: 769px) {
+    .lyrics-grid-container {
+        display: grid;
+        /* Define 300px for the cover and 1fr (remaining space) for lyrics */
+        grid-template-columns: 300px 1fr; 
+        gap: 40px;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+    }
+
+    .lyrics-album-wrapper {
+        display: block; /* Ensure it is visible on desktop */
+        width: 300px;
+        height: 300px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+}
+
+/* --- Mobile: Hide Album Art in Preview --- */
+@media (max-width: 768px) {
+    .lyrics-grid-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* Target the album wrapper in the suggestion preview specifically to hide it */
+    #lyrics-preview .lyrics-album-wrapper {
+        display: none !important;
+    }
+
+    /* Ensure lyrics take up the full width since the cover is gone */
+    .lyrics-content-side {
+        width: 100%;
+    }
+
+    #l-lyrics-view {
+        height: 350px !important; /* Give more room for lyrics on mobile */
+    }
+}
+
+/* --- Standard Image Rules --- */
+.lyrics-album-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Hide navigation bar when a preview or modal is active */
+body.playback-active .fixed-bottom-nav {
+    display: none !important;
+}
+
+/* Ensure the main content takes up the full screen when nav is hidden */
+body.playback-active .main-content {
+    margin-bottom: 0 !important;
+    padding-bottom: 20px !important;
+}
+
+.modal-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(19, 19, 19, 0.9);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-loading-overlay.is-active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-loading-overlay .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top: 4px solid #4eba6b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+
+/* Enhanced Scroll Hint */
+.scroll-hint {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none; /* Hidden on desktop */
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 10001; /* Above the dialog-backdrop if necessary */
+    pointer-events: none;
+
+    /* Background pill to make it stand out */
+    background: rgba(19, 19, 19, 0.6);
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid rgba(82, 196, 113, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(82, 196, 113, 0.2);
+}
+
+.scroll-hint span {
+    font-size: 1.3rem;
+    color: #52c471;
+    letter-spacing: 4px;
+    font-weight: 400;
+    /* Glow effect for the text */
+    text-shadow: 0 0 8px rgba(82, 196, 113, 0.6);
+}
+
+.chevron {
+    width: 10px;
+    height: 10px;
+    border-bottom: 3px solid #52c471;
+    border-right: 3px solid #52c471;
+    transform: rotate(45deg);
+    margin-top: -2px;
+    filter: drop-shadow(0 0 3px rgba(82, 196, 113, 0.8));
+}
+
+
+.scroll-hint {
+    display: flex;
+    /* Duration 2.5s for a smoother feel, 3 iterations */
+    animation: enhancedBounce 2.5s ease-in-out 3 forwards;
+}
+
+
+@media screen and (max-width: 899px) {
+    .scroll-hint {
+        margin-bottom: 55px;
+    }
+}
+
+
+@keyframes enhancedBounce {
+    0% {
+        transform: translate(-50%, 20px);
+        opacity: 0;
+    }
+    20%, 80% {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -10px);
+        opacity: 0;
+    }
 }

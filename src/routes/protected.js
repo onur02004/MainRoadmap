@@ -271,5 +271,23 @@ router.get("/jks", requireAuth , requireFeature('jks'), (req, res) => {
   });
 });
 
+router.get("/listen-to/:query", requireAuth, (req, res) => {
+  const projectRoot = path.join(__dirname, '../..');
+
+  const filePath = path.join(
+        projectRoot, 
+        'src', 
+        'public', 
+        'songLyricsPage.html'
+    );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error sending songLyricsPage.html:", err);
+      res.status(500).send("Internal Server Error: Could not load page (Hata Bi sn)");
+    }
+  });
+});
+
 
 export default router;
