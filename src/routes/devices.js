@@ -14,14 +14,9 @@ const router = Router();
  */
 router.get("/api/device-kinds", requireAuth, async (_req, res) => {
     try {
-        const { rows } = await q(
-            `select key, label, is_smart
-         from device_kinds
-        order by label asc`
-        );
+        const { rows } = await q(`select key, label, is_smart from device_kinds order by label asc`);
         res.json(rows);
     } catch (err) {
-        console.error("GET /api/device-kinds failed:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -35,55 +30,31 @@ router.get("/api/devices", requireAuth, async (req, res) => {
     try {
         const { rows } = await q(
             `with base as (
-  select d.id,
-         d.display_name,
-         d.kind_key,
-         dk.label as kind_label,
-         dk.is_smart,
-         d.status,
-         d.last_seen,
-         d.meta,
-         d.created_at,
-         s.mode       as state_mode,
-         s.params     as state_params,
-         s.updated_at as state_updated_at
-    from devices d
-    join device_kinds dk on dk.key = d.kind_key
-    left join device_state s on s.device_id = d.id
-   where d.owner_user_id = $1
-),
-caps as (
-  select dc.device_id,
-         json_agg(distinct dc.capability order by dc.capability) as capabilities
-    from device_capabilities dc
-   group by dc.device_id
-),
-acts as (
-  select da.device_id,
-         json_agg(
-           jsonb_build_object(
-             'action', da.action,
-             'handlerKey', da.handler_key,
-             'paramSchema', coalesce(da.param_schema, '{}'::jsonb)
-           ) order by da.action
-         ) as actions
-    from device_actions da
-   group by da.device_id
-)
-select b.*,
-       coalesce(c.capabilities, '[]') as capabilities,
-       coalesce(a.actions, '[]')      as actions
-  from base b
-  left join caps c on c.device_id = b.id
-  left join acts a on a.device_id = b.id;
-
-      `,
+              select d.id, d.display_name, d.kind_key, dk.label as kind_label, dk.is_smart,
+                     d.status, d.last_seen, d.meta, d.created_at,
+                     s.mode as state_mode, s.params as state_params, s.updated_at as state_updated_at
+                from devices d
+                join device_kinds dk on dk.key = d.kind_key
+                left join device_state s on s.device_id = d.id
+               where d.owner_user_id = $1
+            ),
+            caps as (
+              select dc.device_id, json_agg(distinct dc.capability order by dc.capability) as capabilities
+                from device_capabilities dc group by dc.device_id
+            ),
+            acts as (
+              select da.device_id,
+                     json_agg(jsonb_build_object('action', da.action, 'handlerKey', da.handler_key) order by da.action) as actions
+                from device_actions da group by da.device_id
+            )
+            select b.*, coalesce(c.capabilities, '[]') as capabilities, coalesce(a.actions, '[]') as actions
+              from base b
+              left join caps c on c.device_id = b.id
+              left join acts a on a.device_id = b.id;`,
             [req.user.sub]
         );
-
         res.json({ items: rows, count: rows.length });
     } catch (err) {
-        console.error("GET /api/devices failed:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -95,59 +66,33 @@ select b.*,
 router.get("/api/devices/:id", requireAuth, async (req, res) => {
     try {
         const { rows } = await q(
-            `
-       with base as (
-   select d.id,
-          d.display_name,
-          d.kind_key,
-          dk.label as kind_label,
-          dk.is_smart,
-          d.status,
-          d.last_seen,
-          d.meta,
-          d.created_at,
-         s.mode as state_mode,
-         s.params as state_params,
-         s.updated_at as state_updated_at
-     from devices d
-     join device_kinds dk on dk.key = d.kind_key
-    left join device_state s on s.device_id = d.id
-    where d.owner_user_id = $1
-     and d.id = $2::uuid
- ),
-      caps as (
-        select dc.device_id,
-               json_agg(distinct dc.capability order by dc.capability) as capabilities
-          from device_capabilities dc
-         group by dc.device_id
-      ),
-      acts as (
-        select da.device_id,
-               json_agg(
-                 jsonb_build_object(
-                   'action', da.action,
-                   'handlerKey', da.handler_key,
-                   'paramSchema', coalesce(da.param_schema, '{}'::jsonb)
-                 ) order by da.action
-               ) as actions
-          from device_actions da
-         group by da.device_id
-      )
-      select b.*,
-             coalesce(c.capabilities, '[]') as capabilities,
-             coalesce(a.actions, '[]')      as actions
-        from base b
-        left join caps c on c.device_id = b.id
-        left join acts a on a.device_id = b.id
-      `,
+            `with base as (
+               select d.id, d.display_name, d.kind_key, dk.label as kind_label, dk.is_smart,
+                      d.status, d.last_seen, d.meta, d.created_at,
+                      s.mode as state_mode, s.params as state_params, s.updated_at as state_updated_at
+                 from devices d
+                 join device_kinds dk on dk.key = d.kind_key
+                 left join device_state s on s.device_id = d.id
+                where d.owner_user_id = $1 and d.id = $2::uuid
+             ),
+             caps as (
+               select dc.device_id, json_agg(distinct dc.capability order by dc.capability) as capabilities
+                 from device_capabilities dc group by dc.device_id
+             ),
+             acts as (
+               select da.device_id,
+                      json_agg(jsonb_build_object('action', da.action, 'handlerKey', da.handler_key) order by da.action) as actions
+                 from device_actions da group by da.device_id
+             )
+             select b.*, coalesce(c.capabilities, '[]') as capabilities, coalesce(a.actions, '[]') as actions
+               from base b
+               left join caps c on c.device_id = b.id
+               left join acts a on a.device_id = b.id;`,
             [req.user.sub, req.params.id]
         );
-
-        const row = rows[0];
-        if (!row) return res.status(404).json({ error: "Not found" });
-        res.json(row);
+        if (!rows[0]) return res.status(404).json({ error: "Not found" });
+        res.json(rows[0]);
     } catch (err) {
-        console.error("GET /api/devices/:id failed:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -164,23 +109,17 @@ router.post("/api/devices", requireAuth, async (req, res) => {
         if (!kindKey || !displayName) {
             return res.status(400).json({ error: "kindKey and displayName are required" });
         }
-
-        // Validate kind exists
         const kind = await q(`select 1 from device_kinds where key=$1 limit 1`, [kindKey]);
         if (!kind.rowCount) return res.status(400).json({ error: "Unknown kindKey" });
 
         const insert = await q(
-            `
-      insert into devices (owner_user_id, kind_key, display_name, meta)
-      values ($1, $2, $3, $4::jsonb)
-      returning id, owner_user_id, kind_key, display_name, status, last_seen, meta, created_at
-      `,
+            `insert into devices (owner_user_id, kind_key, display_name, meta)
+             values ($1, $2, $3, $4::jsonb)
+             returning id, owner_user_id, kind_key, display_name, status, last_seen, meta, created_at`,
             [req.user.sub, kindKey, displayName, meta]
         );
-
         res.status(201).json(insert.rows[0]);
     } catch (err) {
-        console.error("POST /api/devices failed:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -419,69 +358,154 @@ router.patch("/api/devices/:id/state", requireAuth, express.json(), async (req, 
     const { id } = req.params;
     const { mode, params = {}, execute = true } = req.body || {};
 
-    // soft-validate mode
-    const allowed = new Set(["rgb", "wave", "hue"]);
-    if (mode && !allowed.has(mode)) return res.status(400).json({ error: "Invalid mode" });
+    // Genişletilmiş ve izin verilmiş Matrix modları
+    const allowed = new Set([
+        "rgb", "wave", "hue", "image", "spotify_album", 
+        "spotify_lyrics", "weather", "calendar", "countdown", "text", "auto"
+    ]);
 
-    // Ownership + current state
+    if (mode && !allowed.has(mode)) {
+        return res.status(400).json({ error: "Invalid mode provided" });
+    }
+
     const cur = await q(
-        `select d.id, d.kind_key,
-            s.mode as cur_mode, s.params as cur_params
-       from devices d
-  left join device_state s on s.device_id = d.id
-      where d.id = $1::uuid and d.owner_user_id = $2`,
+        `select d.id, d.kind_key, s.mode as cur_mode, s.params as cur_params
+           from devices d
+      left join device_state s on s.device_id = d.id
+          where d.id = $1::uuid and d.owner_user_id = $2`,
         [id, req.user.sub]
     );
     const row = cur.rows[0];
     if (!row) return res.status(404).json({ error: "Not found" });
 
-    // Merge params; if no row in state, insert; else update
     const nextMode = mode || row.cur_mode || "rgb";
     const nextParams = { ...(row.cur_params || {}), ...(params || {}) };
 
     const up = await q(
         `insert into device_state (device_id, mode, params, updated_by)
          values ($1::uuid, $2, $3::jsonb, $4)
-      on conflict (device_id) do update
-            set mode=$2, params=$3::jsonb, updated_at=now(), updated_by=$4
-      returning mode, params, updated_at`,
+         on conflict (device_id) do update
+         set mode=$2, params=$3::jsonb, updated_at=now(), updated_by=$4
+         returning mode, params, updated_at`,
         [id, nextMode, nextParams, req.user.sub]
     );
 
-    // Optional history
-    await q(
-        `insert into device_state_history (device_id, prev_mode, next_mode, prev_params, next_params, changed_by)
-     values ($1::uuid, $2, $3, $4::jsonb, $5::jsonb, $6)`,
-        [id, row.cur_mode, nextMode, row.cur_params, nextParams, req.user.sub]
-    ).catch(() => { }); // best-effort
+    res.json({ ok: true, state: up.rows[0] });
+});
 
-    // Optionally execute the new state right away
-    if (!execute) return res.json({ ok: true, state: up.rows[0] });
 
-    // Map mode -> action calls (so state change actually drives the device)
+// Memory cache for active codes: code -> { status: 'pending' | 'claimed', deviceId: null }
+const activeDeviceCodes = new Map();
+
+function generate6DigitCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * GET /api/pairing/device-code
+ * Called by the unauthenticated Matrix screen on boot to get a pairing code.
+ */
+router.get("/api/pairing/device-code", async (req, res) => {
+    let code = generate6DigitCode();
+    while (activeDeviceCodes.has(code)) {
+        code = generate6DigitCode();
+    }
+    activeDeviceCodes.set(code, { status: "pending", deviceId: null });
+    
+    // Auto-expire pairing code after 10 minutes
+    setTimeout(() => activeDeviceCodes.delete(code), 10 * 60 * 1000);
+
+    res.json({ code });
+});
+
+/**
+ * GET /api/pairing/check
+ * Polled by the Matrix screen to determine if the user claimed the device yet.
+ */
+router.get("/api/pairing/check", async (req, res) => {
+    const { code } = req.query;
+    if (!code || !activeDeviceCodes.has(code)) {
+        return res.status(404).json({ error: "Code expired or invalid" });
+    }
+    const state = activeDeviceCodes.get(code);
+    if (state.status === "claimed") {
+        activeDeviceCodes.delete(code); // Clean up memory
+        return res.json({ status: "paired", deviceId: state.deviceId });
+    }
+    res.json({ status: "pending" });
+});
+
+/**
+ * POST /api/pairing/claim-code
+ * User submits the 6-digit code from the web dashboard to claim the device.
+ */
+router.post("/api/pairing/claim-code", requireAuth, express.json(), async (req, res) => {
+    const { code, displayName, kindKey } = req.body || {};
+    if (!code || !displayName || !kindKey) {
+        return res.status(400).json({ error: "Code, display name, and kind are required" });
+    }
+
+    if (!activeDeviceCodes.has(code)) {
+        return res.status(400).json({ error: "Invalid or expired pairing code" });
+    }
+
+    const state = activeDeviceCodes.get(code);
+    if (state.status === "claimed") {
+        return res.status(400).json({ error: "Code already claimed" });
+    }
+
     try {
-        if (nextMode === "rgb") {
-            const { r = 255, g = 255, b = 255, brightness } = nextParams;
-            // set brightness first if provided
-            if (Number.isFinite(brightness)) {
-                await callAction(id, "set_brightness", { value: Number(brightness) });
-            }
-            await callAction(id, "set_color", { r, g, b });
-        } else if (nextMode === "wave") {
-            const { speed = 0.5, brightness } = nextParams;
-            if (Number.isFinite(brightness)) {
-                await callAction(id, "set_brightness", { value: Number(brightness) });
-            }
-            await callAction(id, "wave", { speed });
-        } else if (nextMode === "hue") {
-            // Placeholder until you implement hue
-            return res.status(400).json({ error: "Hue not implemented yet" });
+        // Insert device into database mapped to user
+        const insert = await q(
+            `insert into devices (owner_user_id, kind_key, display_name, status, last_seen, meta)
+             values ($1, $2, $3, 'online', now(), '{}'::jsonb)
+             returning id`,
+            [req.user.sub, kindKey, displayName]
+        );
+        const deviceId = insert.rows[0].id;
+
+        // Default capabilities for this new RGB Matrix screen
+        const caps = ["rgb", "wave", "brightness", "image", "spotify_album", "text"];
+        for (const cap of caps) {
+            await q(`insert into device_capabilities (device_id, capability) values ($1::uuid, $2)`, [deviceId, cap]);
         }
-        return res.json({ ok: true, state: up.rows[0] });
-    } catch (e) {
-        return res.status(500).json({ error: "Apply failed", detail: e.message });
+
+        // Add device actions
+        const actions = [
+            { action: "on", handler: "led_control.on" },
+            { action: "off", handler: "led_control.off" },
+            { action: "set_color", handler: "led_control.set_color" },
+            { action: "set_brightness", handler: "led_control.set_brightness" }
+        ];
+        for (const act of actions) {
+            await q(
+                `insert into device_actions (device_id, action, handler_key)
+                 values ($1::uuid, $2, $3)
+                 on conflict do nothing`,
+                [deviceId, act.action, act.handler]
+            );
+        }
+
+        // Add initial default active mode
+        await q(
+            `insert into device_state (device_id, mode, params, updated_by)
+             values ($1::uuid, 'rgb', '{"r":0,"g":255,"b":0,"brightness":100}'::jsonb, $2)
+             on conflict do nothing`,
+            [deviceId, req.user.sub]
+        );
+
+        // Inform the matrix screen polling process about the success
+        state.status = "claimed";
+        state.deviceId = deviceId;
+        activeDeviceCodes.set(code, state);
+
+        res.json({ ok: true, deviceId });
+    } catch (err) {
+        console.error("Error creating device via claim-code:", err);
+        res.status(500).json({ error: "Failed to link device" });
     }
 });
+
 
 // Small helper uses your existing executor endpoint internally
 async function callAction(deviceId, action, params) {

@@ -14,6 +14,58 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
 
+    <style>
+        .matrix-select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1.4rem;
+            background: rgba(30, 30, 30, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .matrix-select:hover {
+            border-color: #52c471;
+            box-shadow: 0 4px 12px rgba(82, 196, 113, 0.2);
+        }
+
+        .matrix-select option {
+            background: #131313;
+            color: #fff;
+        }
+
+        .matrix-text-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1.3rem;
+            background: rgba(20, 20, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .matrix-text-input:focus {
+            border-color: #52c471;
+        }
+
+        .mode-subpanel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease-in-out;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -65,18 +117,78 @@
 
 
                 <div class="switch-container">
-                    <!-- This is the moving background "slider" -->
                     <div class="switch-slider" id="switch-slider"></div>
-
-                    <!-- The three options -->
-                    <!-- We use data-index to know which one was clicked -->
                     <button class="switch-option active" data-index="0">RGB</button>
                     <button class="switch-option" data-index="1">Wave</button>
                     <button class="switch-option" data-index="2">HUE</button>
                 </div>
 
-                <!-- This div will display the trigger message -->
                 <div id="message-output" style="display: none;">Select an option</div>
+
+                <div class="matrix-mode-selector" style="margin-top: 1.5rem;">
+                    <label class="muted" style="display:block; margin-bottom:.3rem;">Advanced Matrix Modes</label>
+                    <select id="matrixModeSelect" class="matrix-select">
+                        <option value="rgb">RGB Color / Static</option>
+                        <option value="wave">Wave Mode</option>
+                        <option value="hue">HUE Shift</option>
+                        <option value="image">Custom Image Upload</option>
+                        <option value="spotify_album">Spotify Album Cover</option>
+                        <option value="spotify_lyrics">Spotify Live Lyrics</option>
+                        <option value="weather">Real-Time Weather</option>
+                        <option value="calendar">Smart Calendar</option>
+                        <option value="countdown">Countdown Timer</option>
+                        <option value="text">Custom Scrolling Text</option>
+                        <option value="auto">Auto / Smart Mode</option>
+                    </select>
+                </div>
+
+                <div id="panel_image" class="mode-subpanel" style="display:none;">
+                    <label class="muted">Upload Custom Image (Compressed to 64x64)</label>
+                    <div style="display: flex; gap: 0.5rem; flex-direction: column; margin-top: 0.3rem;">
+                        <input type="file" id="matrixImageInput" accept="image/*" style="display:none;" />
+                        <button id="triggerImageUpload" class="glow-on-hover" style="height: 45px; font-size: 1.2rem;">Choose Image</button>
+                        <p id="imageFileName" class="muted" style="font-size: 1.1rem; text-align: center; margin-top: 0.2rem;"></p>
+                    </div>
+                </div>
+
+                <div id="panel_weather" class="mode-subpanel" style="display:none;">
+                    <label class="muted">Enter Location / City</label>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+                        <input type="text" id="weatherCity" class="matrix-text-input" placeholder="e.g. Istanbul" />
+                        <button id="saveWeather" class="chip-btn" style="width: auto; padding: 0 1rem; height: 45px;">Save</button>
+                    </div>
+                </div>
+
+                <div id="panel_countdown" class="mode-subpanel" style="display:none;">
+                    <label class="muted">Target Date & Time</label>
+                    <input type="datetime-local" id="countdownTarget" class="matrix-text-input" style="margin-top: 0.3rem;" />
+                    <button id="saveCountdown" class="chip-btn" style="margin-top: 0.5rem; width:100%; height: 45px;">Start Countdown</button>
+                </div>
+
+                <div id="panel_text" class="mode-subpanel" style="display:none;">
+                    <label class="muted">Your Custom Text</label>
+                    <input type="text" id="customText" class="matrix-text-input" placeholder="Type text..." maxlength="32" style="margin-top: 0.3rem;" />
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <input type="color" id="textColorPicker" value="#00ff00" style="height: 45px; width: 60px; background: transparent; border: none; cursor: pointer;" />
+                        <button id="saveText" class="chip-btn" style="flex-grow: 1; height: 45px;">Send Text</button>
+                    </div>
+                </div>
+
+                <div id="panel_spotify_album" class="mode-subpanel" style="display:none;">
+                    <p class="muted" style="font-size:1.2rem;">Status: Pulling currently playing Spotify track's artwork. Make sure your account is linked.</p>
+                </div>
+                <div id="panel_spotify_lyrics" class="mode-subpanel" style="display:none;">
+                    <p class="muted" style="font-size:1.2rem;">Status: Syncing lyrics for the currently playing Spotify song in real-time.</p>
+                </div>
+
+                <div id="panel_auto" class="mode-subpanel" style="display:none;">
+                    <p class="muted" style="font-size:1.2rem;">Status: Cycling automatically between features (Weather, Calendar, and Time).</p>
+                </div>
+
+                <div id="panel_calendar" class="mode-subpanel" style="display:none;">
+                    <p class="muted" style="font-size:1.2rem;">Status: Displaying today's calendar, time, and day info.</p>
+                </div>
+
 
                 <div id="brightnessWrap" style="display:none;margin-top:1rem;">
                     <label class="muted" style="display:block;margin-bottom:.3rem;">Brightness (0–255)</label>
@@ -85,22 +197,12 @@
                     </div>
                 </div>
 
-
-                
                 <div id="colorPickerWrap" style="display:none;margin-top:1rem;">
                     <input type="color" id="colorPicker" value="#ffffff" />
                     <button id="sendColor" class="chip-btn">Send Color</button>
                 </div>
 
                 <hr style="border-color:#2a2a2a; margin:1rem 0;">
-
-
-
-
-
-
-
-
 
                 <div class="device-remote-row">
                     <span class="muted">Status:</span> <span id="statusBadge" class="status-badge"
@@ -112,12 +214,6 @@
                 <div class="device-remote-row">
                     <span class="muted">Capabilities: </span> <span style="font-size: 2rem;" id="caps"></span>
                 </div>
-
-
-                <!-- Optional controls for param actions -->
-
-
-
 
                 <output id="execResult" class="muted" style="display:block;margin-top:1rem;"></output>
             </div>

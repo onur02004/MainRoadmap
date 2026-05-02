@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Remote Control</title>
   <link rel="icon" type="image/x-icon" href="/content/favicon.ico">
 
   <link rel="stylesheet" href="../remotecontrolstyle.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="../remotecontrolscript.js" defer></script>
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-  <link rel="icon" type="image/png" href="../favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="icon-bar">
     <a href="/" class="homeicon">
       <img alt="Home_Icon" src="../content/homeIconWhite.png">
     </a>
     <a href="/account" class="homeicon">
-      <img alt="Account_Icon" src="./content/favicon.ico">
+      <img alt="Account_Icon" src="../content/favicon.ico">
     </a>
   </div>
 
@@ -31,7 +34,7 @@
 
   <div class="mainfgholder">
     <div class="mainfgupperholder">
-        <div class="device-toolbar">
+      <div class="device-toolbar">
         <select id="filterKind">
           <option value="">All kinds</option>
         </select>
@@ -43,48 +46,47 @@
         <input id="searchInput" type="search" placeholder="Search display name…" />
       </div>
 
-
-      <button id="openDeviceModal" type="button" class="glow-on-hover" style="font-size:1.2rem;">Add Device</button>
+      <button id="openDeviceModal" type="button" class="glow-on-hover"
+        style="font-size:1.3rem; margin-top: 0.5rem; height: 50px;">Add Device</button>
+      <button id="openPairModal" type="button" class="glow-on-hover"
+        style="font-size:1.3rem; margin-top: 0.5rem; height: 50px; background: #52c471; color: #111;">Pair
+        Matrix</button>
 
       <div class="userinfo">
         <img class="profilepic" src="../content/deafult.jpg" alt="profile_pic" />
         <div class="profilbilgi">
-          <p id="authLabel"></p>
+          <p id="authLabel" class="muted" style="font-size:1.1rem;"></p>
           <div class="logged-in-infos">
             <p id="usernameLabel" style="font-size:2rem;">Username</p>
             <p id="realnameLabel">Real Name</p>
             <p id="roleLabel">Role</p>
           </div>
-          <div class="wrapper"></div>
         </div>
       </div>
 
       <div class="maintitleholder">
-        <p style="font-size:4.5em;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
+        <p style="font-size:4rem;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
           Remote-Control
         </p>
-        <p style="font-size:1em;font-weight:400">Built By: Onur Dönmez</p>
+        <p style="font-size:1.2em;font-weight:400; color: #52c471;">Built By: Onur Dönmez</p>
       </div>
     </div>
 
     <div class="mainfglowerholder">
-      <!-- Filters (optional) -->
-      
-      <!-- Device grid -->
       <div id="deviceGrid" class="device-grid" data-aos="fade-up"></div>
 
-      <!-- Empty state -->
       <div id="emptyState" class="empty-state" style="display:none;" data-aos="fade-up">
-        <img src="../content/iotIconWhite.png" alt="IoT"/>
+        <img src="../content/iotIconWhite.png" alt="IoT" />
         <h2>No devices yet</h2>
         <p>Add your first device to start controlling it here.</p>
+        <button id="emptyAddBtn" class="glow-on-hover"
+          style="font-size:1.2rem; width: auto; padding: 0 2rem; margin-top: 1rem; height: 50px;">Add Device</button>
       </div>
     </div>
   </div>
 
-  <!-- Add Device Modal -->
   <dialog id="deviceModal" class="modal">
-    <form method="dialog" id="deviceForm" class="modal-card">
+    <form id="deviceForm" class="modal-card">
       <h3>Add Device</h3>
       <label>
         Kind
@@ -92,19 +94,46 @@
       </label>
       <label>
         Display name
-        <input name="displayName" id="displayName" required maxlength="80" />
+        <input name="displayName" id="displayName" required maxlength="80" placeholder="e.g. Living Room Matrix" />
       </label>
       <label>
         Meta (JSON)
-        <textarea name="meta" id="meta" rows="4" placeholder='{"pixels":60,"pin":"GPIO18"}'></textarea>
+        <textarea name="meta" id="meta" rows="3" placeholder='{"pixels":64, "pin":"GPIO18"}'></textarea>
       </label>
       <div class="modal-actions">
         <button value="cancel" type="button" id="cancelModal" class="btn-secondary">Cancel</button>
-        <button value="default" type="submit" class="glow-on-hover">Create</button>
+        <button type="submit" class="glow-on-hover" style="height: 50px; font-size:1.2rem;">Create</button>
       </div>
-      <p class="form-hint">Tip: start with a <b>led_strip</b> and meta like {"pixels":60,"pin":"GPIO18"}.</p>
+      <p class="form-hint" style="margin-top: 0.5rem;">Tip: Use <b>{"pixels":64}</b> or custom keys to configure the
+        device.</p>
       <output id="modalError" class="error-text"></output>
     </form>
   </dialog>
+
+
+  <dialog id="pairModal" class="modal">
+    <form id="pairForm" class="modal-card">
+      <h3>Pair Matrix</h3>
+      <label>
+        Pairing Code
+        <input name="pairCode" id="pairCode" required maxlength="6" placeholder="e.g. 123456"
+          style="text-align: center; font-size: 2.2rem; letter-spacing: 4px; border-color: #52c471;" />
+      </label>
+      <label>
+        Kind
+        <select name="pairKindKey" id="pairKindKey" required></select>
+      </label>
+      <label>
+        Display Name
+        <input name="pairDisplayName" id="pairDisplayName" required maxlength="80" placeholder="e.g. Desk Matrix" />
+      </label>
+      <div class="modal-actions">
+        <button value="cancel" type="button" id="cancelPairModal" class="btn-secondary">Cancel</button>
+        <button type="submit" class="glow-on-hover" style="height: 50px; font-size:1.2rem;">Link Device</button>
+      </div>
+      <output id="pairModalError" class="error-text"></output>
+    </form>
+  </dialog>
 </body>
+
 </html>

@@ -13,7 +13,6 @@ if (mq.matches) {
 }
 
 
-// remotecontrolscript.js
 (() => {
     AOS.init();
 
@@ -38,13 +37,9 @@ if (mq.matches) {
         authLabel: document.getElementById("authLabel")
     };
 
-    // Map kind_key -> icon path (fallback to iot)
     const kindIcon = (kindKey) => {
         const map = {
             "led_strip": "../content/iotIconWhite.png",
-            "motor": "../content/iotIconWhite.png",
-            "sensor.temp": "../content/iotIconWhite.png",
-            "sensor.motion": "../content/iotIconWhite.png",
             "laptop": "../content/laptopIconWhite.png",
             "phone": "../content/phoneIconWhite.png",
             "tablet": "../content/tabletIconWhite.png",
@@ -53,7 +48,6 @@ if (mq.matches) {
         return map[kindKey] || "../content/iotIconWhite.png";
     };
 
-    // Formatters
     const fmtDate = (iso) => {
         if (!iso) return "never";
         const d = new Date(iso);
@@ -77,12 +71,28 @@ if (mq.matches) {
         }
     }
 
+    // Add these to the `els` object at the top of the file:
+    const pairEls = {
+        openPairBtn: document.getElementById("openPairModal"),
+        cancelPairBtn: document.getElementById("cancelPairModal"),
+        modal: document.getElementById("pairModal"),
+        form: document.getElementById("pairForm"),
+        kindKey: document.getElementById("pairKindKey"),
+        code: document.getElementById("pairCode"),
+        displayName: document.getElementById("pairDisplayName"),
+        error: document.getElementById("pairModalError")
+    };
+
+    // Add to your current `loadKinds` function to populate the pairing dropdown:
     async function loadKinds() {
         const r = await fetch("/api/device-kinds", { credentials: "include" });
         if (!r.ok) return;
         deviceKinds = await r.json();
 
-        // Fill kind filters
+        els.filterKind.innerHTML = `<option value="">All kinds</option>`;
+        els.kindKey.innerHTML = ``;
+        pairEls.kindKey.innerHTML = ``; // Populate the pair modal select
+
         for (const k of deviceKinds) {
             const o1 = document.createElement("option");
             o1.value = k.key;
@@ -93,8 +103,54 @@ if (mq.matches) {
             o2.value = k.key;
             o2.textContent = `${k.label}${k.is_smart ? " (smart)" : ""}`;
             els.kindKey.appendChild(o2);
+
+            // Pair modal option
+            const o3 = o2.cloneNode(true);
+            pairEls.kindKey.appendChild(o3);
         }
     }
+
+    // Modal Toggle Handlers
+    pairEls.openPairBtn?.addEventListener("click", () => {
+        if (pairEls.modal) {
+            pairEls.error.textContent = "";
+            pairEls.modal.showModal();
+        }
+    });
+
+    pairEls.cancelPairBtn?.addEventListener("click", () => {
+        if (pairEls.modal) pairEls.modal.close();
+    });
+
+    // Form submission handler
+    pairEls.form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        pairEls.error.textContent = "";
+
+        try {
+            const code = pairEls.code.value.trim();
+            const displayName = pairEls.displayName.value.trim();
+            const kindKey = pairEls.kindKey.value;
+
+            const r = await fetch("/api/pairing/claim-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ code, displayName, kindKey })
+            });
+
+            if (!r.ok) {
+                const j = await r.json().catch(() => ({}));
+                throw new Error(j.error || "Failed to pair device");
+            }
+
+            await loadDevices();
+            if (pairEls.modal) pairEls.modal.close();
+            pairEls.form.reset();
+        } catch (err) {
+            pairEls.error.textContent = err.message || String(err);
+        }
+    });
 
     async function loadDevices() {
         const r = await fetch("/api/devices", { credentials: "include" });
@@ -117,96 +173,47 @@ if (mq.matches) {
         });
     }
 
-    function capabilityBadges(caps) {
-        if (!caps || !caps.length) return "";
-        return caps.map(c => `<span class="cap-badge">${c}</span>`).join("");
-    }
-
     function render() {
         const list = applyFilters(allDevices);
-
         els.deviceGrid.innerHTML = "";
         els.emptyState.style.display = list.length ? "none" : "flex";
 
         for (const d of list) {
             const card = document.createElement("article");
             card.className = "device-card";
-            card.dataset.kind = d.kind_key;
-            card.dataset.status = d.status;
-
             card.style.cursor = "pointer";
+
             card.addEventListener("click", (ev) => {
-                // avoid interfering with future inner buttons if you add them back
-                const target = ev.target;
-                if (target.closest("[data-action]")) return; // let action buttons work if present
-                // navigate to device-remote page with id param
+                if (ev.target.closest("[data-action]")) return;
                 window.location.href = `/deviceremote.html?id=${encodeURIComponent(d.id)}`;
             });
 
             card.innerHTML = `
-        <div class="device-card-head">
-          <img src="${kindIcon(d.kind_key)}" alt="${d.kind_label}" />
-          <div class="title-wrap">
-            <h2 title="${d.display_name}">${d.display_name}</h2>
-            <div class="muted">${d.kind_label}${d.is_smart ? " • smart" : ""}</div>
-          </div>
-          <span class="status-badge ${d.status === "online" ? "online" : "offline"}">
-            ${d.status}
-          </span>
-          <div><span class="muted">Last seen:</span> ${fmtDate(d.last_seen)}</div>
-        </div>
-      `;
-
-            //iptal: 
-            //<div class="caps">${capabilityBadges(d.capabilities)}</div>
-            //ve
-            //<div class="device-actions">
-            //  ${buildActionButtons(d.actions)}
-            //  </div>
-
-            // Attach demo handlers (no-op unless you add action endpoint)
-            const btns = card.querySelectorAll("[data-action]");
-            btns.forEach(b => {
-                b.addEventListener("click", () => {
-                    // Placeholder: wire to your executor endpoint later (e.g., /api/device-actions/:id/:action)
-                    const action = b.dataset.action;
-                    alert(`Action "${action}" clicked for ${d.display_name}`);
-                });
-            });
-
+                <div class="device-card-head">
+                  <img src="${kindIcon(d.kind_key)}" alt="${d.kind_label}" />
+                  <div class="title-wrap">
+                    <h2 title="${d.display_name}">${d.display_name}</h2>
+                    <div class="muted" style="font-size:1.2rem;">${d.kind_label}${d.is_smart ? " • smart" : ""}</div>
+                  </div>
+                  <span class="status-badge ${d.status === "online" ? "online" : "offline"}">
+                    ${d.status}
+                  </span>
+                  <div style="font-size:1.2rem;"><span class="muted">Last seen:</span> ${fmtDate(d.last_seen)}</div>
+                </div>
+            `;
             els.deviceGrid.appendChild(card);
         }
     }
 
-    function buildActionButtons(actions) {
-        if (!actions || !actions.length) return `<div class="muted">No actions</div>`;
-        return actions
-            .map(a => {
-                const label = actionLabel(a.action);
-                return `<button class="chip-btn" data-action="${a.action}" title="${a.handlerKey}">${label}</button>`;
-            })
-            .join("");
+    function openModal() {
+        if (els.modal) {
+            els.modalError.textContent = "";
+            els.modal.showModal();
+        }
     }
-
-    function actionLabel(key) {
-        const map = {
-            on: "Turn On",
-            off: "Turn Off",
-            set_color: "Set Color",
-            set_brightness: "Brightness",
-            vibrate: "Vibrate",
-            notify: "Notify",
-            read_value: "Read Value",
-            open_url: "Open URL",
-            write: "Write",
-            read: "Read"
-        };
-        return map[key] || key;
+    function closeModal() {
+        if (els.modal) els.modal.close();
     }
-
-    // Modal
-    function openModal() { els.modal.showModal(); }
-    function closeModal() { els.modal.close(); }
 
     els.openModalBtn?.addEventListener("click", openModal);
     els.emptyAddBtn?.addEventListener("click", openModal);
@@ -243,7 +250,6 @@ if (mq.matches) {
                 throw new Error(j.error || "Failed to create device");
             }
 
-            // Refresh list and close
             await loadDevices();
             closeModal();
             els.deviceForm.reset();
@@ -252,12 +258,10 @@ if (mq.matches) {
         }
     });
 
-    // Filters
     els.filterKind?.addEventListener("change", render);
     els.filterStatus?.addEventListener("change", render);
     els.searchInput?.addEventListener("input", render);
 
-    // Init
     (async function init() {
         await loadSession();
         await loadKinds();
