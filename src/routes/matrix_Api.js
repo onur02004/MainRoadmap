@@ -20,17 +20,22 @@ router.get("/matrix/resize", async (req, res) => {
         // 2. Sharp ile 64x64 yap ve renk paletini optimize et
         // PNG formatı hem sıkıştırma hem de kalite açısından iyidir
         const outputBuffer = await sharp(inputBuffer)
-            .resize(64, 64, { fit: 'cover' })
+            .resize(64, 64, {
+                fit: 'cover',
+                kernel: sharp.kernel.nearest // Yumuşatmak yerine pikselleri keskin tutar
+            })
             .removeAlpha()
             .modulate({
-                brightness: 1.0,
-                saturation: 1.2 // Renkleri biraz canlandırır
+                brightness: 1.1,   // Biraz parlaklık
+                saturation: 1.5,   // Renkleri iyice patlat (LED'lerde soluk renk ölür)
             })
-            .png({
-                palette: true,
-                colors: 256, // 256 renkli palete zorla
-                dither: 1.0  // En önemli kısım burası!
+            .linear(1.5, -0.2)     // Manuel Kontrast: (slope, intercept) -> Renkleri birbirinden ayırır
+            .sharpen({
+                sigma: 1.5,        // Kenarları belirginleştirir
+                m1: 2,
+                m2: 5
             })
+            .png({ palette: true, colors: 64 }) // Renk sayısını azaltmak bazen daha temiz görüntü verir
             .toBuffer();
 
         // 3. Yanıtı gönder
