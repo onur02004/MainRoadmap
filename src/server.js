@@ -23,6 +23,8 @@ import storageRoutes from "./routes/storage.js";
 import publicShareRoutes from "./routes/publicShare.js";
 import notificationsRoute from "./routes/notifications.js";
 import moodRoutes from "./routes/moodRoutes.js";
+import movieManager from "./routes/moviemanager.js";
+import matrixRoutes from "./routes/matrix_Api.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // <- this is .../src
@@ -46,6 +48,8 @@ app.use(storageRoutes);
 app.use(publicShareRoutes);
 app.use(notificationsRoute);
 app.use(moodRoutes);
+app.use(movieManager);
+app.use(matrixRoutes);
 
 //PROTECTED
 //PROTECTED
