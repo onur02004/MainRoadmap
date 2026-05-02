@@ -20,12 +20,17 @@ router.get("/matrix/resize", async (req, res) => {
         // 2. Sharp ile 64x64 yap ve renk paletini optimize et
         // PNG formatı hem sıkıştırma hem de kalite açısından iyidir
         const outputBuffer = await sharp(inputBuffer)
-            .resize(64, 64, {
-                fit: 'cover', // Boşluk bırakmadan doldurur
-                position: 'center'
+            .resize(64, 64, { fit: 'cover' })
+            .removeAlpha()
+            .modulate({
+                brightness: 1.0,
+                saturation: 1.2 // Renkleri biraz canlandırır
             })
-            .removeAlpha() // LED Matrix'lerde genellikle saydamlık (alpha) sorun çıkarır
-            .png() // Matrix Portal S3 PNG'yi rahat okur
+            .png({
+                palette: true,
+                colors: 256, // 256 renkli palete zorla
+                dither: 1.0  // En önemli kısım burası!
+            })
             .toBuffer();
 
         // 3. Yanıtı gönder
