@@ -37,25 +37,25 @@ if not IS_WINDOWS:
         IS_WINDOWS = True
 
 def ambient_yak_kismi(renk):
-    """Senin orijinal lojiğin: İlk 32 LED'i kapatır, geri kalanları istenen renkte yakar"""
+    """İlk 30 LED'i kapatır (0-29), geri kalan tüm LED'leri (30-199) istenen renkte yakar"""
     if IS_WINDOWS:
-        print(f"[SIMÜLASYON] -> İlk 32 LED kapatıldı (0-31).")
-        print(f"[SIMÜLASYON] -> 32. LED'den {LED_COUNT}. LED'e kadar şu renk basıldı: RGB{renk}")
-        # Windows terminalinde rengi kabaca görmen için küçük bir hile:
+        print(f"[SIMÜLASYON] -> İlk 30 LED tamamen kapatıldı (İndeks: 0-29).")
+        print(f"[SIMÜLASYON] -> 30. LED'den {LED_COUNT}. LED'e kadar (Toplam {LED_COUNT - 30} adet) şu renk basıldı: RGB{renk}")
         print(f"[SIMÜLASYON] -> Görsel Renk Tonu: \033[48;2;{renk[0]};{renk[1]};{renk[2]}m    \033[0m")
         return
 
-    # Gerçek Raspberry Pi üzerinde çalışacak kodlar:
-    # 1. İlk 32 LED'i tamamen söndür (0'dan 31'e kadar)
-    for i in range(min(32, LED_COUNT)):
+    # Gerçek Raspberry Pi üzerinde çalışacak düzeltilmiş dinamik kodlar:
+    
+    # 1. İlk 30 LED'i tamamen söndür (0'dan 29'a kadar olan indeksler)
+    for i in range(min(30, LED_COUNT)):
         pixels[i] = (0, 0, 0)
         
-    # 2. 32. LED'den başlayarak sonuna kadar renk ver
-    if LED_COUNT > 32:
-        for i in range(32, LED_COUNT):
+    # 2. 30. LED'den başlayarak şeridin sonuna kadar (LED_COUNT neyse ona kadar) renk ver
+    if LED_COUNT > 30:
+        for i in range(30, LED_COUNT):
             pixels[i] = renk
         
-    # Değişiklikleri şeride gönder
+    # Değişiklikleri şeride/donanıma gönder
     pixels.show()
 
 def main():
