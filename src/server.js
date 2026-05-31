@@ -5,7 +5,6 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { exec as execLED } from "node:child_process";
-
 import adminRoutes from "./routes/admin.js";
 import authRoutes from "./routes/auth.js";
 import protectedRoutes from "./routes/protected.js";
@@ -31,6 +30,7 @@ const __dirname = path.dirname(__filename); // <- this is .../src
 
 const app = express();
 const PORT = 3000;
+
 
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());

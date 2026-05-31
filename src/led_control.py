@@ -1,179 +1,104 @@
 #!/usr/bin/env python3
-# led_control.py
-# Debug-friendly LED control that works on Windows (no hardware).
-
-import os
+# src/led_control.py
 import sys
-import json
+import os
 import time
+import platform
 
-DRY_RUN = False
-pixels = 60
-num_pixels = int(os.getenv("LED_PIXELS", "8"))
-pin_env = os.getenv("LED_PIN", "D18")  # informational only in DRY_RUN
+# 1. DİNAMİK AYARLAR (Web arayüzünden/veritabanından gelen veriler)
+# Eğer veritabanından veri gelmezse senin kodundaki varsayılanları (200 LED, GPIO 18) baz alır.
+LED_COUNT = int(os.environ.get("LED_PIXELS", "200"))
+LED_PIN_NUM = int(os.environ.get("LED_PIN", "18"))
 
-pixel_pin = board.D18
-num_pixels = 60  # <-- set to 60
-pixels = neopixel.NeoPixel(
-    pixel_pin,
-    num_pixels,
-    brightness=0.3,
-    auto_write=False  # important: we'll call show() manually
-)
+# İşletim sistemi kontrolü (Windows ise NeoPixel yükleyip çökmez)
+IS_WINDOWS = os.name == 'nt' or platform.system() == 'Windows'
 
-# Try to import neopixel stack; fall back to dry-run if unavailable
-try:
-    import board
-    import neopixel
-    # map env pin -> board attr if set, default D18
-    pixel_pin = getattr(board, pin_env, getattr(board, "D18", None))
-    pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.3, auto_write=True)
-except Exception as e:
-    DRY_RUN = True
+pixels = None
 
-def log(msg, **extra):
-    # single-line JSON so it's easy to read in Node stdout
-    payload = {"ok": True, "dryRun": DRY_RUN, "msg": msg}
-    if extra:
-        payload.update(extra)
-    print(json.dumps(payload, ensure_ascii=False))
-
-def err(msg):
-    payload = {"ok": False, "dryRun": DRY_RUN, "error": msg}
-    print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
-
-def set_color(r, g, b):
-    if DRY_RUN:
-        log("set_color (dry-run)", r=r, g=g, b=b)
-        return
-    pixels.fill((r, g, b))
-
-def set_brightness(value):
-    # value: 0–255
-    v = max(0, min(255, int(value)))
-    if DRY_RUN:
-        log("set_brightness (dry-run)", value=v)
-        return
-    # neopixel brightness is 0..1
-    brightness = v / 255.0
+if not IS_WINDOWS:
     try:
-        pixels.brightness = brightness
-        pixels.show()
-    except Exception:
-        # Some builds require re-creating with new brightness
-        pass
+        import board
+        import neopixel
+        
+        # Kodun içindeki GPIO pin numarasını board nesnesine eşleme hilesi
+        pin_map = {18: board.D18, 12: board.D12, 13: board.D13, 19: board.D19}
+        target_pin = pin_map.get(LED_PIN_NUM, board.D18) # Tanımsızsa D18 seçer
+        
+        # Senin orijinal şerit tanımın (Güvenli parlaklık seviyesi %25)
+        pixels = neopixel.NeoPixel(
+            target_pin, 
+            LED_COUNT, 
+            brightness=0.25, 
+            auto_write=False, 
+            pixel_order=neopixel.GRB
+        )
+    except ImportError:
+        print("[LED_WARN] NeoPixel kütüphaneleri yüklenemedi, simülasyon moduna geçiliyor.")
+        IS_WINDOWS = True
 
-def turn_on():
-    # “on” here just means ensure LEDs are powered/showing last color
-    if DRY_RUN:
-        log("on (dry-run)")
+def ambient_yak_kismi(renk):
+    """Senin orijinal lojiğin: İlk 32 LED'i kapatır, geri kalanları istenen renkte yakar"""
+    if IS_WINDOWS:
+        print(f"[SIMÜLASYON] -> İlk 32 LED kapatıldı (0-31).")
+        print(f"[SIMÜLASYON] -> 32. LED'den {LED_COUNT}. LED'e kadar şu renk basıldı: RGB{renk}")
+        # Windows terminalinde rengi kabaca görmen için küçük bir hile:
+        print(f"[SIMÜLASYON] -> Görsel Renk Tonu: \033[48;2;{renk[0]};{renk[1]};{renk[2]}m    \033[0m")
         return
+
+    # Gerçek Raspberry Pi üzerinde çalışacak kodlar:
+    # 1. İlk 32 LED'i tamamen söndür (0'dan 31'e kadar)
+    for i in range(min(32, LED_COUNT)):
+        pixels[i] = (0, 0, 0)
+        
+    # 2. 32. LED'den başlayarak sonuna kadar renk ver
+    if LED_COUNT > 32:
+        for i in range(32, LED_COUNT):
+            pixels[i] = renk
+        
+    # Değişiklikleri şeride gönder
     pixels.show()
 
-def turn_off():
-    if DRY_RUN:
-        log("off (dry-run)")
-        return
-    pixels.fill((0, 0, 0))
-    pixels.show()
+def main():
+    if len(sys.argv) < 2:
+        print("[LED_ERROR] Herhangi bir eylem belirtilmedi.")
+        sys.exit(1)
 
-def wave(speed=0.5, steps=32):
-    # keep this SHORT so the Node process returns quickly
-    # speed just affects the sleep time a bit
-    wait = max(0.0, float(speed)) * 0.02  # 0.0.. ~0.1
-    if DRY_RUN:
-        log("wave (dry-run one-shot)", speed=speed, steps=steps)
-        return
-    for j in range(steps):
-        for i in range(num_pixels):
-            # simple 1D moving gradient
-            r = (i * 5 + j * 8) % 256
-            g = (i * 3 + j * 5) % 256
-            b = (i * 2 + j * 13) % 256
-            pixels[i] = (r, g, b)
-        pixels.show()
-        time.sleep(wait)
+    action = sys.argv[1]
 
-def main(argv):
-    if len(argv) < 2:
-        err("Usage: led_control.py <action> [args...]")
-        return 2
+    # Web arayüzünde 'On' (Aç) butonuna basıldığında senin sıcak amber rengini yakar
+    if action == "on":
+        print("[LED_ACTION] Ambient ışık açılıyor...")
+        ambient_yak_kismi((255, 100, 20)) # Orijinal sıcak amber rengin
 
-    action = argv[1].strip().lower()
+    # Web arayüzünde 'Off' (Kapat) butonuna basıldığında her şeyi söndürür
+    elif action == "off":
+        print("[LED_ACTION] Işıklar söndürülüyor.")
+        if not IS_WINDOWS:
+            pixels.fill((0, 0, 0))
+            pixels.show()
 
-    try:
-        if action == "on":
-            turn_on()
-            log("received", action=action)
-            return 0
+    # Renk paletinden (Color Picker) anlık seçtiğin rengi 32. LED'den sonrasına basar
+    elif action == "set_color":
+        if len(sys.argv) < 5:
+            sys.exit(1)
+        r, g, b = int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
+        print(f"[LED_ACTION] Kullanıcı özel renk atadı.")
+        ambient_yak_kismi((r, g, b))
 
-        if action == "off":
-            turn_off()
-            log("received", action=action)
-            return 0
+    # Kumandadan parlaklık kaydırıldığında (0-255 arası değer gelir)
+    elif action == "set_brightness":
+        if len(sys.argv) < 3:
+            sys.exit(1)
+        # Gelen 0-255 arası değeri NeoPixel'in istediği 0.0 - 1.0 arasına oranlıyoruz
+        val = int(sys.argv[2])
+        target_brightness = (val / 255.0) * 0.25 # Senin %25'lik güvenli sınırını aşmamak için çarptık
+        print(f"[LED_ACTION] Parlaklık güncellendi: {target_brightness:.2f}")
+        if not IS_WINDOWS:
+            pixels.brightness = target_brightness
+            pixels.show()
 
-        if action == "set_color":
-            if len(argv) < 5:
-                err("set_color requires r g b")
-                return 3
-            r, g, b = map(int, argv[2:5])
-            r = max(0, min(255, r))
-            g = max(0, min(255, g))
-            b = max(0, min(255, b))
-            set_color(r, g, b)
-            log("received", action=action, r=r, g=g, b=b)
-            return 0
-
-        if action == "set_brightness":
-            if len(argv) < 3:
-                err("set_brightness requires value (0..255)")
-                return 3
-            value = int(argv[2])
-            set_brightness(value)
-            log("received", action=action, value=value)
-            return 0
-
-        if action == "wave":
-            # optional speed arg
-            speed = float(argv[2]) if len(argv) >= 3 else 0.5
-            wave(speed=speed, steps=32)
-            log("received", action=action, speed=speed)
-            return 0
-
-        if action == "hue":
-            err("hue not implemented")
-            return 4
-
-        err(f"unknown action: {action}")
-        return 5
-
-    except Exception as e:
-        err(f"exception: {type(e).__name__}: {e}")
-        return 7
+    elif action == "wave":
+        print("[LED_ACTION] Dalga efekti (Gelecekte yazılacak).")
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
-
-def apply_frame_from_line(line: str):
-    """
-    line format: 'r,g,b;r,g,b;...'(one triplet per LED)
-    """
-    line = line.strip()
-    if not line:
-        return
-
-    parts = line.split(";")
-    for i, part in enumerate(parts):
-        if i >= num_pixels:
-            break
-        try:
-            r_str, g_str, b_str = part.split(",")
-            r = int(r_str)
-            g = int(g_str)
-            b = int(b_str)
-            pixels[i] = (r, g, b)
-        except ValueError:
-            # skip malformed triplets
-            continue
-
-    pixels.show()
+    main()

@@ -268,7 +268,9 @@ router.post("/api/device-actions/:id/:action", requireAuth, express.json(), asyn
             if (row.meta?.pin) env.LED_PIN = row.meta.pin;
             if (row.meta?.pixels) env.LED_PIXELS = String(row.meta.pixels);
 
-            const py = spawn("python3", args, { env });
+            // Windows'ta 'python', Linux/Pi üzerinde 'python3' komutunu dinamik seçelim
+            const pythonCommand = process.platform === "win32" ? "python" : "python3";
+            const py = spawn(pythonCommand, args, { env });
 
 
             let out = "", err = "";
@@ -319,7 +321,7 @@ router.post("/api/device-actions/:id/:action", requireAuth, express.json(), asyn
                     }
                 } catch (_) { }
 
-                
+
                 if (code === 0) return res.json({ ok: true, stdout: out.trim() });
                 return res.status(500).json({ error: "Handler failed", code, stderr: err.trim(), stdout: out.trim() });
 
@@ -360,7 +362,7 @@ router.patch("/api/devices/:id/state", requireAuth, express.json(), async (req, 
 
     // Genişletilmiş ve izin verilmiş Matrix modları
     const allowed = new Set([
-        "rgb", "wave", "hue", "image", "spotify_album", 
+        "rgb", "wave", "hue", "image", "spotify_album",
         "spotify_lyrics", "weather", "calendar", "countdown", "text", "auto"
     ]);
 
@@ -411,7 +413,7 @@ router.get("/api/pairing/device-code", async (req, res) => {
         code = generate6DigitCode();
     }
     activeDeviceCodes.set(code, { status: "pending", deviceId: null });
-    
+
     // Auto-expire pairing code after 10 minutes
     setTimeout(() => activeDeviceCodes.delete(code), 10 * 60 * 1000);
 
@@ -510,7 +512,7 @@ router.post("/api/pairing/claim-code", requireAuth, express.json(), async (req, 
 // Small helper uses your existing executor endpoint internally
 async function callAction(deviceId, action, params) {
     console.log("Device Mode Changed to: " + action + " with param: " + params);
-    
+
     // local call through DB+spawn path
     // You already have router.post("/api/device-actions/:id/:action"...)
     // Here we just re-run the same logic directly to avoid HTTP hop:

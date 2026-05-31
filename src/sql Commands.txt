@@ -778,3 +778,93 @@ INSERT INTO global_notification_controls (feature_key, is_enabled) VALUES
 ('email_public_share', true),
 ('email_direct_share', true)
 ON CONFLICT (feature_key) DO NOTHING;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- 1. Adım: Aygıt türünü tanımlayalım (led_strip)
+INSERT INTO public.device_kinds (key, label, is_smart) 
+VALUES ('led_strip', 'RGB LED Matrix', true)
+ON CONFLICT (key) DO NOTHING;
+
+-- 2. Adım: Kullanıcına (330nur) ait bir LED Matrix cihazı ekleyelim
+-- NOT: Gelecekte sorun yaşamamak için kullanıcı id'sini users tablosundan çekerek ekliyoruz.
+INSERT INTO public.devices (id, owner_user_id, kind_key, display_name, status, last_seen, meta)
+VALUES (
+    'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', -- Sabit bir test UUID'si veriyoruz rahat bulmak için
+    (SELECT id FROM public.users WHERE user_name = '330nur' LIMIT 1),
+    'led_strip',
+    'Yatak Odası LED Matrix',
+    'online',
+    now(),
+    '{"pin": 18, "pixels": 64}'::jsonb  -- Buradan gelecekte GPIO pinlerini veya piksel sayısını değiştirebilirsin!
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. Adım: Cihazın yeteneklerini (capabilities) bağlayalım
+INSERT INTO public.device_capabilities (device_id, capability) VALUES 
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'rgb'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'wave'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'brightness'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'text')
+ON CONFLICT DO NOTHING;
+
+-- 4. Adım: Backend'in (devices.js) doğruladığı eylemleri (actions) ve handler_key'leri eşleştirelim
+-- ÖNEMLİ: devices.js 157. satırda handler_key "led_control" ile başlıyor mu diye bakıyor!
+INSERT INTO public.device_actions (device_id, action, param_schema, handler_key) VALUES 
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'on', '{}'::jsonb, 'led_control_main'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'off', '{}'::jsonb, 'led_control_main'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'set_color', '{}'::jsonb, 'led_control_main'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'set_brightness', '{}'::jsonb, 'led_control_main'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'wave', '{}'::jsonb, 'led_control_main')
+ON CONFLICT DO NOTHING;
+
+
+-- 1. Adım: Aygıt türünü tanımlayalım (led_strip)
+INSERT INTO public.device_kinds (key, label, is_smart) 
+VALUES ('led_strip', 'RGB LED Matrix', true)
+ON CONFLICT (key) DO NOTHING;
+
+-- 2. Adım: Kullanıcı adına (username) göre dinamik olarak cihazı ekleyelim
+INSERT INTO public.devices (id, owner_user_id, kind_key, display_name, status, last_seen, meta)
+VALUES (
+    'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    (SELECT id FROM public.users WHERE user_name = '330nur' LIMIT 1),
+    'led_strip',
+    'Yatak Odası LED Matrix',
+    'online',
+    now(),
+    '{"pin": 18, "pixels": 64}'::jsonb
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. Adım: Cihazın yeteneklerini (capabilities) bağlayalım
+INSERT INTO public.device_capabilities (device_id, capability) VALUES 
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'rgb'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'wave'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'brightness'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'text')
+ON CONFLICT DO NOTHING;
+
+-- 4. Adım: devices.js formatına tam uyumlu handler_key eşleştirmeleri
+INSERT INTO public.device_actions (device_id, action, param_schema, handler_key) VALUES 
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'on', '{}'::jsonb, 'led_control.on'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'off', '{}'::jsonb, 'led_control.off'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'set_color', '{}'::jsonb, 'led_control.set_color'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'set_brightness', '{}'::jsonb, 'led_control.set_brightness'),
+('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'wave', '{}'::jsonb, 'led_control.wave')
+ON CONFLICT DO NOTHING;
