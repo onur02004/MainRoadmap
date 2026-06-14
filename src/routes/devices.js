@@ -5,6 +5,7 @@ import { q } from "../db/pool.js";
 import express from "express";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { processMatrixState } from "../widgets/engine.js";
 
 const router = Router();
 
@@ -519,6 +520,57 @@ async function callAction(deviceId, action, params) {
     // If you prefer, you can also fetch() your own endpoint.
     return; // if you inline execution, or leave as a no-op and let client call afterwards
 }
+
+
+
+/**
+ * GET /api/hardware/matrix/:deviceId/poll
+ * ESP32'nin her saniye çağıracağı "Aptal" uç nokta.
+ * auth.js (requireAuth) BURADA KULLANILMAZ!
+ */
+router.get("/api/hardware/matrix/:deviceId/poll", async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+
+        // 1. Cihazın mevcut durumunu (mode) çek
+        const stateRes = await q(
+            `SELECT mode FROM device_state WHERE device_id = $1::uuid`,
+            [deviceId]
+        );
+        
+        if (!stateRes.rows[0]) {
+            return res.send("TXT|#FF0000|Eslenmedi");
+        }
+        
+        const activeMode = stateRes.rows[0].mode; // Örn: 'simple_clock'
+
+        // 2. Aktif modun özel ayarlarını çek
+        const configRes = await q(
+            `SELECT config FROM device_widget_configs 
+             WHERE device_id = $1::uuid AND widget_key = $2`,
+            [deviceId, activeMode]
+        );
+        
+        const config = configRes.rows[0] ? configRes.rows[0].config : {};
+
+        // 3. Ortak verileri topla (Eğer Lyrics modundaysa Spotify datası çekilebilir)
+        const sharedData = {
+            // İleride Spotify veya hava durumu verileri buraya eklenecek
+        };
+
+        // 4. Widget Engine'e gönder ve String komutu al
+        const esp32Command = await processMatrixState(activeMode, config, sharedData);
+
+        // 5. Saf metin (text/plain) olarak ESP32'ye yolla
+        res.set('Content-Type', 'text/plain');
+        res.send(esp32Command);
+
+    } catch (error) {
+        console.error("Matrix Poll Hatası:", error);
+        res.send("TXT|#FF0000|Sunucu Hatasi");
+    }
+});
+
 
 
 export default router;

@@ -868,3 +868,13 @@ INSERT INTO public.device_actions (device_id, action, param_schema, handler_key)
 ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'set_brightness', '{}'::jsonb, 'led_control.set_brightness'),
 ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'wave', '{}'::jsonb, 'led_control.wave')
 ON CONFLICT DO NOTHING;
+
+
+
+CREATE TABLE device_widget_configs (
+    device_id UUID REFERENCES devices(id) ON DELETE CASCADE,
+    widget_key VARCHAR(50) NOT NULL, -- Örn: 'simple_clock', 'live_lyrics'
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (device_id, widget_key)
+);
