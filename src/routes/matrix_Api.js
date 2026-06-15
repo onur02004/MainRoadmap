@@ -43,11 +43,6 @@ router.get("/matrix/resizeOld", async (req, res) => {
     }
 });
 
-import express from "express";
-import sharp from "sharp";
-import axios from "axios";
-
-const router = express.Router();
 
 router.get("/matrix/resize", async (req, res) => {
     const imageUrl = req.query.url;
