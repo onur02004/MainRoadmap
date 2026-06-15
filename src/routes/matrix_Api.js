@@ -46,41 +46,63 @@ router.get("/matrix/resizeOld", async (req, res) => {
 
 router.get("/matrix/resize", async (req, res) => {
     const imageUrl = req.query.url;
+    const brightnessParam = req.query.brightness;
 
     if (!imageUrl) {
         return res.status(400).json({ error: "URL query parameter is required" });
     }
 
     try {
-        // 1. Orijinal resmi internetten indir
+        // 1. URL'den gelen parlaklık değerini güvenli bir şekilde sayıya dönüştür
+        // Eğer değer gönderilmediyse veya geçersizse varsayılan olarak 1.15 (Gündüz modu) kullan
+        let finalBrightness = 1.15;
+        if (brightnessParam) {
+            const parsed = parseFloat(brightnessParam);
+            if (!isNaN(parsed) && parsed >= 0.0 && parsed <= 2.0) {
+                finalBrightness = parsed;
+            }
+        }
+
+        // 2. Parlaklığa göre doğrusal kontrast (linear) çarpanını dinamik ayarla
+        // Parlaklık düştükçe beyazların gözü alan patlamasını engellemek için kontrast çarpanını da yumuşatıyoruz
+        let contrastMultiplier = 1.3;
+        if (finalBrightness < 1.0) {
+            contrastMultiplier = 1.05; // Gece modu için yumuşatılmış kontrast
+        }
+
+        // 3. Orijinal resmi internetten indir
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const inputBuffer = Buffer.from(response.data);
 
-        // 2. LED Matris Donanımı İçin Agresif Kontrast ve Renk Kombinasyonu
+        // 4. Sharp ile Matris Donanımına Özel Gelişmiş Filtreleme Pipeline'ı
         const outputBuffer = await sharp(inputBuffer)
-            // Detayları korumak için Lanczos3 interpolasyonu ile küçültme
             .resize(64, 64, { 
                 fit: 'cover',
                 kernel: sharp.kernel.lanczos3 
             })
-            // Saydamlık katmanını kaldır ve arkaya saf siyah (#000000) koy
             .removeAlpha()
             
-            // --- AGRESİF RENK VE KONTRAST AYARLARI ---
+            // --- DİNAMİK RENK VE PARLAKLIK AYARLARI ---
             .modulate({
-                brightness: 1.15,  // AM kapağındaki gibi soluk beyaz çizgileri parlatmak için %15 artış
-                saturation: 2.2,   // Daft Punk'ın altın tonlarını canlandırmak için doygunluğu %120 artırdık!
+                brightness: finalBrightness, // URL'den gelen dinamik değer basılıyor (?brightness=0.65 gibi)
+                saturation: finalBrightness < 1.0 ? 1.4 : 1.7, // Gece modunda sarıların çamurlaşmaması için dengeli doygunluk
             })
             
-            // GAMA DÜZELTMESİ: Koyu renk pikselleri saf siyaha çeker, orta tonları belirginleştirir.
-            // AM kapağındaki o çamurlu lacivert arka planı tamamen kapatıp çizgileri öne fırlatır.
+            // RENK MATRİSİ RECOMBİNATION
+            // Altın sarısı tonlarının kırmızıya/turuncuya kaçmasını engelleyen yeşil takviye formülün
+            .recomb([
+                [ 1.0,  0.0,  0.0 ], 
+                [ 0.05, 1.1,  0.0 ], 
+                [ 0.0,  0.0,  1.0 ]  
+            ])
+            
+            // GAMA DÜZELTMESİ (Arka planı simsiyah tutan kusursuz ayarın)
             .gamma(2.2) 
             
-            // DOĞRUSAL KONTRAST (Linear Contrast): Siyahları daha siyah, beyazları daha parlak yapar.
-            // (a * piksel + b) -> Kontrastı artırırken parlaklık tabanını dengeler.
-            .linear(1.3, -0.15) 
+            // DOĞRUSAL KONTRAST (Derin siyah dengesini koruyan formülün)
+            .linear(contrastMultiplier, -0.15) 
             
-            // KESKİNLEŞTİRME (Unsharp Mask): İnce çizgileri ve Daft Punk yazısını matris piksellerine oturtur.
+            // KESKİNLEŞTİRME (Çizgilerin ve Daft Punk yazısının okunabilirliği için)
             .sharpen({
                 sigma: 1.8,
                 flat: 3.0,
@@ -90,17 +112,17 @@ router.get("/matrix/resize", async (req, res) => {
             // DONANIMSAL RENK PALETİ
             .png({
                 palette: true,
-                colors: 48,       // Renk sayısını 48'e düşürdük: Matrisin renk karmaşasını azaltıp saf renkleri basmasını sağlar
-                dither: 0.0       // Dither kesinlikle kapalı (Noktalanma ve gürültü sıfırlandı)
+                colors: 48,       
+                dither: 0.0       
             })
             .toBuffer();
 
-        // 3. Yanıtı gönder
+        // 5. Yanıtı gönder
         res.set('Content-Type', 'image/png');
         res.send(outputBuffer);
 
     } catch (error) {
-        console.error("Matrix resize error:", error.message);
+        console.error("Matrix dynamic resize error:", error.message);
         res.status(500).json({ error: "Failed to process image" });
     }
 });
