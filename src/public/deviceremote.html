@@ -15,74 +15,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
 
     <style>
-        .matrix-select {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            font-size: 1.4rem;
-            background: rgba(30, 30, 30, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-radius: 12px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            outline: none;
-            transition: all 0.3s ease;
-            margin-bottom: 1rem;
-        }
-
-        .matrix-select:hover {
-            border-color: #52c471;
-            box-shadow: 0 4px 12px rgba(82, 196, 113, 0.2);
-        }
-
-        .matrix-select option {
-            background: #131313;
-            color: #fff;
-        }
-
+        /* GENEL FORMLAR İÇİN */
         .matrix-text-input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            font-size: 1.3rem;
-            background: rgba(20, 20, 20, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            color: #fff;
-            outline: none;
-            margin-bottom: 0.5rem;
+            width: 100%; padding: 0.8rem 1rem; font-size: 1.3rem;
+            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px; color: #fff; outline: none; margin-bottom: 0.5rem;
         }
-
-        .matrix-text-input:focus {
-            border-color: #52c471;
-        }
-
+        .matrix-text-input:focus { border-color: #52c471; }
+        
         .mode-subpanel {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px; padding: 1rem; margin-top: 1rem; display: none;
             animation: fadeIn 0.3s ease-in-out;
-            margin-top: 1rem;
-            margin-bottom: 1rem;
         }
+
+        /* --- MATRIX APP GRID TASARIMI --- */
+        .app-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem; margin-top: 1rem;
+        }
+        .app-card {
+            background: rgba(30, 30, 30, 0.5); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; padding: 1.5rem 1rem; text-align: center;
+            cursor: pointer; transition: all 0.2s ease;
+            display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        }
+        .app-card.active {
+            background: rgba(82, 196, 113, 0.15); border-color: #52c471; color: #52c471;
+            transform: translateY(-3px); box-shadow: 0 4px 15px rgba(82, 196, 113, 0.2);
+        }
+        .app-card:hover:not(.active) { background: rgba(50, 50, 50, 0.5); transform: translateY(-2px); }
+        .app-icon { font-size: 2.5rem; }
+        .app-name { font-size: 1.2rem; font-family: system-ui, sans-serif; font-weight: 500; }
+
+        /* --- LED STRIP TASARIMI --- */
+        .color-picker-huge {
+            width: 100%; height: 80px; border: none; border-radius: 16px;
+            cursor: pointer; background: none; padding: 0; outline: none;
+        }
+        .color-picker-huge::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-huge::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.1); border-radius: 16px; }
     </style>
 </head>
 
 <body>
     <div class="icon-bar">
-        <a href="/" class="homeicon">
-            <img alt="Home_Icon" src="../content/homeIconWhite.png">
-        </a>
-        <a href="/remotecontrol.html" class="homeicon">
-            <img alt="Back_Icon" src="../content/accountIconWhite.png">
-        </a>
+        <a href="/" class="homeicon"><img alt="Home_Icon" src="../content/homeIconWhite.png"></a>
+        <a href="/remotecontrol.html" class="homeicon"><img alt="Back_Icon" src="../content/accountIconWhite.png"></a>
     </div>
 
-    <section class="waveanim">
-        <div class="wave">
-            <span></span><span></span><span></span>
-        </div>
-    </section>
+    <section class="waveanim"><div class="wave"><span></span><span></span><span></span></div></section>
 
     <div class="mainfgholder">
         <div class="mainfgupperholder">
@@ -99,10 +81,7 @@
             </div>
 
             <div class="maintitleholder">
-                <p id="deviceTitle"
-                    style="font-size:3rem;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
-                    Device
-                </p>
+                <p id="deviceTitle" style="font-size:3rem;font-weight:400;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">Device</p>
                 <p id="deviceSub" class="muted"></p>
             </div>
         </div>
@@ -110,112 +89,113 @@
         <div class="mainfglowerholder" data-aos="fade-up">
             <div class="device-remote">
 
-                <div class="stateless-toggle-container" style="--delay: 0.8s;">
-                    <button id="turnon" class="toggle-option">On</button>
-                    <button id="turnoff" class="toggle-option">Off</button>
+                <div class="stateless-toggle-container" style="--delay: 0.2s;">
+                    <button id="turnon" class="toggle-option">Güç: AÇIK</button>
+                    <button id="turnoff" class="toggle-option">Güç: KAPALI</button>
                 </div>
 
+                <output id="execResult" class="muted" style="display:block; text-align: center; margin-bottom: 1rem;"></output>
 
-                <div class="switch-container">
-                    <div class="switch-slider" id="switch-slider"></div>
-                    <button class="switch-option active" data-index="0">RGB</button>
-                    <button class="switch-option" data-index="1">Wave</button>
-                    <button class="switch-option" data-index="2">HUE</button>
-                </div>
+                <div id="ui_led_strip" style="display: none;">
+                    
+                    <div class="switch-container" style="margin-bottom: 1rem;">
+                        <div class="switch-slider" id="led-slider"></div>
+                        <button class="switch-option active" data-mode="rgb">Solid RGB</button>
+                        <button class="switch-option" data-mode="wave">Gökkuşağı Wave</button>
+                        <button class="switch-option" data-mode="hue">Renk Döngüsü</button>
+                    </div>
 
-                <div id="message-output" style="display: none;">Select an option</div>
+                    <label class="muted" style="display:block;margin-bottom:.5rem;">Parlaklık</label>
+                    <input type="range" class="volume" id="ledBrightness" min="0" max="255" value="100" style="margin-bottom: 1.5rem;" />
 
-                <div class="matrix-mode-selector" style="margin-top: 1.5rem;">
-                    <label class="muted" style="display:block; margin-bottom:.3rem;">Advanced Matrix Modes</label>
-                    <select id="matrixModeSelect" class="matrix-select">
-                        <option value="rgb">RGB Color / Static</option>
-                        <option value="wave">Wave Mode</option>
-                        <option value="hue">HUE Shift</option>
-                        <option value="image">Custom Image Upload</option>
-                        <option value="spotify_album">Spotify Album Cover</option>
-                        <option value="spotify_lyrics">Spotify Live Lyrics</option>
-                        <option value="weather">Real-Time Weather</option>
-                        <option value="calendar">Smart Calendar</option>
-                        <option value="countdown">Countdown Timer</option>
-                        <option value="text">Custom Scrolling Text</option>
-                        <option value="auto">Auto / Smart Mode</option>
-                    </select>
-                </div>
-
-                <div id="panel_image" class="mode-subpanel" style="display:none;">
-                    <label class="muted">Upload Custom Image (Compressed to 64x64)</label>
-                    <div style="display: flex; gap: 0.5rem; flex-direction: column; margin-top: 0.3rem;">
-                        <input type="file" id="matrixImageInput" accept="image/*" style="display:none;" />
-                        <button id="triggerImageUpload" class="glow-on-hover" style="height: 45px; font-size: 1.2rem;">Choose Image</button>
-                        <p id="imageFileName" class="muted" style="font-size: 1.1rem; text-align: center; margin-top: 0.2rem;"></p>
+                    <div id="ledColorWrapper">
+                        <label class="muted" style="display:block;margin-bottom:.5rem;">Özel Renk Seç</label>
+                        <input type="color" id="ledColorPicker" class="color-picker-huge" value="#00ff00" />
+                        <button id="ledSendColor" class="glow-on-hover" style="height: 45px; font-size:1.4rem; margin-top: 1rem;">Rengi Uygula</button>
                     </div>
                 </div>
 
-                <div id="panel_weather" class="mode-subpanel" style="display:none;">
-                    <label class="muted">Enter Location / City</label>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
-                        <input type="text" id="weatherCity" class="matrix-text-input" placeholder="e.g. Istanbul" />
-                        <button id="saveWeather" class="chip-btn" style="width: auto; padding: 0 1rem; height: 45px;">Save</button>
+
+                <div id="ui_matrix" style="display: none;">
+                    
+                    <label class="muted" style="font-size: 1.4rem;">Matrix Uygulamaları</label>
+                    <div class="app-grid" id="matrixAppGrid">
+                        <div class="app-card active" data-mode="rgb">
+                            <span class="app-icon">🎨</span><span class="app-name">RGB Sabit</span>
+                        </div>
+                        <div class="app-card" data-mode="spotify_album">
+                            <span class="app-icon">🎧</span><span class="app-name">Spotify Albüm</span>
+                        </div>
+                        <div class="app-card" data-mode="spotify_lyrics">
+                            <span class="app-icon">🎤</span><span class="app-name">Canlı Sözler</span>
+                        </div>
+                        <div class="app-card" data-mode="weather">
+                            <span class="app-icon">⛅</span><span class="app-name">Hava Durumu</span>
+                        </div>
+                        <div class="app-card" data-mode="calendar">
+                            <span class="app-icon">📅</span><span class="app-name">Takvim/Saat</span>
+                        </div>
+                        <div class="app-card" data-mode="text">
+                            <span class="app-icon">📝</span><span class="app-name">Özel Metin</span>
+                        </div>
+                        <div class="app-card" data-mode="image">
+                            <span class="app-icon">🖼️</span><span class="app-name">Resim Yükle</span>
+                        </div>
+                        <div class="app-card" data-mode="auto">
+                            <span class="app-icon">🤖</span><span class="app-name">Akıllı Döngü</span>
+                        </div>
                     </div>
-                </div>
 
-                <div id="panel_countdown" class="mode-subpanel" style="display:none;">
-                    <label class="muted">Target Date & Time</label>
-                    <input type="datetime-local" id="countdownTarget" class="matrix-text-input" style="margin-top: 0.3rem;" />
-                    <button id="saveCountdown" class="chip-btn" style="margin-top: 0.5rem; width:100%; height: 45px;">Start Countdown</button>
-                </div>
-
-                <div id="panel_text" class="mode-subpanel" style="display:none;">
-                    <label class="muted">Your Custom Text</label>
-                    <input type="text" id="customText" class="matrix-text-input" placeholder="Type text..." maxlength="32" style="margin-top: 0.3rem;" />
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                        <input type="color" id="textColorPicker" value="#00ff00" style="height: 45px; width: 60px; background: transparent; border: none; cursor: pointer;" />
-                        <button id="saveText" class="chip-btn" style="flex-grow: 1; height: 45px;">Send Text</button>
+                    <div id="panel_weather" class="mode-subpanel">
+                        <label class="muted">Şehir Adı</label>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+                            <input type="text" id="weatherCity" class="matrix-text-input" placeholder="e.g. Istanbul" />
+                            <button id="saveWeather" class="chip-btn glow-on-hover" style="width: 80px; height: 45px;">Kaydet</button>
+                        </div>
                     </div>
-                </div>
 
-                <div id="panel_spotify_album" class="mode-subpanel" style="display:none;">
-                    <p class="muted" style="font-size:1.2rem;">Status: Pulling currently playing Spotify track's artwork. Make sure your account is linked.</p>
-                </div>
-                <div id="panel_spotify_lyrics" class="mode-subpanel" style="display:none;">
-                    <p class="muted" style="font-size:1.2rem;">Status: Syncing lyrics for the currently playing Spotify song in real-time.</p>
-                </div>
-
-                <div id="panel_auto" class="mode-subpanel" style="display:none;">
-                    <p class="muted" style="font-size:1.2rem;">Status: Cycling automatically between features (Weather, Calendar, and Time).</p>
-                </div>
-
-                <div id="panel_calendar" class="mode-subpanel" style="display:none;">
-                    <p class="muted" style="font-size:1.2rem;">Status: Displaying today's calendar, time, and day info.</p>
-                </div>
-
-
-                <div id="brightnessWrap" style="display:none;margin-top:1rem;">
-                    <label class="muted" style="display:block;margin-bottom:.3rem;">Brightness (0–255)</label>
-                    <div style="display: flex; width: 100%; justify-content: center; align-items: center;">
-                        <input type="range" class="volume" id="brightnessInputNEW" min="0" max="255" value="100" />
+                    <div id="panel_text" class="mode-subpanel">
+                        <label class="muted">Özel Metniniz (Max 32 Karakter)</label>
+                        <input type="text" id="customText" class="matrix-text-input" placeholder="Bir şeyler yazın..." maxlength="32" style="margin-top: 0.3rem;" />
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input type="color" id="textColorPicker" value="#1DB954" style="height: 45px; width: 60px; background: transparent; border: none; cursor: pointer;" />
+                            <button id="saveText" class="chip-btn glow-on-hover" style="flex-grow: 1; height: 45px;">Metni Matrix'e Gönder</button>
+                        </div>
                     </div>
+
+                    <div id="panel_image" class="mode-subpanel">
+                        <label class="muted">64x64 Pixel Resim Yükle</label>
+                        <div style="display: flex; gap: 0.5rem; flex-direction: column; margin-top: 0.3rem;">
+                            <input type="file" id="matrixImageInput" accept="image/*" style="display:none;" />
+                            <button id="triggerImageUpload" class="glow-on-hover" style="height: 45px; font-size: 1.2rem;">Galeriden Seç</button>
+                            <p id="imageFileName" class="muted" style="font-size: 1.1rem; text-align: center;"></p>
+                        </div>
+                    </div>
+
+                    <div id="panel_spotify_album" class="mode-subpanel">
+                        <p class="muted" style="font-size:1.2rem; text-align: center;">🎵 Spotify hesabınızdan şu an çalan şarkının albüm kapağı canlı olarak yansıtılıyor.</p>
+                    </div>
+
+                    <div id="panel_spotify_lyrics" class="mode-subpanel">
+                        <p class="muted" style="font-size:1.2rem; text-align: center;">🎤 Şu an çalan şarkının sözleri saniyesi saniyesine senkronize ediliyor.</p>
+                    </div>
+
+                    <div id="panel_auto" class="mode-subpanel">
+                        <p class="muted" style="font-size:1.2rem; text-align: center;">🤖 Matrix ekranınız Saat, Hava Durumu ve Müzik arasında otomatik geçiş yapacak.</p>
+                    </div>
+
+                    <label class="muted" style="display:block; margin-top:1.5rem; margin-bottom:.5rem;">Matrix Parlaklığı</label>
+                    <input type="range" class="volume" id="matrixBrightness" min="0" max="255" value="100" />
                 </div>
 
-                <div id="colorPickerWrap" style="display:none;margin-top:1rem;">
-                    <input type="color" id="colorPicker" value="#ffffff" />
-                    <button id="sendColor" class="chip-btn">Send Color</button>
-                </div>
-
-                <hr style="border-color:#2a2a2a; margin:1rem 0;">
+                <hr style="border-color:#2a2a2a; margin:1.5rem 0;">
 
                 <div class="device-remote-row">
-                    <span class="muted">Status:</span> <span id="statusBadge" class="status-badge"
-                        style="font-size: 3rem;">…</span>
+                    <span class="muted">Durum:</span> <span id="statusBadge" class="status-badge" style="font-size: 1.8rem;">…</span>
                 </div>
                 <div class="device-remote-row">
-                    <span class="muted">Last seen:</span> <span id="lastSeen" style="font-size: 2rem;">…</span>
+                    <span class="muted">Son Görülme:</span> <span id="lastSeen" style="font-size: 1.6rem;">…</span>
                 </div>
-                <div class="device-remote-row">
-                    <span class="muted">Capabilities: </span> <span style="font-size: 2rem;" id="caps"></span>
-                </div>
-
-                <output id="execResult" class="muted" style="display:block;margin-top:1rem;"></output>
             </div>
         </div>
     </div>
