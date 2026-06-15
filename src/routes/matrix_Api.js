@@ -56,31 +56,42 @@ router.get("/matrix/resize", async (req, res) => {
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const inputBuffer = Buffer.from(response.data);
 
-        // 2. Sharp ile Matris Donanımına Özel Gelişmiş Filtreleme
+        // 2. LED Matris Donanımı İçin Agresif Kontrast ve Renk Kombinasyonu
         const outputBuffer = await sharp(inputBuffer)
-            // Küçültürken detayların kaybolmaması için en keskin interpolasyon algoritmasını (lanczos3) kullanıyoruz
+            // Detayları korumak için Lanczos3 interpolasyonu ile küçültme
             .resize(64, 64, { 
                 fit: 'cover',
                 kernel: sharp.kernel.lanczos3 
             })
-            // Saydamlık katmanını kaldır (arkaya siyah fon koyarak)
+            // Saydamlık katmanını kaldır ve arkaya saf siyah (#000000) koy
             .removeAlpha()
-            // LED'lerde patlayan renkler için doygunluğu artır ve matrisin siyah dengesi için lineer kontrast ekle
+            
+            // --- AGRESİF RENK VE KONTRAST AYARLARI ---
             .modulate({
-                brightness: 1.05,  // Solukluğu önlemek için çok hafif parlaklık artışı
-                saturation: 1.6,   // Renkleri LED'lerde canlandırmak için doygunluğu %60 artırdık
+                brightness: 1.15,  // AM kapağındaki gibi soluk beyaz çizgileri parlatmak için %15 artış
+                saturation: 2.2,   // Daft Punk'ın altın tonlarını canlandırmak için doygunluğu %120 artırdık!
             })
-            // Keskinliği artırma (Unsharp Mask): Kontrast sınırlarını belirginleştirir, yazıları/logoları keskinleştirir
+            
+            // GAMA DÜZELTMESİ: Koyu renk pikselleri saf siyaha çeker, orta tonları belirginleştirir.
+            // AM kapağındaki o çamurlu lacivert arka planı tamamen kapatıp çizgileri öne fırlatır.
+            .gamma(2.2) 
+            
+            // DOĞRUSAL KONTRAST (Linear Contrast): Siyahları daha siyah, beyazları daha parlak yapar.
+            // (a * piksel + b) -> Kontrastı artırırken parlaklık tabanını dengeler.
+            .linear(1.3, -0.15) 
+            
+            // KESKİNLEŞTİRME (Unsharp Mask): İnce çizgileri ve Daft Punk yazısını matris piksellerine oturtur.
             .sharpen({
-                sigma: 1.5,
-                flat: 2.0,
-                jagged: 2.5
+                sigma: 1.8,
+                flat: 3.0,
+                jagged: 3.5
             })
-            // Donanımsal renk paleti optimizasyonu (En kritik kısım)
+            
+            // DONANIMSAL RENK PALETİ
             .png({
                 palette: true,
-                colors: 64,       // 256 yerine 64 renk: CircuitPython / Adafruit_imageload'un paleti daha az renk ile daha kararlı işler
-                dither: 0.0       // DITHER'I KAPATTIK: Noktalama/gürültü bitti, pikseller net renk blokları haline geldi
+                colors: 48,       // Renk sayısını 48'e düşürdük: Matrisin renk karmaşasını azaltıp saf renkleri basmasını sağlar
+                dither: 0.0       // Dither kesinlikle kapalı (Noktalanma ve gürültü sıfırlandı)
             })
             .toBuffer();
 
