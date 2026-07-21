@@ -6,6 +6,7 @@ import express from "express";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { processMatrixState } from "../widgets/engine.js";
+import 'dotenv/config';
 
 const router = Router();
 
@@ -571,6 +572,148 @@ router.get("/api/hardware/matrix/:deviceId/poll", async (req, res) => {
     }
 });
 
+
+
+const deviceCooldowns = new Map();
+const COOLDOWN_MS = 500; // İstekler arası en az 500ms olmalı (İsteğe göre değiştirebilirsin)
+
+/**
+ * POST /api/secret/led-control
+ * C# veya Postman üzerinden doğrudan LED kontrolü için gizli endpoint.
+ * Body örneği: 
+ * {
+ *   "apiKey": "SÜPER_GİZLİ_KEY_123",
+ *   "deviceId": "UUID-BURAYA",
+ *   "action": "toggle", // "on", "off", "toggle", "set_color", "set_brightness"
+ *   "params": { "r": 255, "g": 0, "b": 0, "value": 100 }
+ * }
+ */
+router.post("/api/secret/led-control", express.json(), async (req, res) => {
+    try {
+        const { apiKey, deviceId, action, params = {} } = req.body || {};
+
+        // 1. GÜVENLİK KONTROLÜ (API Key)
+        // Buradaki KEY'i .env dosyandan çekebilirsin (process.env.SECRET_LED_API_KEY)
+        const SECRET_KEY = process.env.LED_API_KEY;
+        if (!apiKey || apiKey !== SECRET_KEY) {
+            return res.status(401).json({ error: "Unauthorized: Geçersiz API Key" });
+        }
+
+        if (!deviceId) {
+            return res.status(400).json({ error: "deviceId gereklidir." });
+        }
+
+        // 2. RATE LIMIT / COOLDOWN KONTROLÜ (IO Kilitlenmesini Önleme)
+        const now = Date.now();
+        const lastCall = deviceCooldowns.get(deviceId) || 0;
+
+        if (now - lastCall < COOLDOWN_MS) {
+            const waitTime = COOLDOWN_MS - (now - lastCall);
+            return res.status(429).json({ 
+                error: "Too Many Requests: Sistem aşırı yüklenmesini önlemek için cooldown aktif.", 
+                retryAfterMs: waitTime 
+            });
+        }
+        
+        // Son istek zamanını güncelle
+        deviceCooldowns.set(deviceId, now);
+
+        // 3. CİHAZ VE MEVCUT DURUMU ÇEK
+        const devRes = await q(
+            `SELECT d.id, d.meta, s.mode, s.params 
+               FROM devices d 
+          LEFT JOIN device_state s ON s.device_id = d.id 
+              WHERE d.id = $1::uuid`,
+            [deviceId]
+        );
+
+        if (!devRes.rows[0]) {
+            return res.status(404).json({ error: "Cihaz bulunamadı." });
+        }
+
+        const device = devRes.rows[0];
+        let targetAction = action;
+
+        // 4. ESNEK DURUM YÖNETİMİ (Eğer action boşsa veya toggle ise)
+        if (!targetAction || targetAction === "toggle") {
+            // Mevcut duruma bak; eğer açıksa kapat, kapalıysa aç
+            const currentPower = device.params?.power;
+            targetAction = (currentPower === "off") ? "on" : "off";
+        }
+
+        // 5. PYTHON SCRIPT ÇAĞRISI (led_control.py)
+        const scriptPath = path.join(process.cwd(), "/src/led_control.py");
+        let args = [scriptPath];
+
+        switch (targetAction) {
+            case "on":
+                args.push("on");
+                break;
+            case "off":
+                args.push("off");
+                break;
+            case "set_color": {
+                const { r = 255, g = 255, b = 255 } = params;
+                args.push("set_color", String(r), String(g), String(b));
+                break;
+            }
+            case "set_brightness": {
+                const { value = 128 } = params;
+                args.push("set_brightness", String(value));
+                break;
+            }
+            default:
+                return res.status(400).json({ error: `Desteklenmeyen action: ${targetAction}` });
+        }
+
+        // Python çalıştırma ortamı
+        const env = { ...process.env };
+        if (device.meta?.pin) env.LED_PIN = device.meta.pin;
+        if (device.meta?.pixels) env.LED_PIXELS = String(device.meta.pixels);
+
+        const pythonCommand = process.platform === "win32" ? "python" : "python3";
+        const py = spawn(pythonCommand, args, { env });
+
+        let out = "", err = "";
+        py.stdout.on("data", (d) => (out += d.toString()));
+        py.stderr.on("data", (d) => (err += d.toString()));
+
+        py.on("close", async (code) => {
+            if (code !== 0) {
+                return res.status(500).json({ error: "Script hatası", stderr: err.trim() });
+            }
+
+            // DB Durumunu Güncelle
+            const newPowerState = targetAction === "off" ? "off" : "on";
+            const updatedParams = { 
+                ...(device.params || {}), 
+                ...params, 
+                power: newPowerState 
+            };
+
+            await q(
+                `INSERT INTO device_state (device_id, mode, params, updated_at)
+                 VALUES ($1::uuid, 'rgb', $2::jsonb, now())
+                 ON CONFLICT (device_id) DO UPDATE
+                 SET params = $2::jsonb, updated_at = now()`,
+                [deviceId, JSON.stringify(updatedParams)]
+            );
+
+            await q(`UPDATE devices SET last_seen = now(), status = 'online' WHERE id = $1::uuid`, [deviceId]);
+
+            return res.json({ 
+                ok: true, 
+                executedAction: targetAction, 
+                state: updatedParams,
+                stdout: out.trim() 
+            });
+        });
+
+    } catch (e) {
+        console.error("Secret LED endpoint error:", e);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 
 export default router;

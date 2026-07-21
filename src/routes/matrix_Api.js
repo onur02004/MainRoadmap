@@ -44,7 +44,7 @@ router.get("/matrix/resizeOld", async (req, res) => {
 });
 
 
-router.get("/matrix/resize", async (req, res) => {
+router.get("/matrix/resizeold2", async (req, res) => {
     const imageUrl = req.query.url;
     const brightnessParam = req.query.brightness;
 
@@ -114,6 +114,121 @@ router.get("/matrix/resize", async (req, res) => {
                 palette: true,
                 colors: 48,       
                 dither: 0.0       
+            })
+            .toBuffer();
+
+        // 5. Yanıtı gönder
+        res.set('Content-Type', 'image/png');
+        res.send(outputBuffer);
+
+    } catch (error) {
+        console.error("Matrix dynamic resize error:", error.message);
+        res.status(500).json({ error: "Failed to process image" });
+    }
+});
+
+router.get("/matrix/resize", async (req, res) => {
+    const imageUrl = req.query.url;
+    const brightnessParam = req.query.brightness;
+
+    if (!imageUrl) {
+        return res.status(400).json({ error: "URL query parameter is required" });
+    }
+
+    try {
+        // 1. Parlaklık parametresi kontrolü
+        let finalBrightness = 1.15;
+        if (brightnessParam) {
+            const parsed = parseFloat(brightnessParam);
+            if (!isNaN(parsed) && parsed >= 0.0 && parsed <= 2.0) {
+                finalBrightness = parsed;
+            }
+        }
+
+        // 2. Resmi indir
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const inputBuffer = Buffer.from(response.data);
+
+        // 3. GELİŞMİŞ RENK VE DETAY ANALİZİ
+        const stats = await sharp(inputBuffer).stats();
+        
+        // Genel parlaklık seviyesi (0 = Siyah, 255 = Beyaz)
+        const averageLightness = (stats.channels[0].mean + stats.channels[1].mean + stats.channels[2].mean) / 3;
+        
+        // Renklilik / Canlılık düzeyi
+        const chromaVibrancy = (stats.channels[0].stdev + stats.channels[1].stdev + stats.channels[2].stdev) / 3;
+        
+        // --- DİNAMİK PARAMETRE AYARLARI ---
+        let gammaValue = 2.2;
+        let contrastMultiplier = 1.2;
+        let linearOffset = -0.12;
+        let targetColors = 48;
+        let ditherValue = 0.3; // Tamamen kapatmak yerine alt eşikte tutuyoruz
+        let saturationValue = finalBrightness < 1.0 ? 1.3 : 1.5;
+        let useRecomb = true;
+
+        // SENARYO 1: AGRESİF RENKLİ RESİMLER (Tame Impala vb.)
+        if (chromaVibrancy >= 58) {
+            gammaValue = 1.4;         
+            linearOffset = -0.02;     
+            contrastMultiplier = finalBrightness < 1.0 ? 0.9 : 1.05; 
+            targetColors = 64;        
+            ditherValue = 1.0;        
+            saturationValue = finalBrightness < 1.0 ? 1.1 : 1.25; 
+            useRecomb = false;        
+        } 
+        // SENARYO 2: KOYU ARKA PLANLI VE BELİRGİN SİYAH ALANLARI OLAN RESİMLER (Umut Kaya, Agents of Fortune vb.)
+        else if (averageLightness < 105) {
+            // S-Curve mantığı: Gamayı çok yükseltmeden siyah offsetini kontrollü kırpıyoruz
+            gammaValue = 2.0;         // Detaylar (yüz hatları) kaybolmasın diye yumuşak tuttuk
+            linearOffset = -0.20;     // Gerçek siyahları tamamen söndürmek için eşiği aşağı çektik
+            contrastMultiplier = 1.4; // Siyah ile ara tonların (yüzün) arasını açmak için kontrastı bindirdik
+            targetColors = 48;        // Paleti çok daraltmıyoruz ki yüzdeki geçişler bloklaşmasın
+            
+            // Burası kritik: Eğer resim Umut Kaya gibi aşırı kontrastlı bir siyahsa dither ekleyerek
+            // o kirli gri geçişleri matriste pürüzsüzce dağıtıyoruz.
+            ditherValue = chromaVibrancy < 40 ? 0.5 : 0.2; 
+            
+            saturationValue = finalBrightness < 1.0 ? 1.4 : 1.75;
+            useRecomb = true;
+        }
+
+        // 4. Sharp Pipeline
+        let pipeline = sharp(inputBuffer)
+            .resize(64, 64, { 
+                fit: 'cover',
+                kernel: sharp.kernel.lanczos3 
+            })
+            .removeAlpha()
+            
+            .modulate({
+                brightness: finalBrightness,
+                saturation: saturationValue
+            });
+            
+        if (useRecomb) {
+            pipeline = pipeline.recomb([
+                [ 1.0,  0.0,  0.0 ], 
+                [ 0.05, 1.1,  0.0 ], 
+                [ 0.0,  0.0,  1.0 ]  
+            ]);
+        }
+            
+        const outputBuffer = await pipeline
+            .gamma(gammaValue) 
+            .linear(contrastMultiplier, linearOffset) 
+            
+            // Keskinleştirmeyi dinamik yaptık; siyah ağırlıklı resimlerde fontlar patlamasın
+            .sharpen({
+                sigma: averageLightness < 105 ? 1.0 : 1.4,
+                flat: 3.0,
+                jagged: 3.5
+            })
+            
+            .png({
+                palette: true,
+                colors: targetColors,       
+                dither: ditherValue       
             })
             .toBuffer();
 

@@ -33,15 +33,15 @@ if not IS_WINDOWS:
             pixel_order=neopixel.GRB
         )
     except ImportError:
-        print("[LED_WARN] NeoPixel kütüphaneleri yüklenemedi, simülasyon moduna geçiliyor.")
+        print("[LED_WARN] NeoPixel kutuphaneleri yuklenemedi, simulasyon moduna geciliyor.")
         IS_WINDOWS = True
 
 def ambient_yak_kismi(renk):
-    """İlk 30 LED'i kapatır (0-29), geri kalan tüm LED'leri (30-199) istenen renkte yakar"""
+    """Ilk 30 LED'i kapatir (0-29), geri kalan tim LED'leri (30-199) istenen renkte yakar"""
     if IS_WINDOWS:
-        print(f"[SIMÜLASYON] -> İlk 30 LED tamamen kapatıldı (İndeks: 0-29).")
-        print(f"[SIMÜLASYON] -> 30. LED'den {LED_COUNT}. LED'e kadar (Toplam {LED_COUNT - 30} adet) şu renk basıldı: RGB{renk}")
-        print(f"[SIMÜLASYON] -> Görsel Renk Tonu: \033[48;2;{renk[0]};{renk[1]};{renk[2]}m    \033[0m")
+        print(f"[SIMULASYON] -> Ilk 30 LED tamamen kapatildi (Indeks: 0-29).")
+        print(f"[SIMULASYON] -> 30. LED'den {LED_COUNT}. LED'e kadar (Toplam {LED_COUNT - 30} adet) su renk basildi: RGB{renk}")
+        print(f"[SIMULASYON] -> Gorsel Renk Tonu: \033[48;2;{renk[0]};{renk[1]};{renk[2]}m    \033[0m")
         return
 
     # Gerçek Raspberry Pi üzerinde çalışacak düzeltilmiş dinamik kodlar:
@@ -67,12 +67,12 @@ def main():
 
     # Web arayüzünde 'On' (Aç) butonuna basıldığında senin sıcak amber rengini yakar
     if action == "on":
-        print("[LED_ACTION] Ambient ışık açılıyor...")
+        print("[LED_ACTION] Ambient isik aciliyor...")
         ambient_yak_kismi((255, 100, 20)) # Orijinal sıcak amber rengin
 
     # Web arayüzünde 'Off' (Kapat) butonuna basıldığında her şeyi söndürür
     elif action == "off":
-        print("[LED_ACTION] Işıklar söndürülüyor.")
+        print("[LED_ACTION] isiklar sonduruluyor.")
         if not IS_WINDOWS:
             pixels.fill((0, 0, 0))
             pixels.show()
@@ -82,7 +82,7 @@ def main():
         if len(sys.argv) < 5:
             sys.exit(1)
         r, g, b = int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
-        print(f"[LED_ACTION] Kullanıcı özel renk atadı.")
+        print(f"[LED_ACTION] Kullanici ozel renk atadi.")
         ambient_yak_kismi((r, g, b))
 
     # Kumandadan parlaklık kaydırıldığında (0-255 arası değer gelir)
@@ -92,13 +92,13 @@ def main():
         # Gelen 0-255 arası değeri NeoPixel'in istediği 0.0 - 1.0 arasına oranlıyoruz
         val = int(sys.argv[2])
         target_brightness = (val / 255.0) * 0.25 # Senin %25'lik güvenli sınırını aşmamak için çarptık
-        print(f"[LED_ACTION] Parlaklık güncellendi: {target_brightness:.2f}")
+        print(f"[LED_ACTION] Parlaklik guncellendi: {target_brightness:.2f}")
         if not IS_WINDOWS:
             pixels.brightness = target_brightness
             pixels.show()
 
     elif action == "wave":
-        print("[LED_ACTION] Dalga efekti (Gelecekte yazılacak).")
+        print("[LED_ACTION] Dalga efekti (Gelecekte yazilacak).")
 
 if __name__ == "__main__":
     main()
