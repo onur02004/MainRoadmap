@@ -242,5 +242,20 @@ router.get("/matrix/resize", async (req, res) => {
     }
 });
 
+router.get("/api/time", (_req, res) => {
+    const now = new Date();
+    // Almanya/Türkiye saati gibi özel bir zaman dilimi veya doğrudan yerel saat:
+    // UTC offsetsiz saf ISO verisi veya doğrudan obje
+    res.json({
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        day: now.getDate(),
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+        second: now.getSeconds(),
+        unix: Math.floor(now.getTime() / 1000)
+    });
+});
+
 
 export default router;
