@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benim Odam - Canlı Yayın</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 800px;
+        }
+        .video-box {
+            border: 4px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .status {
+            margin-top: 15px;
+            color: #00ffcc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Oda Canlı Takip Paneli</h1>
+        <div class="video-box">
+            <!-- İstek doğrudan Express proxy rotamıza gider -->
+            <img src="/odam/stream" alt="Canlı Yayın Yükleniyor..." />
+        </div>
+        <p class="status">● Bağlantı Güvenli (JWT Korumalı)</p>
+    </div>
+</body>
+</html>

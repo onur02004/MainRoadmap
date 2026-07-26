@@ -7,6 +7,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { processMatrixState } from "../widgets/engine.js";
 import 'dotenv/config';
+import http from "node:http";
 
 const router = Router();
 
@@ -715,5 +716,58 @@ router.post("/api/secret/led-control", express.json(), async (req, res) => {
     }
 });
 
+router.get("/odam", requireAuth, (req, res) => {
+    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c"; //prod
+    //const allowedUserId = "5efaab86-0a88-4fa0-adf0-23197bf040bf"; //local
+    const currentUserId = req.user?.sub || req.user?.id;
+
+    if (currentUserId !== allowedUserId) {
+        return res.status(403).json({ error: "Bu odaya erişim yetkiniz bulunmamaktadır." });
+    }
+
+    // Projenizin root klasöründen src/public/features/odam.html yolunu oluşturup gönderir
+    const filePath = path.join(process.cwd(), "src", "public", "features", "odam.html");
+    
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error("odam.html gönderilirken hata oluştu:", err);
+            res.status(500).send("Sayfa yüklenirken bir hata oluştu.");
+        }
+    });
+});
+
+router.get("/odam/stream", requireAuth, (req, res) => {
+    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c"; //prod
+    //const allowedUserId = "5efaab86-0a88-4fa0-adf0-23197bf040bf"; //local
+    const currentUserId = req.user?.sub || req.user?.id;
+
+    if (currentUserId !== allowedUserId) {
+        return res.status(403).json({ error: "Erişim engellendi." });
+    }
+
+    // Localhost'ta çalışan ustreamer servisine proxy isteği gönder
+    const proxyReq = http.request(
+        {
+            host: "127.0.0.1",
+            port: 8080,
+            path: "/stream", // ustreamer'ın mjpeg yayın adresi
+            method: "GET",
+        },
+        (proxyRes) => {
+            // Gelen başlıkları ve video/mjpeg content-type değerini aynen tarayıcıya ilet
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res, { end: true });
+        }
+    );
+
+    proxyReq.on("error", (err) => {
+        console.error("Kamera akışı local proxy hatası:", err);
+        res.status(502).send("Kamera yayını şu an aktif değil.");
+    });
+
+    req.on("abort", () => {
+        proxyReq.destroy();
+    });
+});
 
 export default router;
