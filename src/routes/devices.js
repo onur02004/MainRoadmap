@@ -574,7 +574,6 @@ router.get("/api/hardware/matrix/:deviceId/poll", async (req, res) => {
 });
 
 
-
 const deviceCooldowns = new Map();
 const COOLDOWN_MS = 500; // İstekler arası en az 500ms olmalı (İsteğe göre değiştirebilirsin)
 
@@ -716,16 +715,103 @@ router.post("/api/secret/led-control", express.json(), async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --- KAMERA YÖNETİMİ İÇİN DEĞİŞKENLER ---
+const ALLOWED_USER_ID = "7f5c358d-f973-4b15-8998-2fcf5eae128c"; // prod ID
+//const ALLOWED_USER_ID = "5efaab86-0a88-4fa0-adf0-23197bf040bf"; // local ID
+
+let ustreamerProcess = null;
+let activeWatchers = 0;
+let stopTimer = null;
+let ustreamerLogs = []; // Son 50 log satırını bellekte tutar
+
+function logToBuffer(data) {
+    const lines = data.toString().split("\n");
+    for (const line of lines) {
+        if (line.trim()) {
+            ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] ${line.trim()}`);
+            if (ustreamerLogs.length > 50) ustreamerLogs.shift();
+        }
+    }
+}
+
+function startUstreamer() {
+    if (ustreamerProcess) return;
+
+    if (process.platform === "win32") {
+        console.warn("[Kamera] Windows ortamında ustreamer desteklenmiyor veya doğrudan çalıştırılamaz.");
+        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] UYARI: Windows üzerinde ustreamer çalıştırılamadı.`);
+        return;
+    }
+
+    console.log("[Kamera] ustreamer başlatılıyor...");
+    ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] ustreamer başlatılıyor...`);
+
+    ustreamerProcess = spawn("ustreamer", [
+        "--host=127.0.0.1",
+        "--port=8080",
+        "--device=/dev/video0",
+        "--format=MJPEG",
+        "--resolution=1280x720",
+        "--desired-fps=30"
+    ]);
+
+    // 🔴 KRİTİK EKLENTİ: Node.js'in ENOENT hatası yüzünden çökmesini önler
+    ustreamerProcess.on("error", (err) => {
+        console.error("[Kamera] ustreamer başlatılamadı:", err.message);
+        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] HATA: ustreamer bulunamadı (${err.code})`);
+        ustreamerProcess = null;
+    });
+
+    ustreamerProcess.stdout.on("data", logToBuffer);
+    ustreamerProcess.stderr.on("data", logToBuffer);
+
+    ustreamerProcess.on("close", (code) => {
+        console.log(`[Kamera] ustreamer kapandı (Kod: ${code})`);
+        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] ustreamer durduruldu (Kod: ${code})`);
+        ustreamerProcess = null;
+    });
+}
+
+
+function stopUstreamer() {
+    if (ustreamerProcess) {
+        console.log("[Kamera] Kimse izlemiyor, ustreamer kapatılıyor...");
+        ustreamerProcess.kill("SIGTERM");
+        ustreamerProcess = null;
+    }
+}
+
+
+
+
+
+// --- ODA & KAMERA ROTALARI ---
+
+/**
+ * 1. GET /odam
+ * Odaya özel HTML sayfasını sunar.
+ */
 router.get("/odam", requireAuth, (req, res) => {
-    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c"; //prod
-    //const allowedUserId = "5efaab86-0a88-4fa0-adf0-23197bf040bf"; //local
     const currentUserId = req.user?.sub || req.user?.id;
 
-    if (currentUserId !== allowedUserId) {
+    if (currentUserId !== ALLOWED_USER_ID) {
         return res.status(403).json({ error: "Bu odaya erişim yetkiniz bulunmamaktadır." });
     }
 
-    // Projenizin root klasöründen src/public/features/odam.html yolunu oluşturup gönderir
     const filePath = path.join(process.cwd(), "src", "public", "features", "odam.html");
     
     res.sendFile(filePath, (err) => {
@@ -736,42 +822,84 @@ router.get("/odam", requireAuth, (req, res) => {
     });
 });
 
+/**
+ * 2. GET /odam/stream
+ * İstek atıldığında ustreamer'ı otomatik başlatır, izleyici ayrıldığında 5sn sonra kapatır.
+ */
 router.get("/odam/stream", requireAuth, (req, res) => {
-    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c";
     const currentUserId = req.user?.sub || req.user?.id;
 
-    if (currentUserId !== allowedUserId) {
+    if (currentUserId !== ALLOWED_USER_ID) {
         return res.status(403).json({ error: "Erişim yetkiniz yok." });
     }
 
-    const proxyReq = http.request(
-        {
-            host: "127.0.0.1",
-            port: 8080,
-            path: "/stream", // Eğer yine ECONNRESET alırsanız burayı "/" yapıp deneyin
-            method: "GET",
-            headers: {
-                'Connection': 'keep-alive'
+    // Aktif durdurma zamanlayıcısı varsa iptal et
+    if (stopTimer) {
+        clearTimeout(stopTimer);
+        stopTimer = null;
+    }
+
+    activeWatchers++;
+    startUstreamer();
+
+    // Process'in ayağa kalkması için 500ms tolerans verip akışı başlatıyoruz
+    setTimeout(() => {
+        const proxyReq = http.request(
+            {
+                host: "127.0.0.1",
+                port: 8080,
+                path: "/stream",
+                method: "GET",
+                headers: {
+                    'Connection': 'keep-alive'
+                }
+            },
+            (proxyRes) => {
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                proxyRes.pipe(res, { end: true });
             }
-        },
-        (proxyRes) => {
-            res.writeHead(proxyRes.statusCode, proxyRes.headers);
-            proxyRes.pipe(res, { end: true });
-        }
-    );
+        );
 
-    proxyReq.on("error", (err) => {
-        console.error("Kamera akışı local proxy hatası:", err);
-        if (!res.headersSent) {
-            res.status(502).send("Kamera yayını şu an aktif değil.");
-        }
-    });
+        proxyReq.on("error", (err) => {
+            console.error("Kamera akışı local proxy hatası:", err);
+            if (!res.headersSent) {
+                res.status(502).send("Kamera yayını şu an aktif değil.");
+            }
+        });
 
-    req.on("close", () => {
-        proxyReq.destroy();
-    });
+        req.on("close", () => {
+            proxyReq.destroy();
+            activeWatchers = Math.max(0, activeWatchers - 1);
 
-    proxyReq.end(); // İstegi sonlandırmayı unutmamak soket kilitlenmelerini önler
+            // Kimse kalmadıysa 5 saniye sonra kamerayı kapat
+            if (activeWatchers === 0) {
+                stopTimer = setTimeout(() => {
+                    stopUstreamer();
+                }, 5000);
+            }
+        });
+
+        proxyReq.end();
+    }, 500);
 });
+
+/**
+ * 3. GET /odam/logs
+ * Frontend tarafındaki canlı terminal paneli için durum bilgisi ve ustreamer çıktılarını döner.
+ */
+router.get("/odam/logs", requireAuth, (req, res) => {
+    const currentUserId = req.user?.sub || req.user?.id;
+
+    if (currentUserId !== ALLOWED_USER_ID) {
+        return res.status(403).json({ error: "Erişim yetkiniz yok." });
+    }
+
+    res.json({
+        active: ustreamerProcess !== null,
+        watchers: activeWatchers,
+        logs: ustreamerLogs
+    });
+});
+
 
 export default router;
