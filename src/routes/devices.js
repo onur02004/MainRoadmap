@@ -737,24 +737,24 @@ router.get("/odam", requireAuth, (req, res) => {
 });
 
 router.get("/odam/stream", requireAuth, (req, res) => {
-    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c"; //prod
-    //const allowedUserId = "5efaab86-0a88-4fa0-adf0-23197bf040bf"; //local
+    const allowedUserId = "7f5c358d-f973-4b15-8998-2fcf5eae128c";
     const currentUserId = req.user?.sub || req.user?.id;
 
     if (currentUserId !== allowedUserId) {
-        return res.status(403).json({ error: "Erişim engellendi." });
+        return res.status(403).json({ error: "Erişim yetkiniz yok." });
     }
 
-    // Localhost'ta çalışan ustreamer servisine proxy isteği gönder
     const proxyReq = http.request(
         {
             host: "127.0.0.1",
             port: 8080,
-            path: "/stream", // ustreamer'ın mjpeg yayın adresi
+            path: "/stream", // Eğer yine ECONNRESET alırsanız burayı "/" yapıp deneyin
             method: "GET",
+            headers: {
+                'Connection': 'keep-alive'
+            }
         },
         (proxyRes) => {
-            // Gelen başlıkları ve video/mjpeg content-type değerini aynen tarayıcıya ilet
             res.writeHead(proxyRes.statusCode, proxyRes.headers);
             proxyRes.pipe(res, { end: true });
         }
@@ -762,12 +762,16 @@ router.get("/odam/stream", requireAuth, (req, res) => {
 
     proxyReq.on("error", (err) => {
         console.error("Kamera akışı local proxy hatası:", err);
-        res.status(502).send("Kamera yayını şu an aktif değil.");
+        if (!res.headersSent) {
+            res.status(502).send("Kamera yayını şu an aktif değil.");
+        }
     });
 
-    req.on("abort", () => {
+    req.on("close", () => {
         proxyReq.destroy();
     });
+
+    proxyReq.end(); // İstegi sonlandırmayı unutmamak soket kilitlenmelerini önler
 });
 
 export default router;
