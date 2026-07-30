@@ -229,15 +229,18 @@
 
     <div class="dashboard-grid">
         <!-- SOL SÜTUN: Kameralar -->
+        <!-- SOL SÜTUN: Kameralar -->
         <div class="cameras-column">
-            <!-- Kamera 1 -->
             <!-- Kamera 1 -->
             <div class="camera-card">
                 <div class="camera-header">
                     <span>Kamera 1</span>
                 </div>
                 <div class="camera-viewport">
-                    <img src="/odam/stream/1" alt="Kamera 1">
+                    <img id="camFeed1" src="/odam/stream/1" alt="Kamera 1"
+                        onerror="this.style.display='none'; document.getElementById('camPlaceholder1').style.display='block';">
+                    <div id="camPlaceholder1" class="camera-placeholder" style="display: none;">Kamera 1 Yayını Yok
+                    </div>
                 </div>
             </div>
 
@@ -254,7 +257,6 @@
                 </div>
             </div>
         </div>
-
         <!-- SAĞ SÜTUN: Loglar ve Hızlı Eylemler -->
         <div class="sidebar-column">
             <!-- Log Paneli -->
@@ -299,8 +301,6 @@
                     statusText.textContent = "Kamera Pasif";
                 }
 
-                watcherCount.textContent = `İzleyici: ${data.watchers}`;
-
                 // Logları terminale bas ve en alta kaydır
                 if (data.logs && data.logs.length > 0) {
                     terminal.innerHTML = data.logs.map(log => `<div class="terminal-line">${escapeHtml(log)}</div>`).join('');
@@ -311,6 +311,7 @@
             }
         }
 
+        
         // Işık ve Cihaz Kontrolü Eylemleri (Backend LED API'sine İstek Atar)
         async function triggerAction(action) {
             try {
