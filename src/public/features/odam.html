@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -209,11 +210,13 @@
         .btn-primary {
             background-color: var(--accent-blue);
         }
+
         .btn-primary:hover {
             background-color: var(--accent-blue-hover);
         }
     </style>
 </head>
+
 <body>
 
     <div class="header">
@@ -228,25 +231,26 @@
         <!-- SOL SÜTUN: Kameralar -->
         <div class="cameras-column">
             <!-- Kamera 1 -->
+            <!-- Kamera 1 -->
             <div class="camera-card">
                 <div class="camera-header">
-                    <span>Kamera 1 (Canlı Akış)</span>
-                    <span id="watcherCount" style="font-size: 0.8rem;">İzleyici: 0</span>
+                    <span>Kamera 1</span>
                 </div>
                 <div class="camera-viewport">
-                    <img id="camFeed1" src="/odam/stream" alt="Kamera 1 Yayın" onerror="this.style.display='none'; document.getElementById('camPlaceholder1').style.display='block';">
-                    <div id="camPlaceholder1" class="camera-placeholder" style="display: none;">Kamera 1 Yayını Yok</div>
+                    <img src="/odam/stream/1" alt="Kamera 1">
                 </div>
             </div>
 
-            <!-- Kamera 2 (Gelecekteki Kamera Bağlantısı İçin) -->
+            <!-- Kamera 2 -->
             <div class="camera-card">
                 <div class="camera-header">
                     <span>Kamera 2</span>
-                    <span style="font-size: 0.8rem; color: #64748b;">Devre Dışı</span>
                 </div>
                 <div class="camera-viewport">
-                    <div class="camera-placeholder">Kamera 2 Bağlı Değil</div>
+                    <img id="camFeed2" src="/odam/stream/2" alt="Kamera 2 Yayın"
+                        onerror="this.style.display='none'; document.getElementById('camPlaceholder2').style.display='block';">
+                    <div id="camPlaceholder2" class="camera-placeholder" style="display: none;">Kamera 2 Yayını Yok /
+                        Sürücü Takılı Değil</div>
                 </div>
             </div>
         </div>
@@ -285,7 +289,7 @@
                 if (!res.ok) return;
 
                 const data = await res.json();
-                
+
                 // Durum göstergesi güncelle
                 if (data.active) {
                     statusDot.classList.add("active");
@@ -315,7 +319,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" }
                 });
-                
+
                 if (res.ok) {
                     console.log(`[Eylem] ${action} başarıyla gönderildi.`);
                 } else {
@@ -340,4 +344,5 @@
         fetchLogs();
     </script>
 </body>
+
 </html>

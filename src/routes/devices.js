@@ -738,6 +738,11 @@ let activeWatchers = 0;
 let stopTimer = null;
 let ustreamerLogs = []; // Son 50 log satırını bellekte tutar
 
+const CAMERAS = {
+    1: { device: "/dev/video0", port: 8080, process: null, watchers: 0, stopTimer: null },
+    2: { device: "/dev/video1", port: 8081, process: null, watchers: 0, stopTimer: null }
+};
+
 function logToBuffer(data) {
     const lines = data.toString().split("\n");
     for (const line of lines) {
@@ -748,50 +753,48 @@ function logToBuffer(data) {
     }
 }
 
-function startUstreamer() {
-    if (ustreamerProcess) return;
+function startUstreamerForCam(camId) {
+    const cam = CAMERAS[camId];
+    if (!cam || cam.process) return;
 
-    if (process.platform === "win32") {
-        console.warn("[Kamera] Windows ortamında ustreamer desteklenmiyor veya doğrudan çalıştırılamaz.");
-        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] UYARI: Windows üzerinde ustreamer çalıştırılamadı.`);
-        return;
-    }
+    console.log(`[Kamera ${camId}] ustreamer başlatılıyor (Port: ${cam.port})...`);
+    ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] Kamera ${camId} başlatılıyor...`);
 
-    console.log("[Kamera] ustreamer başlatılıyor...");
-    ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] ustreamer başlatılıyor...`);
-
-    ustreamerProcess = spawn("ustreamer", [
+    const args = [
         "--host=127.0.0.1",
-        "--port=8080",
-        "--device=/dev/video0",
+        `--port=${cam.port}`,
+        `--device=${cam.device}`,
         "--format=MJPEG",
         "--resolution=1280x720",
         "--desired-fps=30"
-    ]);
+    ];
 
-    // 🔴 KRİTİK EKLENTİ: Node.js'in ENOENT hatası yüzünden çökmesini önler
-    ustreamerProcess.on("error", (err) => {
-        console.error("[Kamera] ustreamer başlatılamadı:", err.message);
-        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] HATA: ustreamer bulunamadı (${err.code})`);
-        ustreamerProcess = null;
+    const pythonOrProc = spawn("ustreamer", args);
+
+    pythonOrProc.on("error", (err) => {
+        console.error(`[Kamera ${camId}] ustreamer hatası:`, err.message);
+        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] HATA: Kamera ${camId} (${err.code})`);
+        cam.process = null;
     });
 
-    ustreamerProcess.stdout.on("data", logToBuffer);
-    ustreamerProcess.stderr.on("data", logToBuffer);
+    pythonOrProc.stdout.on("data", logToBuffer);
+    pythonOrProc.stderr.on("data", logToBuffer);
 
-    ustreamerProcess.on("close", (code) => {
-        console.log(`[Kamera] ustreamer kapandı (Kod: ${code})`);
-        ustreamerLogs.push(`[${new Date().toLocaleTimeString()}] ustreamer durduruldu (Kod: ${code})`);
-        ustreamerProcess = null;
+    pythonOrProc.on("close", (code) => {
+        console.log(`[Kamera ${camId}] ustreamer kapandı (Kod: ${code})`);
+        cam.process = null;
     });
+
+    cam.process = pythonOrProc;
 }
 
 
-function stopUstreamer() {
-    if (ustreamerProcess) {
-        console.log("[Kamera] Kimse izlemiyor, ustreamer kapatılıyor...");
-        ustreamerProcess.kill("SIGTERM");
-        ustreamerProcess = null;
+function stopUstreamerForCam(camId) {
+    const cam = CAMERAS[camId];
+    if (cam && cam.process) {
+        console.log(`[Kamera ${camId}] İzleyici kalmadı, kapatılıyor...`);
+        cam.process.kill("SIGTERM");
+        cam.process = null;
     }
 }
 
@@ -899,6 +902,67 @@ router.get("/odam/logs", requireAuth, (req, res) => {
         watchers: activeWatchers,
         logs: ustreamerLogs
     });
+});
+
+
+router.get("/odam/stream/:camId", requireAuth, (req, res) => {
+    const currentUserId = req.user?.sub || req.user?.id;
+    if (currentUserId !== ALLOWED_USER_ID) {
+        return res.status(403).json({ error: "Erişim yetkiniz yok." });
+    }
+
+    const camId = req.params.camId || "1";
+    const cam = CAMERAS[camId];
+
+    if (!cam) {
+        return res.status(404).send("Tanımsız kamera.");
+    }
+
+    // Durdurma zamanlayıcısı varsa iptal et
+    if (cam.stopTimer) {
+        clearTimeout(cam.stopTimer);
+        cam.stopTimer = null;
+    }
+
+    cam.watchers++;
+    startUstreamerForCam(camId);
+
+    // Process/Stream ayağa kalkana kadar kısa tolerans
+    setTimeout(() => {
+        const proxyReq = http.request(
+            {
+                host: "127.0.0.1",
+                port: cam.port,
+                path: "/stream",
+                method: "GET",
+                headers: { 'Connection': 'keep-alive' }
+            },
+            (proxyRes) => {
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                proxyRes.pipe(res, { end: true });
+            }
+        );
+
+        proxyReq.on("error", (err) => {
+            console.error(`Kamera ${camId} proxy hatası:`, err);
+            if (!res.headersSent) {
+                res.status(502).send("Kamera yayını aktif değil.");
+            }
+        });
+
+        req.on("close", () => {
+            proxyReq.destroy();
+            cam.watchers = Math.max(0, cam.watchers - 1);
+
+            if (cam.watchers === 0) {
+                cam.stopTimer = setTimeout(() => {
+                    stopUstreamerForCam(camId);
+                }, 5000);
+            }
+        });
+
+        proxyReq.end();
+    }, 500);
 });
 
 
